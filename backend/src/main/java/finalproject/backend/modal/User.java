@@ -28,7 +28,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     private String phoneNumber;
@@ -57,6 +57,13 @@ public class User implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
     private Set<Role> roles = new HashSet<>();
+
+    @OneToMany(mappedBy = "instructor", fetch = FetchType.LAZY)
+    private List<Course> courses = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Enrollment> enrollments = new ArrayList<>();
+
 
     // ─── UserDetails ──────────────────────────────────────────────────────────
 
@@ -97,3 +104,4 @@ public class User implements UserDetails {
         updatedAt = LocalDateTime.now();    // ← auto-set on every update
     }
 }
+

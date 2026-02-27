@@ -1,5 +1,6 @@
 package finalproject.backend.config;
 
+import finalproject.backend.service.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +32,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserDetailsService       userDetailsService;
+    private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -41,47 +44,43 @@ public class SecurityConfig {
         http.formLogin(AbstractHttpConfigurer::disable);
         http.httpBasic(AbstractHttpConfigurer::disable);
 
-                // ── Routes ────────────────────────────────────────────────────────
         http.authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/public/**").permitAll()
-
-                        // ← was "USER"/"ADMIN" — must match what getAuthorities() returns
-                        .requestMatchers("/api/v1/user/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-
                         .anyRequest().authenticated()
                 )
-
-                // ── Stateless session ─────────────────────────────────────────────
+                // ── Session management ────────────────────────────────────────────
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // ── Exception handling ────────────────────────────────────────────
                 .exceptionHandling(exception -> exception
-
-                        // 401 — not authenticated
                         .authenticationEntryPoint((request, response, ex) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"success\":false,\"message\":\"Unauthorized — please login\"}");
+                            response.getWriter().write("{\"success\":false,\"message\":\"Unauthorized — please login\"}");
                         })
-
-                        // 403 — authenticated but wrong role  ← was missing
                         .accessDeniedHandler((request, response, ex) -> {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"success\":false,\"message\":\"Access denied — insufficient privileges\"}");
+                            response.getWriter().write("{\"success\":false,\"message\":\"Access denied — insufficient privileges\"}");
                         })
                 )
 
                 // ── Auth provider ─────────────────────────────────────────────────
                 .authenticationProvider(authenticationProvider())
 
-                // ── JWT filter ────────────────────────────────────────────────────
+                // ✅ Google/GitHub OAuth2 login
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
+
+                // ✅ JWT filter for APIs (Added once, properly chained)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -95,15 +94,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider (){
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailsService);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
         return daoAuthenticationProvider;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
