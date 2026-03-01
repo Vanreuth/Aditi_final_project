@@ -1,0 +1,593 @@
+{
+  "info": {
+    "name": "Aditi Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full API collection for Aditi E-Learning Backend — Base URL: http://localhost:8080"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080/api/v1" },
+    { "key": "token",    "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Test@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me (Get current user)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/logout",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories?page=0&size=10&sortBy=orderIndex&sortDir=asc",
+              "host": ["{{base_url}}"],
+              "path": ["categories"],
+              "query": [
+                { "key": "page",    "value": "0" },
+                { "key": "size",    "value": "10" },
+                { "key": "sortBy",  "value": "orderIndex" },
+                { "key": "sortDir", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Category By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categories/1"
+          }
+        },
+        {
+          "name": "Get Category By Slug",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categories/slug/web-development"
+          }
+        },
+        {
+          "name": "Create Category (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/categories",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mobile Development\",\n  \"slug\": \"mobile-development\",\n  \"description\": \"Android, iOS, Flutter, React Native\",\n  \"isActive\": true,\n  \"orderIndex\": 6\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Category (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/categories/1",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ការអភិវឌ្ឍន៍គេហទំព័រ\",\n  \"slug\": \"web-development\",\n  \"description\": \"Updated description\",\n  \"isActive\": true,\n  \"orderIndex\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Category (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/categories/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/courses?page=0&size=10&sortBy=createdAt&sortDir=desc",
+              "host": ["{{base_url}}"],
+              "path": ["courses"],
+              "query": [
+                { "key": "page",    "value": "0" },
+                { "key": "size",    "value": "10" },
+                { "key": "sortBy",  "value": "createdAt" },
+                { "key": "sortDir", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Course By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/courses/1"
+          }
+        },
+        {
+          "name": "Get Course By Slug",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/courses/slug/html-for-beginners-km"
+          }
+        },
+        {
+          "name": "Get Courses By Category",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/courses/category/1?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["courses","category","1"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Courses By Instructor",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/courses/instructor/1?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["courses","instructor","1"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Course (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/courses",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",        "value": "Python for Beginners",  "type": "text" },
+                { "key": "slug",         "value": "python-beginners",      "type": "text" },
+                { "key": "description",  "value": "Learn Python from scratch", "type": "text" },
+                { "key": "requirements", "value": "No prior knowledge needed", "type": "text" },
+                { "key": "level",        "value": "BEGINNER",              "type": "text" },
+                { "key": "language",     "value": "Khmer",                 "type": "text" },
+                { "key": "status",       "value": "DRAFT",                 "type": "text" },
+                { "key": "isFeatured",   "value": "false",                 "type": "text" },
+                { "key": "isFree",       "value": "true",                  "type": "text" },
+                { "key": "categoryId",   "value": "1",                     "type": "text" },
+                { "key": "instructorId", "value": "1",                     "type": "text" },
+                { "key": "thumbnail",    "type": "file", "src": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Course (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/courses/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",        "value": "Python for Beginners Updated", "type": "text" },
+                { "key": "slug",         "value": "python-beginners",             "type": "text" },
+                { "key": "description",  "value": "Updated description",          "type": "text" },
+                { "key": "level",        "value": "BEGINNER",                     "type": "text" },
+                { "key": "language",     "value": "Khmer",                        "type": "text" },
+                { "key": "status",       "value": "PUBLISHED",                    "type": "text" },
+                { "key": "isFeatured",   "value": "true",                         "type": "text" },
+                { "key": "isFree",       "value": "true",                         "type": "text" },
+                { "key": "categoryId",   "value": "1",                            "type": "text" },
+                { "key": "instructorId", "value": "1",                            "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Course (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/courses/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Chapters",
+      "item": [
+        {
+          "name": "Get Chapters By Course",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/chapters/course/1"
+          }
+        },
+        {
+          "name": "Get Chapter By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/chapters/1"
+          }
+        },
+        {
+          "name": "Create Chapter (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chapters",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to HTML\",\n  \"description\": \"Overview of HTML basics\",\n  \"orderIndex\": 1,\n  \"courseId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Chapter (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/chapters/1",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to HTML (Updated)\",\n  \"description\": \"Updated overview\",\n  \"orderIndex\": 1,\n  \"courseId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Chapter (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/chapters/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Lessons",
+      "item": [
+        {
+          "name": "Get Lessons By Chapter",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/lessons/chapter/1"
+          }
+        },
+        {
+          "name": "Get Lessons By Course",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/lessons/course/1"
+          }
+        },
+        {
+          "name": "Get Lesson By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/lessons/1"
+          }
+        },
+        {
+          "name": "Create Lesson (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/lessons",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"What is HTML?\",\n  \"description\": \"Learn about HTML and its purpose\",\n  \"content\": \"<h1>HTML stands for HyperText Markup Language...</h1>\",\n  \"orderIndex\": 1,\n  \"chapterId\": 1,\n  \"courseId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Lesson (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/lessons/1",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"What is HTML? (Updated)\",\n  \"description\": \"Updated description\",\n  \"content\": \"<h1>Updated HTML content...</h1>\",\n  \"orderIndex\": 1,\n  \"chapterId\": 1,\n  \"courseId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Lesson (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/lessons/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Code Snippets",
+      "item": [
+        {
+          "name": "Get Snippets By Lesson",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/snippets/lesson/1"
+          }
+        },
+        {
+          "name": "Get Snippet By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/snippets/1"
+          }
+        },
+        {
+          "name": "Create Snippet (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/snippets",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hello World in HTML\",\n  \"code\": \"<!DOCTYPE html>\\n<html>\\n  <body>\\n    <h1>Hello World</h1>\\n  </body>\\n</html>\",\n  \"language\": \"html\",\n  \"explanation\": \"This is a basic HTML page structure.\",\n  \"orderIndex\": 1,\n  \"lessonId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Snippet (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/snippets/1",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hello World Updated\",\n  \"code\": \"<!DOCTYPE html>\\n<html>\\n  <body>\\n    <h1>Hello Updated World</h1>\\n  </body>\\n</html>\",\n  \"language\": \"html\",\n  \"explanation\": \"Updated explanation.\",\n  \"orderIndex\": 1,\n  \"lessonId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Snippet (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/snippets/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Lesson Progress",
+      "item": [
+        {
+          "name": "Upsert Progress (save/update)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/lesson-progress",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"lessonId\": 1,\n  \"completed\": false,\n  \"scrollPct\": 60,\n  \"readTimeSeconds\": 120,\n  \"pdfDownloaded\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark Lesson Completed",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/lesson-progress/complete?userId=1&lessonId=1",
+              "host": ["{{base_url}}"],
+              "path": ["lesson-progress","complete"],
+              "query": [
+                { "key": "userId",   "value": "1" },
+                { "key": "lessonId", "value": "1" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Get Progress (user + lesson)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/lesson-progress?userId=1&lessonId=1",
+              "host": ["{{base_url}}"],
+              "path": ["lesson-progress"],
+              "query": [
+                { "key": "userId",   "value": "1" },
+                { "key": "lessonId", "value": "1" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Get All Progress By User",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/lesson-progress/user/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Count Completed Lessons By User",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/lesson-progress/user/1/completed-count",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Count Completed By Course + User",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/lesson-progress/course/1/user/1/completed-count",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Course PDF Exports",
+      "item": [
+        {
+          "name": "Get PDF Export By Course",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/course-pdf-exports/course/1"
+          }
+        },
+        {
+          "name": "Increment Download Count",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/course-pdf-exports/course/1/download",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Delete PDF Export (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/course-pdf-exports/course/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Users (ADMIN)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/users",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/users/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    }
+
+  ]
+}
+

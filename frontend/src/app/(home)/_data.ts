@@ -9,8 +9,12 @@ export type Course = {
 	students: number;
 	rating: number;
 	price: string;
+	isFree: boolean;
 	summary: string;
 	skills: string[];
+	thumbnail: string; // gradient CSS or image URL
+	thumbnailBg: string; // tailwind bg gradient class
+	icon: string; // emoji icon for the card
 };
 
 export type RoadmapStage = {
@@ -23,10 +27,10 @@ export type RoadmapStage = {
 };
 
 export const platformStats = [
-	{ label: "Active Learners", value: "12,500+" },
-	{ label: "Guided Courses", value: "180+" },
-	{ label: "Hands-on Projects", value: "95" },
-	{ label: "Average Rating", value: "4.8/5" },
+	{ label: "Active Learners", value: "12,500+", icon: "👨‍🎓" },
+	{ label: "Guided Courses", value: "180+", icon: "📚" },
+	{ label: "Hands-on Projects", value: "95", icon: "🛠️" },
+	{ label: "Average Rating", value: "4.8/5", icon: "⭐" },
 ];
 
 export const courseCategories = [
@@ -49,9 +53,13 @@ export const courses: Course[] = [
 		students: 3100,
 		rating: 4.9,
 		price: "$29",
+		isFree: false,
 		summary:
 			"Build responsive interfaces with HTML, CSS, JavaScript, and React fundamentals.",
 		skills: ["Semantic HTML", "CSS Layouts", "React Components", "State Basics"],
+		thumbnail: "from-blue-500 via-cyan-400 to-teal-400",
+		thumbnailBg: "bg-gradient-to-br from-blue-500 via-cyan-400 to-teal-400",
+		icon: "⚛️",
 	},
 	{
 		id: 102,
@@ -64,9 +72,13 @@ export const courses: Course[] = [
 		students: 2200,
 		rating: 4.8,
 		price: "$39",
+		isFree: false,
 		summary:
 			"Design production APIs with JWT, OAuth2, refresh tokens, and role-based access.",
 		skills: ["JPA Modeling", "JWT Auth", "OAuth2 Login", "Secure Cookies"],
+		thumbnail: "from-green-500 via-emerald-400 to-teal-500",
+		thumbnailBg: "bg-gradient-to-br from-green-500 via-emerald-400 to-teal-500",
+		icon: "🔐",
 	},
 	{
 		id: 103,
@@ -79,9 +91,13 @@ export const courses: Course[] = [
 		students: 1400,
 		rating: 4.7,
 		price: "$34",
+		isFree: false,
 		summary:
 			"Containerize frontend and backend services and ship with repeatable deployment flows.",
 		skills: ["Dockerfiles", "Compose", "CI Basics", "Monitoring"],
+		thumbnail: "from-orange-500 via-amber-400 to-yellow-400",
+		thumbnailBg: "bg-gradient-to-br from-orange-500 via-amber-400 to-yellow-400",
+		icon: "🐳",
 	},
 	{
 		id: 104,
@@ -94,9 +110,13 @@ export const courses: Course[] = [
 		students: 2700,
 		rating: 4.8,
 		price: "Free",
+		isFree: true,
 		summary:
 			"Learn SQL for reporting, dashboards, and data modeling with real business datasets.",
 		skills: ["SQL Queries", "Data Joins", "Aggregation", "Dashboard Inputs"],
+		thumbnail: "from-purple-500 via-violet-400 to-indigo-500",
+		thumbnailBg: "bg-gradient-to-br from-purple-500 via-violet-400 to-indigo-500",
+		icon: "📊",
 	},
 	{
 		id: 105,
@@ -109,9 +129,13 @@ export const courses: Course[] = [
 		students: 900,
 		rating: 4.9,
 		price: "$49",
+		isFree: false,
 		summary:
 			"Master tradeoffs, architecture patterns, and interview-ready system design answers.",
 		skills: ["Scalability", "Caching", "Queues", "Tradeoff Analysis"],
+		thumbnail: "from-rose-500 via-pink-400 to-fuchsia-500",
+		thumbnailBg: "bg-gradient-to-br from-rose-500 via-pink-400 to-fuchsia-500",
+		icon: "🏗️",
 	},
 	{
 		id: 106,
@@ -124,9 +148,13 @@ export const courses: Course[] = [
 		students: 1100,
 		rating: 4.8,
 		price: "$44",
+		isFree: false,
 		summary:
 			"Write scalable React apps with composition patterns, performance tuning, and testing.",
 		skills: ["Hooks Patterns", "Rendering Performance", "Testing", "Design Systems"],
+		thumbnail: "from-sky-500 via-blue-400 to-indigo-500",
+		thumbnailBg: "bg-gradient-to-br from-sky-500 via-blue-400 to-indigo-500",
+		icon: "🚀",
 	},
 ];
 

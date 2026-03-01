@@ -69,6 +69,26 @@ public class R2StorageServiceImpl implements R2StorageService {
 
 
     @Override
+    public String uploadBytes(byte[] bytes, String folder, String filename, String contentType) {
+        String fileKey = folder + "/" + UUID.randomUUID() + "-" + filename;
+        try {
+            PutObjectRequest put = PutObjectRequest.builder()
+                    .bucket(r2Properties.getBucketName())
+                    .key(fileKey)
+                    .contentType(contentType)
+                    .contentLength((long) bytes.length)
+                    .build();
+            s3Client.putObject(put, RequestBody.fromBytes(bytes));
+            String publicUrl = buildPublicUrl(fileKey);
+            log.info("Bytes uploaded successfully: {}", fileKey);
+            return publicUrl;
+        } catch (S3Exception e) {
+            log.error("Failed to upload bytes to R2: {}", e.getMessage());
+            throw new FileStorageException("Failed to upload bytes: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void deleteFile(String publicUrl) {
         String fileKey = extractKeyFromUrl(publicUrl);
         try {

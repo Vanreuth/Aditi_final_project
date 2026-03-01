@@ -41,72 +41,64 @@ public class UserServiceImpl implements UserService {
     private final R2StorageService r2StorageService;
 
     @Override
+    @Transactional
     public ApiResponse<UserResponse> createUser(UserRequest userRequest, MultipartFile profilePicture) {
-
-        //Validation
-        this.userRequestValidation(userRequest);
+        validateCreateRequest(userRequest);
 
         User user = userMapper.toEntity(userRequest);
         user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        user.setStatus("ACTIVE");
-
         user.setRoles(resolveRoles(userRequest.getRoles()));
+        // status & createdAt set by @PrePersist
 
-        // Upload profile picture if provided
         if (profilePicture != null && !profilePicture.isEmpty()) {
             try {
-                String url = r2StorageService.uploadFile(profilePicture, "profile");
-                user.setProfilePicture(url);
+                user.setProfilePicture(r2StorageService.uploadFile(profilePicture, "profile"));
             } catch (IOException e) {
                 throw new CustomMessageException("Failed to upload profile picture: " + e.getMessage());
             }
         }
 
-        User savedUser = userRepository.save(user);
-
-
-        return ApiResponse.success(userMapper.toResponse(savedUser), "User created successfully");
+        User saved = userRepository.save(user);
+        log.info("Created user id={}", saved.getId());
+        return ApiResponse.success(userMapper.toResponse(saved), "User created successfully");
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAllUsers(Pageable pageable) {
-        Page<User> userPage = userRepository.findAll(pageable);
-        Page<UserResponse> userResponsePage = userPage.map(userMapper::toResponse);
-        return PageResponse.of(userResponsePage);
+        Page<User> page = userRepository.findAll(pageable);
+        return PageResponse.of(page.map(userMapper::toResponse));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ApiResponse<UserResponse> getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new CustomMessageException("User not found with id: " + id));
-        return ApiResponse.success(userMapper.toResponse(user),"User successfully retrieved");
+        User user = findUserOrThrow(id);
+        return ApiResponse.success(userMapper.toResponse(user), "User retrieved successfully");
     }
 
     @Override
+    @Transactional
     public ApiResponse<UserResponse> updateUser(Long id, UpdateUserRequest request, MultipartFile photo) {
+        User user = findUserOrThrow(id);
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new CustomMessageException("User not found with id: " + id));
-
-        // check username duplicate before applying
-        if (request.getUsername() != null && !request.getUsername().isEmpty()
-                && !request.getUsername().equals(user.getUsername())) {
-            if (userRepository.existsByUsername(request.getUsername()))
-                throw new CustomMessageException("Username already taken",
-                        String.valueOf(HttpStatus.CONFLICT.value()));
+        if (request.getUsername() != null && !request.getUsername().isBlank()
+                && !request.getUsername().equals(user.getUsername())
+                && userRepository.existsByUsername(request.getUsername())) {
+            throw new CustomMessageException("Username already taken",
+                    String.valueOf(HttpStatus.CONFLICT.value()));
         }
 
-        // check email duplicate before applying
-        if (request.getEmail() != null && !request.getEmail().isEmpty()
-                && !request.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(request.getEmail()))
-                throw new CustomMessageException("Email already in use",
-                        String.valueOf(HttpStatus.CONFLICT.value()));
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && !request.getEmail().equals(user.getEmail())
+                && userRepository.existsByEmail(request.getEmail())) {
+            throw new CustomMessageException("Email already in use",
+                    String.valueOf(HttpStatus.CONFLICT.value()));
         }
 
         userMapper.updateEntity(request, user);
 
-        if (request.getPassword() != null && !request.getPassword().isEmpty())
+        if (request.getPassword() != null && !request.getPassword().isBlank())
             user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         if (request.getRoles() != null && !request.getRoles().isEmpty())
@@ -115,39 +107,57 @@ public class UserServiceImpl implements UserService {
         if (photo != null && !photo.isEmpty()) {
             try {
                 String old = user.getProfilePicture();
-                if (old != null && !old.isEmpty())
-                    r2StorageService.deleteFile(old);
+                if (old != null && !old.isBlank()) r2StorageService.deleteFile(old);
                 user.setProfilePicture(r2StorageService.uploadFile(photo, "profile"));
             } catch (IOException e) {
                 throw new CustomMessageException("Failed to upload photo: " + e.getMessage());
             }
         }
+
         User saved = userRepository.save(user);
-        log.info("Admin updated user id={}", id);
+        log.info("Updated user id={}", id);
         return ApiResponse.success(userMapper.toResponse(saved), "User updated successfully");
     }
 
     @Override
     @Transactional
     public ApiResponse<Void> deleteUser(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new CustomMessageException("User not found with id: " + id));
-        String old = user.getProfilePicture();
-        if (old != null && !old.isEmpty()) {
-            try { r2StorageService.deleteFile(old); }
-            catch (Exception e) { log.warn("R2 delete failed: {}", e.getMessage()); }
+        User user = findUserOrThrow(id);
+        String pic = user.getProfilePicture();
+        if (pic != null && !pic.isBlank()) {
+            try { r2StorageService.deleteFile(pic); }
+            catch (Exception e) { log.warn("R2 delete failed for user id={}: {}", id, e.getMessage()); }
         }
         userRepository.delete(user);
         log.info("Deleted user id={}", id);
         return ApiResponse.success("User deleted successfully");
     }
 
+    // ── helpers ───────────────────────────────────────────────────────────────
+
+    private User findUserOrThrow(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new CustomMessageException(
+                        "User not found with id: " + id,
+                        String.valueOf(HttpStatus.NOT_FOUND.value())));
+    }
+
+    private void validateCreateRequest(UserRequest req) {
+        if (ObjectUtils.isEmpty(req.getPassword()))
+            throw new CustomMessageException("Password is required");
+
+        if (userRepository.existsByEmail(req.getEmail()))
+            throw new CustomMessageException("Email already exists",
+                    String.valueOf(HttpStatus.CONFLICT.value()));
+
+        if (userRepository.existsByUsername(req.getUsername()))
+            throw new CustomMessageException("Username already exists",
+                    String.valueOf(HttpStatus.CONFLICT.value()));
+    }
 
     private Set<Role> resolveRoles(Set<String> requestedRoles) {
-        if (ObjectUtils.isEmpty(requestedRoles)) {
-            // Default → ROLE_USER
+        if (ObjectUtils.isEmpty(requestedRoles))
             return Set.of(findOrCreateRole("USER"));
-        }
         return requestedRoles.stream()
                 .map(this::findOrCreateRole)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -155,21 +165,6 @@ public class UserServiceImpl implements UserService {
 
     private Role findOrCreateRole(String name) {
         return roleRepository.findByName(name)
-                .orElseGet(() -> roleRepository.save(
-                        Role.builder().name(name).build()));
+                .orElseGet(() -> roleRepository.save(Role.builder().name(name).build()));
     }
-
-    private void userRequestValidation(UserRequest userRequest) {
-
-        if(ObjectUtils.isEmpty(userRequest.getPassword())) {
-            throw new CustomMessageException("Password is empty");
-        }
-
-        if(userRepository.existsByEmail(userRequest.getEmail())) {
-            throw  new CustomMessageException("Email already exists", String.valueOf(HttpStatus.NOT_FOUND.value()));
-        }
-
-    }
-
-
 }

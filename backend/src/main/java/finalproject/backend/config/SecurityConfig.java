@@ -51,6 +51,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        // Categories — public read, admin write
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers("/api/v1/categories/**").hasRole("ADMIN")
+                        // Courses — public read, admin write
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/courses/**").permitAll()
+                        .requestMatchers("/api/v1/courses/**").hasRole("ADMIN")
+                        // Chapters — public read, admin write
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chapters/**").permitAll()
+                        .requestMatchers("/api/v1/chapters/**").hasRole("ADMIN")
+                        // Lessons — public read, admin write
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/lessons/**").permitAll()
+                        .requestMatchers("/api/v1/lessons/**").hasRole("ADMIN")
+                        // Enrollments — authenticated users
+                        .requestMatchers("/api/v1/enrollments/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 // ── Session management ────────────────────────────────────────────

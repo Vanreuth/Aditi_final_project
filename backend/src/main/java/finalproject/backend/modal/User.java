@@ -61,8 +61,6 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "instructor", fetch = FetchType.LAZY)
     private List<Course> courses = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Enrollment> enrollments = new ArrayList<>();
 
 
     // ─── UserDetails ──────────────────────────────────────────────────────────

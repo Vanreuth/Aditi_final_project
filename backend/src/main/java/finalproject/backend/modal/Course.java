@@ -31,28 +31,52 @@ public class Course {
 
     private String thumbnail;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price = BigDecimal.ZERO; //free
+    @Column(columnDefinition = "TEXT")
+    private String requirements;
+
 
     @Column(nullable = false)
+    @Builder.Default
     private String level = "BEGINNER";  // BEGINNER / INTERMEDIATE / ADVANCED
 
+
     @Column(nullable = false)
+    @Builder.Default
     private String language = "Khmer";
 
     @Column(nullable = false)
+    @Builder.Default
     private String status = "DRAFT";  // DRAFT / PUBLISHED / ARCHIVED
 
     @Column(name = "is_featured")
-    private boolean isFeatured = false;
+    @Builder.Default
+    private Boolean isFeatured = false;
 
-    @Column(name = "total_lessons")
-    private int totalLessons = 0;
+    @Column(name = "is_free")
+    @Builder.Default
+    private Boolean isFree = false;
 
-    @Column(name = "enrolled_count")
-    private int enrolledCount = 0;
+    @Column(name = "total_lessons", columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer totalLessons = 0;
+
+    // ─── Download full course as PDF ──────────────────────────────────────────
+    @Column(name = "pdf_url")
+    private String pdfUrl;              // ← full course PDF (all lessons merged)
+
+    @Column(name = "pdf_name")
+    private String pdfName;             // "HTML-Beginner-Full-Course.pdf"
+
+    @Column(name = "pdf_size_kb")
+    private Long pdfSizeKb;             // file size in KB
+
+    @Column(name = "pdf_updated_at")
+    private LocalDateTime pdfUpdatedAt; // when PDF was last regenerated
+
+
 
     @Column(name = "avg_rating", precision = 3, scale = 2)
+    @Builder.Default
     private BigDecimal avgRating = BigDecimal.ZERO; // 0.00–5.00
 
     @Column(updatable = false)
@@ -71,12 +95,26 @@ public class Course {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")
+    @Builder.Default
     private List<Chapter> chapters = new ArrayList<>();
 
-    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
-    private List<Enrollment> enrollments = new ArrayList<>();
 
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt    == null) createdAt    = LocalDateTime.now();
+        if (status       == null) status       = "DRAFT";
+        if (level        == null) level        = "BEGINNER";
+        if (isFeatured   == null) isFeatured   = false;
+        if (isFree       == null) isFree       = false;
+        if (totalLessons == null) totalLessons = 0;
+    }
 
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+        if ("PUBLISHED".equals(status) && publishedAt == null)
+            publishedAt = LocalDateTime.now();
+    }
 }

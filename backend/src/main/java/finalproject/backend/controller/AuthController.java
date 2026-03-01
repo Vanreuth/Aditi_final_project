@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +24,10 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> register(
             @Valid RegisterRequest request,
-            @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(authService.register(request, profilePicture));
@@ -34,7 +35,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
-            @Valid @RequestBody LoginRequest request,
+            @RequestBody LoginRequest request,
             HttpServletResponse response) {
         return ResponseEntity.ok(authService.login(request, response));
     }
@@ -69,12 +70,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.me(request));
     }
 
-    @PutMapping("/profile")
+    @PutMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AuthResponse>> updateProfile(
             Authentication authentication,
             @Valid UpdateProfileRequest request,
-            @RequestPart(value = "profilePicture", required = false) MultipartFile photo) {
-
+            @RequestParam(value = "profilePicture", required = false) MultipartFile photo) {
         return ResponseEntity.ok(
                 authService.updateProfile(authentication, request, photo));
 

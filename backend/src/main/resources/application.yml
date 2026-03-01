@@ -1,5 +1,8 @@
 server:
   port: 8080
+  tomcat:
+    max-parameter-count: 500
+    max-part-count: 500
 
 spring:
   application:
@@ -13,7 +16,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: false
     properties:
       hibernate:
@@ -24,7 +27,8 @@ spring:
     multipart:
       enabled: true
       max-file-size: ${MAX_FILE_SIZE:10MB}
-      max-request-size: ${MAX_REQUEST_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:20MB}
+      file-size-threshold: 0
 
   security:
     oauth2:
@@ -34,6 +38,7 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: openid, profile, email
+            redirect-uri: ${GOOGLE_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}
 
 cloudflare:
   r2:

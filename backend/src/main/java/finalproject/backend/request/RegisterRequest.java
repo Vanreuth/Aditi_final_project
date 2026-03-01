@@ -23,12 +23,11 @@ public class RegisterRequest {
                 regexp = "^[a-zA-Z0-9_]+$",
                 message = "Username: letters, numbers, underscores only"
         )
+        private String username;
 
         @NotBlank(message = "Email is required")
         @Email(message = "Invalid email format")
         private String email;
-
-        private String username;
 
         private String phoneNumber;
 

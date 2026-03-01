@@ -21,6 +21,9 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
+  BookOpen,
+  Layers,
+  GraduationCap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -81,15 +84,31 @@ const sidebarGroups = [
     ],
   },
   {
-    title: "Pages",
+    title: "Content Management",
     items: [
+      {
+        title: "Courses",
+        href: "/dashboard/courses",
+        icon: BookOpen,
+        badge: null,
+      },
+      {
+        title: "Categories",
+        href: "/dashboard/categories",
+        icon: Layers,
+        badge: null,
+      },
       {
         title: "Users",
         href: "/dashboard/users",
         icon: Users,
-        badge: "12",
-        badgeVariant: "secondary" as const,
+        badge: null,
       },
+    ],
+  },
+  {
+    title: "Pages",
+    items: [
       {
         title: "Projects",
         href: "/dashboard/projects",
