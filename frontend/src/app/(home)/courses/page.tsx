@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Loader2, Search, Star, Users, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type CourseDto, type CategoryDto, fetchCourses, fetchCategories } from "@/lib/api";
-import { courses as staticCourses, courseCategories as staticCategories } from "../_data";
 
 // ─── Level helpers ────────────────────────────────────────────────────────────
 
@@ -43,14 +41,13 @@ export default function CoursesPage() {
 	const [selectedCategory, setSelectedCategory] = useState("All");
 
 	// API state
-	const [apiCourses, setApiCourses] = useState<CourseDto[] | null>(null);
-	const [apiCategories, setApiCategories] = useState<CategoryDto[] | null>(null);
+	const [apiCourses, setApiCourses] = useState<CourseDto[]>([]);
+	const [apiCategories, setApiCategories] = useState<CategoryDto[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [apiError, setApiError] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
-		setLoading(true);
 		Promise.all([fetchCourses(0, 50), fetchCategories(0, 50)])
 			.then(([coursesPage, categoriesPage]) => {
 				if (!cancelled) {
@@ -60,7 +57,11 @@ export default function CoursesPage() {
 				}
 			})
 			.catch(() => {
-				if (!cancelled) setApiError(true);
+				if (!cancelled) {
+					setApiError(true);
+					setApiCourses([]);
+					setApiCategories([]);
+				}
 			})
 			.finally(() => {
 				if (!cancelled) setLoading(false);
@@ -70,41 +71,15 @@ export default function CoursesPage() {
 
 	// Derive category names for filter pills
 	const categoryNames = useMemo(() => {
-		if (apiCategories && apiCategories.length > 0) {
-			return ["All", ...apiCategories.map((c) => c.name)];
-		}
-		return ["All", ...staticCategories];
+		return ["All", ...apiCategories.map((c) => c.name)];
 	}, [apiCategories]);
 
 	// Derive level options from courses
 	const levels = ["All", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
 
-	// Merge API + static courses for display
+	// Courses from backend
 	const allCourses = useMemo(() => {
-		if (apiCourses && apiCourses.length > 0) return apiCourses;
-		// Fallback: convert static courses to CourseDto shape
-		return staticCourses.map((c) => ({
-			id: c.id,
-			title: c.title,
-			slug: c.slug,
-			description: c.summary,
-			thumbnail: null,
-			price: parseFloat(c.price.replace(/[^0-9.]/g, "")) || 0,
-			level: c.level.toUpperCase(),
-			language: "Khmer",
-			status: "PUBLISHED",
-			isFeatured: false,
-			totalLessons: c.lessons,
-			enrolledCount: c.students,
-			avgRating: c.rating,
-			createdAt: new Date().toISOString(),
-			updatedAt: null,
-			publishedAt: null,
-			instructorId: 1,
-			instructorName: "Admin",
-			categoryId: 1,
-			categoryName: c.category,
-		} as CourseDto));
+		return apiCourses;
 	}, [apiCourses]);
 
 	const filteredCourses = useMemo(() => {
@@ -115,7 +90,7 @@ export default function CoursesPage() {
 			const matchesQuery =
 				keyword.length === 0 ||
 				course.title.toLowerCase().includes(keyword) ||
-				course.description.toLowerCase().includes(keyword);
+				(course.description ?? "").toLowerCase().includes(keyword);
 			return matchesLevel && matchesCategory && matchesQuery;
 		});
 	}, [allCourses, selectedLevel, selectedCategory, query]);

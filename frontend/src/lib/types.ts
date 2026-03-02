@@ -99,6 +99,7 @@ export interface CourseDto {
   instructorName: string;
   categoryId: number;
   categoryName: string;
+  chapters?: ChapterDto[];
 }
 
 export interface CreateCourseRequest {
@@ -124,11 +125,15 @@ export interface ChapterDto {
   id: number;
   title: string;
   description: string | null;
+  content?: string | null;
   orderIndex: number;
+  durationMinutes?: number | null;
+  videoUrl?: string | null;
   createdAt: string;
   courseId: number;
   courseTitle: string;
   lessonCount: number;
+  lessons?: LessonDto[];
 }
 
 export interface CreateChapterRequest {
@@ -145,6 +150,7 @@ export interface UpdateChapterRequest extends Partial<CreateChapterRequest> {}
 export interface LessonDto {
   id: number;
   title: string;
+  slug?: string;
   description: string | null;
   content: string;
   orderIndex: number;

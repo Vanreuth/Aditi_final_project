@@ -254,6 +254,11 @@ export async function fetchCourseBySlug(slug: string): Promise<CourseDto> {
   return data.data;
 }
 
+export async function fetchCourseWithChaptersBySlug(slug: string): Promise<CourseDto> {
+  const data = await get<ApiResponse<CourseDto>>(`/api/v1/courses/slug/${slug}/full`, 0);
+  return data.data;
+}
+
 export async function fetchCoursesByCategory(
   categoryId: number,
   page = 0,
@@ -350,6 +355,17 @@ export async function fetchLessonsByCourse(courseId: number): Promise<LessonDto[
 
 export async function fetchLessonById(id: number): Promise<LessonDto> {
   const data = await get<ApiResponse<LessonDto>>(`/api/v1/lessons/${id}`);
+  return data.data;
+}
+
+export async function fetchLessonBySlug(
+  courseSlug: string,
+  lessonSlug: string
+): Promise<LessonDto> {
+  const data = await get<ApiResponse<LessonDto>>(
+    `/api/v1/courses/slug/${courseSlug}/lessons/${lessonSlug}`,
+    0
+  );
   return data.data;
 }
 

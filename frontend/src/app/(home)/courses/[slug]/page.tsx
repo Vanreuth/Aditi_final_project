@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hook";
-import { markLessonComplete, getUserProgress } from "@/lib/api";
+import { fetchLessonBySlug, markLessonComplete, getUserProgress } from "@/lib/api";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -31,23 +31,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useCourseBySlug, useChaptersByCourse } from "@/hooks/use-api";
-import { fetchLessonsByChapter } from "@/lib/api";
-import type { ChapterDto, LessonDto, CodeSnippetDto } from "@/lib/types";
-
-// ─── Level badge helper ───────────────────────────────────────────────────────
-
-const levelColors: Record<string, string> = {
-  BEGINNER: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  INTERMEDIATE: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  ADVANCED: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-};
-
-const levelLabels: Record<string, string> = {
-  BEGINNER: "ចាប់ផ្តើម",
-  INTERMEDIATE: "មធ្យម",
-  ADVANCED: "ខ្ពស់",
-};
+import { useCourseWithChaptersBySlug } from "@/hooks/use-api";
+import type { LessonDto, CodeSnippetDto } from "@/lib/types";
 
 // ─── Language colors for code snippets ────────────────────────────────────────
 
@@ -179,77 +164,101 @@ export default function CourseDetailPage() {
   // Auth state
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
-  const { data: course, loading: courseLoading } = useCourseBySlug(slug);
-  const { data: chaptersData, loading: chaptersLoading } = useChaptersByCourse(course?.id || 0);
+  const { data: course, loading: courseLoading } = useCourseWithChaptersBySlug(slug);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedChapters, setExpandedChapters] = useState<number[]>([]);
-  const [lessonsMap, setLessonsMap] = useState<Record<number, LessonDto[]>>({});
-  const [loadingChapters, setLoadingChapters] = useState<number[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<LessonDto | null>(null);
+  const [loadingSelectedLesson, setLoadingSelectedLesson] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
+  const lessonRequestRef = useRef(0);
 
-  const chapters = (chaptersData || []).sort((a, b) => a.orderIndex - b.orderIndex);
+  const chapters = useMemo(
+    () =>
+      (course?.chapters || [])
+        .map((chapter) => ({
+          ...chapter,
+          lessons: [...(chapter.lessons || [])].sort((a, b) => a.orderIndex - b.orderIndex),
+        }))
+        .sort((a, b) => a.orderIndex - b.orderIndex),
+    [course?.chapters]
+  );
 
-  // Load lessons for a chapter
-  const loadLessonsForChapter = useCallback(async (chapterId: number) => {
-    if (lessonsMap[chapterId] || loadingChapters.includes(chapterId)) return;
-    
-    setLoadingChapters((prev) => [...prev, chapterId]);
-    try {
-      const lessons = await fetchLessonsByChapter(chapterId);
-      setLessonsMap((prev) => ({
-        ...prev,
-        [chapterId]: (lessons || []).sort((a, b) => a.orderIndex - b.orderIndex),
-      }));
-      // Auto-select first lesson if none selected
-      if (!selectedLesson && lessons && lessons.length > 0) {
-        setSelectedLesson(lessons.sort((a, b) => a.orderIndex - b.orderIndex)[0]);
+  const selectLesson = useCallback(
+    async (lesson: LessonDto) => {
+      setSelectedLesson(lesson);
+
+      if (!lesson.slug) return;
+
+      const requestId = lessonRequestRef.current + 1;
+      lessonRequestRef.current = requestId;
+      setLoadingSelectedLesson(true);
+      try {
+        const fullLesson = await fetchLessonBySlug(slug, lesson.slug);
+        if (lessonRequestRef.current === requestId) {
+          setSelectedLesson(fullLesson);
+        }
+      } catch (error) {
+        console.error("Failed to load lesson by slug:", error);
+      } finally {
+        if (lessonRequestRef.current === requestId) {
+          setLoadingSelectedLesson(false);
+        }
       }
-    } catch (error) {
-      console.error("Failed to load lessons:", error);
-    } finally {
-      setLoadingChapters((prev) => prev.filter((id) => id !== chapterId));
-    }
-  }, [lessonsMap, loadingChapters, selectedLesson]);
+    },
+    [slug]
+  );
 
-  // Auto-expand first chapter and load its lessons
   useEffect(() => {
-    if (chapters.length > 0 && expandedChapters.length === 0) {
-      const firstChapter = chapters[0];
-      setExpandedChapters([firstChapter.id]);
-      loadLessonsForChapter(firstChapter.id);
+    lessonRequestRef.current += 1;
+    setExpandedChapters([]);
+    setSelectedLesson(null);
+    setLoadingSelectedLesson(false);
+  }, [slug]);
+
+  // Auto-expand first chapter and auto-select the first lesson
+  useEffect(() => {
+    if (chapters.length === 0) return;
+
+    if (expandedChapters.length === 0) {
+      setExpandedChapters([chapters[0].id]);
     }
-  }, [chapters, expandedChapters.length, loadLessonsForChapter]);
+
+    if (!selectedLesson) {
+      const firstLesson = chapters[0].lessons?.[0];
+      if (firstLesson) {
+        selectLesson(firstLesson);
+      }
+    }
+  }, [chapters, expandedChapters.length, selectedLesson, selectLesson]);
 
   const toggleChapter = (chapterId: number) => {
-    const isExpanding = !expandedChapters.includes(chapterId);
     setExpandedChapters((prev) =>
       prev.includes(chapterId)
         ? prev.filter((id) => id !== chapterId)
         : [...prev, chapterId]
     );
-    if (isExpanding) {
-      loadLessonsForChapter(chapterId);
-    }
   };
 
   // Get all lessons flat for navigation
-  const allLessons = chapters.flatMap((ch) => lessonsMap[ch.id] || []);
+  const allLessons = useMemo(
+    () => chapters.flatMap((chapter) => chapter.lessons || []),
+    [chapters]
+  );
   const currentLessonIndex = selectedLesson
     ? allLessons.findIndex((l) => l.id === selectedLesson.id)
     : -1;
 
   const goToPreviousLesson = () => {
     if (currentLessonIndex > 0) {
-      setSelectedLesson(allLessons[currentLessonIndex - 1]);
+      void selectLesson(allLessons[currentLessonIndex - 1]);
     }
   };
 
   const goToNextLesson = () => {
     if (currentLessonIndex < allLessons.length - 1) {
-      setSelectedLesson(allLessons[currentLessonIndex + 1]);
+      void selectLesson(allLessons[currentLessonIndex + 1]);
     }
   };
 
@@ -299,7 +308,7 @@ export default function CourseDetailPage() {
       if (currentLessonIndex < allLessons.length - 1) {
         setTimeout(() => goToNextLesson(), 500);
       }
-    } catch (error) {
+    } catch {
       // Mark locally even if backend fails (session auth issue)
       setCompletedLessons((prev) => new Set([...prev, selectedLesson.id]));
       toast.success("បានបញ្ចប់មេរៀន!", {
@@ -381,15 +390,14 @@ export default function CourseDetailPage() {
 
         {/* Chapters List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {chaptersLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
+          {chapters.length === 0 ? (
+            <div className="px-3 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+              មិនមានជំពូកសម្រាប់វគ្គនេះទេ
             </div>
           ) : (
             chapters.map((chapter) => {
               const isExpanded = expandedChapters.includes(chapter.id);
-              const chapterLessons = lessonsMap[chapter.id] || [];
-              const isLoading = loadingChapters.includes(chapter.id);
+              const chapterLessons = chapter.lessons || [];
 
               return (
                 <Collapsible key={chapter.id} open={isExpanded} onOpenChange={() => toggleChapter(chapter.id)}>
@@ -403,7 +411,7 @@ export default function CourseDetailPage() {
                           {chapter.title}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {chapterLessons.length > 0 ? `${chapterLessons.length} មេរៀន` : "ផ្ទុក..."}
+                          {chapterLessons.length} មេរៀន
                         </p>
                       </div>
                       {isExpanded ? (
@@ -415,31 +423,24 @@ export default function CourseDetailPage() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="ml-5 pl-4 border-l-2 border-violet-200 dark:border-violet-800 space-y-1 py-1">
-                      {isLoading ? (
-                        <div className="flex items-center gap-2 px-3 py-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-violet-500" />
-                          <span className="text-xs text-slate-500">កំពុងផ្ទុក...</span>
-                        </div>
-                      ) : (
-                        chapterLessons.map((lesson) => (
-                          <button
-                            key={lesson.id}
-                            onClick={() => setSelectedLesson(lesson)}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
-                              selectedLesson?.id === lesson.id
-                                ? "bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300"
-                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                            }`}
-                          >
-                            {completedLessons.has(lesson.id) ? (
-                              <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-                            ) : (
-                              <FileText className="h-4 w-4 shrink-0" />
-                            )}
-                            <span className="text-sm line-clamp-1">{lesson.title}</span>
-                          </button>
-                        ))
-                      )}
+                      {chapterLessons.map((lesson) => (
+                        <button
+                          key={lesson.id}
+                          onClick={() => void selectLesson(lesson)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition ${
+                            selectedLesson?.id === lesson.id
+                              ? "bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300"
+                              : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          {completedLessons.has(lesson.id) ? (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                          ) : (
+                            <FileText className="h-4 w-4 shrink-0" />
+                          )}
+                          <span className="text-sm line-clamp-1">{lesson.title}</span>
+                        </button>
+                      ))}
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -482,6 +483,12 @@ export default function CourseDetailPage() {
               </h1>
               {selectedLesson.description && (
                 <p className="mt-3 text-slate-600 dark:text-slate-400">{selectedLesson.description}</p>
+              )}
+              {loadingSelectedLesson && (
+                <p className="mt-2 inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  កំពុងផ្ទុកមាតិកាមេរៀន...
+                </p>
               )}
             </div>
 

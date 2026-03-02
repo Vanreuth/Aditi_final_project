@@ -17,6 +17,7 @@ import {
   fetchCourses,
   fetchCourseById,
   fetchCourseBySlug,
+  fetchCourseWithChaptersBySlug,
   fetchCoursesByCategory,
   fetchChaptersByCourse,
   fetchLessonsByCourse,
@@ -112,6 +113,13 @@ export function useCourse(id: number | null) {
 export function useCourseBySlug(slug: string | null) {
   return useQuery<CourseDto | null>(
     async () => (slug ? fetchCourseBySlug(slug) : null),
+    [slug]
+  );
+}
+
+export function useCourseWithChaptersBySlug(slug: string | null) {
+  return useQuery<CourseDto | null>(
+    async () => (slug ? fetchCourseWithChaptersBySlug(slug) : null),
     [slug]
   );
 }
