@@ -18,9 +18,7 @@ export default function HomeLayout({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200">
         <Footer />
-      </footer>
     </div>
   );
 }

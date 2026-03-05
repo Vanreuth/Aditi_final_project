@@ -111,33 +111,15 @@ export default function CoursesPage() {
 	return (
 		<div className="space-y-8 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-10">
 			{/* ── Page Header ── */}
-			<section className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/60 px-6 py-10 shadow-lg shadow-violet-100/40 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/50 dark:shadow-black/20 md:px-10">
-				<div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-violet-300/25 blur-2xl dark:bg-violet-700/15" />
-				<p className="text-xs font-semibold uppercase tracking-widest text-violet-600 dark:text-violet-400">
-					Course Catalog
-				</p>
-				<h1 className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white md:text-4xl">
-					វគ្គសិក្សា{" "}
-					<span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent dark:from-violet-400 dark:to-indigo-400">
-						ជាភាសាខ្មែរ
-					</span>
-				</h1>
-				<p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-400">
-					វគ្គសិក្សាទាំងអស់ ឥតគិតថ្លៃ — HTML, CSS, JavaScript, React, Next.js, Spring Boot, Docker ជាភាសាខ្មែរ
-				</p>
-				<div className="mt-4 flex flex-wrap gap-2">
-					{categoryNames.slice(1).map((cat) => (
-						<button
-							key={cat}
-							type="button"
-							onClick={() => setSelectedCategory(cat)}
-							className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700 transition hover:bg-violet-100 dark:border-violet-700/30 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
-						>
-							{cat}
-						</button>
-					))}
-				</div>
-			</section>
+			<div className="mx-auto max-w-4xl text-center">
+        <div className="mx-auto mb-4 h-1 w-28 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500" />
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white md:text-5xl">
+          ថ្នាក់សិក្សា<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-pink-500">របស់យើង</span>
+        </h2>
+        <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-600 dark:text-slate-400 md:text-base">
+          សូមជ្រើសរើសថ្នាក់រៀនដែលអ្នកចង់រៀន ហើយចាប់ផ្តើមដំណើរការនៃការសិក្សារបស់អ្នក។
+        </p>
+      </div>
 
 			{/* ── Search + Filters ── */}
 			<section className="rounded-2xl border border-white/60 bg-white/70 p-4 shadow-sm shadow-violet-100/30 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/50 dark:shadow-black/20 md:p-5">

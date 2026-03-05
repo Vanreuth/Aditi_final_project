@@ -16,16 +16,15 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [username, setUsername]             = useState("")
-  const [password, setPassword]             = useState("")
-  const [showPassword, setShowPassword]     = useState(false)
-  const [rememberMe, setRememberMe]         = useState(false)
-  const [error, setError]                   = useState<string | null>(null)
-  const [loading, setLoading]               = useState(false)
-  const [googleLoading, setGoogleLoading]   = useState(false)
+  const [username, setUsername]               = useState("")
+  const [password, setPassword]               = useState("")
+  const [showPassword, setShowPassword]       = useState(false)
+  const [rememberMe, setRememberMe]           = useState(false)
+  const [error, setError]                     = useState<string | null>(null)
+  const [loading, setLoading]                 = useState(false)
+  const [googleLoading, setGoogleLoading]     = useState(false)
   const [facebookLoading, setFacebookLoading] = useState(false)
 
-  // ── Form submit ─────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
@@ -49,7 +48,6 @@ export default function LoginPage() {
     }
   }
 
-  // ── OAuth ───────────────────────────────────────────────────
   async function handleOAuth(
     provider: "google" | "facebook",
     setProviderLoading: (v: boolean) => void
@@ -66,17 +64,20 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="bg-[#16213e] border border-white/10 rounded-2xl p-8 shadow-2xl">
-
+      <div
+        className="rounded-2xl border border-border bg-card/85 backdrop-blur-md p-8 shadow-2xl
+                   shadow-black/30 ring-1 ring-white/10 transition-colors duration-300"
+      >
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-wide">Welcome Back</h1>
-          <p className="text-sm text-slate-400 mt-1.5">Sign in to continue learning</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-wide">Welcome Back</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Sign in to continue learning</p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-5 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+          <div className="mb-5 px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/30
+                          text-destructive text-sm text-center">
             {error}
           </div>
         )}
@@ -84,9 +85,9 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* Username / email */}
+          {/* Username */}
           <div className="space-y-1.5">
-            <Label htmlFor="username" className="text-slate-300 text-sm font-medium">
+            <Label htmlFor="username" className="text-foreground text-sm font-medium">
               Username
             </Label>
             <Input
@@ -97,20 +98,21 @@ export default function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               required
               autoComplete="username"
-              className="bg-[#0f3460]/60 border-white/10 text-white placeholder:text-slate-500
-                         focus-visible:ring-blue-500 focus-visible:border-blue-500 h-11"
+              className="bg-input/50 border-border text-foreground placeholder:text-muted-foreground
+                         focus-visible:ring-primary focus-visible:border-primary h-11
+                         transition-colors"
             />
           </div>
 
           {/* Password */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-slate-300 text-sm font-medium">
+              <Label htmlFor="password" className="text-foreground text-sm font-medium">
                 Password
               </Label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-sm text-primary hover:opacity-80 transition-opacity"
               >
                 Forgot?
               </Link>
@@ -124,14 +126,15 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="bg-[#0f3460]/60 border-white/10 text-white placeholder:text-slate-500
-                           focus-visible:ring-blue-500 focus-visible:border-blue-500 h-11 pr-10"
+                className="bg-input/50 border-border text-foreground placeholder:text-muted-foreground
+                           focus-visible:ring-primary focus-visible:border-primary h-11 pr-10
+                           transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400
-                           hover:text-slate-200 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground
+                           hover:text-foreground transition-colors"
                 tabIndex={-1}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -146,9 +149,9 @@ export default function LoginPage() {
               id="remember"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
-              className="border-white/20 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+              className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
-            <Label htmlFor="remember" className="text-sm text-slate-400 cursor-pointer select-none">
+            <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer select-none">
               Remember me
             </Label>
           </div>
@@ -157,8 +160,8 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-semibold
-                       rounded-lg transition-colors disabled:opacity-60 mt-2"
+            className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-lg
+                       transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60 mt-2"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -173,9 +176,9 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-xs text-slate-500 tracking-wide">Or continue with</span>
-          <div className="flex-1 h-px bg-white/10" />
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs text-muted-foreground tracking-wide">Or continue with</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         {/* OAuth buttons */}
@@ -185,8 +188,8 @@ export default function LoginPage() {
             variant="outline"
             onClick={() => handleOAuth("google", setGoogleLoading)}
             disabled={googleLoading || facebookLoading}
-            className="h-10 bg-transparent border-white/10 text-slate-300
-                       hover:bg-white/5 hover:text-white transition-colors"
+            className="h-10 border-border bg-transparent text-foreground
+                       hover:bg-accent/20 hover:text-foreground transition-colors"
           >
             {googleLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -208,8 +211,8 @@ export default function LoginPage() {
             variant="outline"
             onClick={() => handleOAuth("facebook", setFacebookLoading)}
             disabled={googleLoading || facebookLoading}
-            className="h-10 bg-transparent border-white/10 text-slate-300
-                       hover:bg-white/5 hover:text-white transition-colors"
+            className="h-10 border-border bg-transparent text-foreground
+                       hover:bg-accent/20 hover:text-foreground transition-colors"
           >
             {facebookLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -225,9 +228,9 @@ export default function LoginPage() {
         </div>
 
         {/* Sign up link */}
-        <p className="text-center text-sm text-slate-500 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+          <Link href="/register" className="text-primary hover:opacity-80 font-medium transition-opacity">
             Sign up
           </Link>
         </p>

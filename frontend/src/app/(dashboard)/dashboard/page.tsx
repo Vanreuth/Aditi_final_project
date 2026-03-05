@@ -27,7 +27,10 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useCourses } from "@/hooks/useCourses";
 import { useCategories } from "@/hooks/useCategories";
 import { useUsers } from "@/hooks/useUsers";
-import type { CourseResponse, UserResponse, CategoryResponse } from "@/types/apiType";
+import type { CourseResponse } from "@/types/courseType";
+import type { CategoryResponse } from "@/types/category";
+import type { UserResponse } from "@/types/userType";
+
 
 // ─── Stats Card Component ─────────────────────────────────────────────────────
 

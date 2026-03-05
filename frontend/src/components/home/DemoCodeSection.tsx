@@ -86,10 +86,10 @@ export function DemoCodeSection() {
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
       <div className="mx-auto max-w-5xl text-center">
         <div className="mx-auto mb-4 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" />
-        <h2 className="text-3xl font-black text-slate-900 dark:text-white md:text-5xl">
+        <h2 className="text-3xl font-black text-foreground md:text-5xl">
           បទពិសោធន៍អន្តរកម្ម
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-400 md:text-base">
+        <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
           សាកល្បងមើល code និង output ជាក់ស្តែង លើភាសាផ្សេងៗ
         </p>
 
@@ -122,7 +122,7 @@ export function DemoCodeSection() {
           </Panel>
         </div>
 
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">{current.note}</p>
+        <p className="mt-4 text-sm text-muted-foreground">{current.note}</p>
 
         <div className="mt-5 flex items-center justify-center gap-2">
           {DEMOS.map((item, i) => (
@@ -131,14 +131,14 @@ export function DemoCodeSection() {
               type="button"
               onClick={() => setIndex(i)}
               className={`h-2.5 rounded-full transition-all ${
-                i === index ? "w-6 bg-blue-500" : "w-2.5 bg-slate-300 dark:bg-slate-700"
+                i === index ? "w-6 bg-blue-500" : "w-2.5 bg-muted-foreground/40"
               }`}
               aria-label={`Switch to ${item.lang}`}
             />
           ))}
         </div>
 
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{progressText}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{progressText}</p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
           {DEMOS.map((item, i) => (
@@ -149,7 +149,7 @@ export function DemoCodeSection() {
               className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
                 i === index
                   ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 dark:border-white/15 dark:bg-slate-900 dark:text-slate-300"
+                  : "border-border bg-card text-foreground hover:border-primary/50"
               }`}
             >
               {item.lang}
@@ -179,7 +179,7 @@ function ControlButton({
       className={`inline-flex items-center gap-1 rounded-xl border px-4 py-2 text-sm font-semibold transition ${
         active
           ? "border-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-          : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-white/20 dark:bg-slate-900 dark:text-slate-200"
+          : "border-border bg-card text-foreground hover:border-border/80"
       }`}
     >
       {children}
@@ -198,8 +198,8 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/70">
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-3 text-sm font-semibold text-muted-foreground">
         <span className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
         {title}
       </div>

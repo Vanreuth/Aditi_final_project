@@ -26,6 +26,7 @@ import {
   Clock,
   Trophy,
   Lock,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -44,6 +45,7 @@ import {
 import type { ChapterResponse } from "@/types/chapterType";
 import type { LessonResponse } from "@/types/lessonType";
 import { CodeSnippetTabs } from "@/components/course/CodeBlock";
+import { useCoursePdf } from "@/hooks/useCoursesPdf";
 
 // ─── Visual helper ────────────────────────────────────────────────────────────
 
@@ -78,27 +80,27 @@ function getCourseVisual(title: string): {
 
 function CourseDetailSkeleton() {
   return (
-    <div className="flex h-screen bg-white dark:bg-[#0a0a0f]">
-      <div className="w-72 shrink-0 flex flex-col border-r border-slate-200 dark:border-[#1e1e2e] bg-slate-50 dark:bg-[#0f0f17]">
-        <div className="h-32 animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
+    <div className="flex h-screen bg-background">
+      <div className="w-72 shrink-0 flex flex-col border-r border-border bg-card">
+        <div className="h-32 animate-pulse bg-muted" />
         <div className="p-3 space-y-2 flex-1">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-1">
-              <div className="h-11 w-full rounded-xl animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
+              <div className="h-11 w-full rounded-xl animate-pulse bg-muted" />
               {i < 2 &&
                 Array.from({ length: 3 }).map((_, j) => (
-                  <div key={j} className="h-8 rounded-lg ml-5 animate-pulse bg-slate-100 dark:bg-[#161622]" style={{ width: "calc(100% - 1.25rem)" }} />
+                  <div key={j} className="h-8 rounded-lg ml-5 animate-pulse bg-muted/60" style={{ width: "calc(100% - 1.25rem)" }} />
                 ))}
             </div>
           ))}
         </div>
       </div>
       <div className="flex-1 p-10 space-y-5">
-        <div className="h-5 w-48 rounded-full animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
-        <div className="h-8 w-2/3 rounded-xl animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
-        <div className="h-4 w-full rounded animate-pulse bg-slate-100 dark:bg-[#161622]" />
-        <div className="h-4 w-5/6 rounded animate-pulse bg-slate-100 dark:bg-[#161622]" />
-        <div className="h-56 w-full rounded-2xl mt-4 animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
+        <div className="h-5 w-48 rounded-full animate-pulse bg-muted" />
+        <div className="h-8 w-2/3 rounded-xl animate-pulse bg-muted" />
+        <div className="h-4 w-full rounded animate-pulse bg-muted/60" />
+        <div className="h-4 w-5/6 rounded animate-pulse bg-muted/60" />
+        <div className="h-56 w-full rounded-2xl mt-4 animate-pulse bg-muted" />
       </div>
     </div>
   );
@@ -107,13 +109,13 @@ function CourseDetailSkeleton() {
 function LessonSkeleton() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 space-y-5">
-      <div className="h-5 w-36 rounded-full animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
-      <div className="h-8 w-3/4 rounded-xl animate-pulse bg-slate-200 dark:bg-[#1a1a2e]" />
+      <div className="h-5 w-36 rounded-full animate-pulse bg-muted" />
+      <div className="h-8 w-3/4 rounded-xl animate-pulse bg-muted" />
       <div className="space-y-3 pt-3">
         {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
-            className="h-4 rounded animate-pulse bg-slate-100 dark:bg-[#161622]"
+            className="h-4 rounded animate-pulse bg-muted/60"
             style={{ width: i % 3 === 2 ? "60%" : "100%" }}
           />
         ))}
@@ -187,6 +189,13 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
   );
 
   const { data: course, loading: courseLoading } = useCourseWithChapters(slug);
+  const { data: pdfData, downloading: pdfDownloading, incrementDownload } = useCoursePdf(course?.id ?? 0);
+
+  const handlePdfDownload = async () => {
+    const result = await incrementDownload();
+    const url = result?.fileUrl ?? pdfData?.fileUrl;
+    if (url) window.open(url, "_blank");
+  };
   const shouldFetchFallbackChapters = Boolean(course?.id) && !(course?.chapters?.length);
   const shouldFetchFallbackLessons =
     Boolean(course?.id) &&
@@ -467,19 +476,19 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
 
   if (!course)
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center min-h-screen bg-white dark:bg-[#0a0a0f]">
-        <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-5 bg-slate-100 dark:bg-[#1a1a2e]">
-          <BookOpen className="h-9 w-9 text-slate-400 dark:text-slate-600" />
+      <div className="flex flex-col items-center justify-center py-24 text-center min-h-screen bg-background">
+        <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-5 bg-muted border border-border">
+          <BookOpen className="h-9 w-9 text-muted-foreground" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-[#e2e8f0]" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
+        <h2 className="text-xl font-bold text-foreground" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
           រកមិនឃើញវគ្គសិក្សា
         </h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           វគ្គសិក្សានេះមិនមានក្នុងប្រព័ន្ធទេ
         </p>
         <Link
           href="/courses"
-          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80 bg-slate-100 dark:bg-[#1a1a2e] text-slate-600 dark:text-[#94a3b8] border border-slate-200 dark:border-[#1e1e2e]"
+          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80 bg-muted text-muted-foreground border border-border"
         >
           <ArrowLeft className="h-4 w-4" /> ត្រឡប់ទៅវគ្គសិក្សា
         </Link>
@@ -497,28 +506,16 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
         @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap');
 
         .course-learning {
-          --cl-bg:        #f8fafc;
-          --cl-bg-card:   #ffffff;
-          --cl-bg-raised: #f1f5f9;
-          --cl-bg-muted:  #e2e8f0;
-          --cl-border:    #e2e8f0;
-          --cl-border-hi: #cbd5e1;
-          --cl-text-hi:   #0f172a;
-          --cl-text:      #475569;
-          --cl-text-lo:   #94a3b8;
-          --cl-text-ghost:#cbd5e1;
-        }
-        .dark .course-learning {
-          --cl-bg:        #0a0a0f;
-          --cl-bg-card:   #0f0f17;
-          --cl-bg-raised: #1a1a2e;
-          --cl-bg-muted:  #161622;
-          --cl-border:    #1a1a2e;
-          --cl-border-hi: #1e293b;
-          --cl-text-hi:   #e2e8f0;
-          --cl-text:      #64748b;
-          --cl-text-lo:   #94a3b8;
-          --cl-text-ghost:#334155;
+          --cl-bg:        var(--background);
+          --cl-bg-card:   var(--card);
+          --cl-bg-raised: var(--muted);
+          --cl-bg-muted:  color-mix(in oklch, var(--muted) 80%, var(--background));
+          --cl-border:    var(--border);
+          --cl-border-hi: var(--input);
+          --cl-text-hi:   var(--foreground);
+          --cl-text:      var(--muted-foreground);
+          --cl-text-lo:   color-mix(in oklch, var(--muted-foreground) 75%, var(--foreground));
+          --cl-text-ghost:color-mix(in oklch, var(--muted-foreground) 45%, var(--background));
         }
 
         .course-learning * { box-sizing: border-box; }
@@ -707,6 +704,24 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
                 />
               </div>
             </div>
+
+            {/* PDF download */}
+            {pdfData?.fileUrl && (
+              <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--cl-border)" }}>
+                <button
+                  onClick={handlePdfDownload}
+                  disabled={pdfDownloading}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50 border border-border bg-card text-foreground"
+                >
+                  {pdfDownloading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  ទាញយក PDF
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── Chapter / lesson list ── */}
@@ -852,12 +867,12 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
                                 {isDone ? (
                                   <CheckCircle2
                                     className="h-3 w-3"
-                                    style={{ color: isActive ? "#0a0a0f" : "#4ade80" }}
+                                    style={{ color: isActive ? "var(--cl-bg)" : "#4ade80" }}
                                   />
                                 ) : isActive ? (
                                   <PlayCircle
                                     className="h-3 w-3"
-                                    style={{ color: "#0a0a0f" }}
+                                    style={{ color: "var(--cl-bg)" }}
                                   />
                                 ) : (
                                   <span
@@ -1339,7 +1354,7 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
                     className="complete-btn inline-flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-semibold"
                     style={{
                       background: visual.accent,
-                      color: "#0a0a0f",
+                      color: "var(--cl-bg)",
                       border: "none",
                       cursor: "pointer",
                       boxShadow: `0 8px 24px ${visual.accent}40`,

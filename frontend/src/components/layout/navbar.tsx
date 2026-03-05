@@ -78,10 +78,10 @@ export default function Navbar() {
       {/* ── Main nav ─────────────────────────────────────────────────────── */}
       <div
         className={cn(
-          "border-b bg-white/95 backdrop-blur-2xl transition-all duration-300 dark:bg-slate-950/90",
+          "border-b border-border bg-background/90 backdrop-blur-2xl transition-all duration-300",
           scrolled
-            ? "border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] dark:border-white/10 dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)]"
-            : "border-slate-100/60 dark:border-white/8"
+            ? "border-border/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)]"
+            : "border-border/60"
         )}
       >
         <div className="container-app flex h-[62px] items-center justify-between">
@@ -99,16 +99,16 @@ export default function Navbar() {
               {/* Online indicator dot */}
               <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-                <span className="relative h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-slate-950" />
+                <span className="relative h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-background" />
               </span>
             </div>
 
             {/* Logo text */}
             <div className="leading-none">
-              <p className="text-[15px] font-bold tracking-[-0.02em] text-slate-900 dark:text-white">
+              <p className="text-[15px] font-bold tracking-[-0.02em] text-foreground">
                 ADUTI Learning
               </p>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-400 transition-colors group-hover:text-indigo-500 dark:text-slate-500 dark:group-hover:text-indigo-400">
+              <p className="mt-0.5 text-[11px] font-medium text-muted-foreground transition-colors group-hover:text-primary">
                 រៀនកូដជាភាសាខ្មែរ
               </p>
             </div>
@@ -126,7 +126,7 @@ export default function Navbar() {
                     "relative flex items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-medium transition-all duration-200 select-none",
                     active
                       ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-md shadow-blue-500/20"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-white"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
                   {item.label}
@@ -146,7 +146,7 @@ export default function Navbar() {
             {/* Auth link — desktop */}
             <Link
               href={authHref}
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-white"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
             >
               {user
                 ? <><User className="h-3.5 w-3.5" />{authLabel}</>
@@ -173,8 +173,8 @@ export default function Navbar() {
               className={cn(
                 "relative ml-1 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 lg:hidden",
                 open
-                  ? "bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/8 dark:hover:text-white"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
               <span className={cn("absolute transition-all duration-200", open ? "opacity-100 rotate-0" : "opacity-0 rotate-90")}>
@@ -191,7 +191,7 @@ export default function Navbar() {
       {/* ── Mobile menu ──────────────────────────────────────────────────── */}
       <div
         className={cn(
-          "overflow-hidden border-b border-slate-200/70 bg-white/98 backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/98 lg:hidden",
+          "overflow-hidden border-b border-border/70 bg-background/98 backdrop-blur-2xl transition-all duration-300 lg:hidden",
           open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
@@ -208,14 +208,14 @@ export default function Navbar() {
                   "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150",
                   active
                     ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-md shadow-blue-500/20"
-                    : "text-slate-700 hover:bg-slate-50 hover:text-blue-700 dark:text-slate-300 dark:hover:bg-white/6 dark:hover:text-blue-300"
+                    : "text-foreground hover:bg-muted hover:text-primary"
                 )}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-base leading-none">{item.emoji}</span>
                   <span>{item.label}</span>
                 </div>
-                <span className={cn("text-xs", active ? "text-white/70" : "text-slate-400")}>
+                <span className={cn("text-xs", active ? "text-white/70" : "text-muted-foreground")}>
                   {item.english}
                 </span>
               </Link>
@@ -223,11 +223,11 @@ export default function Navbar() {
           })}
 
           {/* Divider */}
-          <div className="!my-3 h-px bg-slate-100 dark:bg-white/8" />
+          <div className="!my-3 h-px bg-border" />
 
           {/* CTA row */}
           <div className="grid grid-cols-2 gap-2 !mt-2">
-            <Button asChild variant="outline" className="rounded-2xl border-slate-200 font-medium dark:border-white/10">
+            <Button asChild variant="outline" className="rounded-2xl border-border font-medium">
               <Link href={authHref}>
                 {user ? <User className="mr-2 h-3.5 w-3.5" /> : <LogIn className="mr-2 h-3.5 w-3.5" />}
                 {authLabel}
@@ -245,12 +245,12 @@ export default function Navbar() {
           </div>
 
           {/* Contact strip */}
-          <div className="!mt-3 flex items-center justify-center gap-5 rounded-2xl bg-slate-50 px-4 py-2.5 dark:bg-white/5">
-            <a href="tel:+85512345678" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400">
+          <div className="!mt-3 flex items-center justify-center gap-5 rounded-2xl bg-muted/50 px-4 py-2.5">
+              <a href="tel:+85512345678" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
               <Phone className="h-3 w-3" />+855 12 345 678
             </a>
-            <span className="h-3 w-px bg-slate-200 dark:bg-white/10" />
-            <a href="mailto:hello@adutilearning.com" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400">
+              <span className="h-3 w-px bg-border" />
+              <a href="mailto:hello@adutilearning.com" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
               <Mail className="h-3 w-3" />hello@adutilearning.com
             </a>
           </div>

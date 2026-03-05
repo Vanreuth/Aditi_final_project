@@ -3,7 +3,7 @@
 import { useState, ChangeEvent, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { register } from "@/hooks/useAuth"
+import { authService } from "@/services/authService"
 import type { RegisterRequest } from "@/types/authType"
 import { Eye, EyeOff, Loader2, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,9 +12,10 @@ import { Label } from "@/components/ui/label"
 
 function PasswordRule({ met, label }: { met: boolean; label: string }) {
   return (
-    <span className={`flex items-center gap-1.5 text-xs ${
-      met ? "text-green-400" : "text-slate-500"
-    }`}>
+    <span
+      className="flex items-center gap-1.5 text-xs transition-colors"
+      style={{ color: met ? "oklch(0.55 0.18 145)" : "var(--muted-foreground)" }}
+    >
       {met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
       {label}
     </span>
@@ -66,7 +67,7 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await register({ ...form, profilePicture })
+      await authService.register({ ...form }, profilePicture)
       router.push("/login")
     } catch {
       setError("Registration failed. Please try again.")
@@ -77,30 +78,33 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="bg-[#16213e] border border-white/10 rounded-2xl p-8 shadow-2xl">
-
+      <div
+        className="rounded-2xl border border-border bg-card/85 backdrop-blur-md p-8 shadow-2xl
+                   shadow-black/30 ring-1 ring-white/10 transition-colors duration-300"
+      >
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-wide">
+          <h1 className="text-2xl font-bold text-foreground tracking-wide">
             Create Account
           </h1>
-          <p className="text-sm text-slate-400 mt-1.5">
+          <p className="text-sm text-muted-foreground mt-1.5">
             Join our learning community
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-5 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+          <div className="mb-5 px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/30
+                          text-destructive text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* Full Name hidden — username is the identity */}
+          {/* Username */}
           <div className="space-y-1.5">
-            <Label htmlFor="username" className="text-slate-300 text-sm font-medium">
+            <Label htmlFor="username" className="text-foreground text-sm font-medium">
               Username
             </Label>
             <Input
@@ -112,12 +116,14 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               autoComplete="username"
-              className="bg-[#0f3460]/60 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 focus-visible:border-blue-500 h-11"
+              className="bg-input/50 border-border text-foreground placeholder:text-muted-foreground
+                         focus-visible:ring-primary focus-visible:border-primary h-11 transition-colors"
             />
           </div>
 
+          {/* Email */}
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-slate-300 text-sm font-medium">
+            <Label htmlFor="email" className="text-foreground text-sm font-medium">
               Email
             </Label>
             <Input
@@ -129,13 +135,14 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               autoComplete="email"
-              className="bg-[#0f3460]/60 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 focus-visible:border-blue-500 h-11"
+              className="bg-input/50 border-border text-foreground placeholder:text-muted-foreground
+                         focus-visible:ring-primary focus-visible:border-primary h-11 transition-colors"
             />
           </div>
 
           {/* Password */}
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-slate-300 text-sm font-medium">
+            <Label htmlFor="password" className="text-foreground text-sm font-medium">
               Password
             </Label>
             <div className="relative">
@@ -148,14 +155,16 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 autoComplete="new-password"
-                className="bg-[#0f3460]/60 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 focus-visible:border-blue-500 h-11 pr-10"
+                className="bg-input/50 border-border text-foreground placeholder:text-muted-foreground
+                           focus-visible:ring-primary focus-visible:border-primary h-11 pr-10 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 tabIndex={-1}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground
+                           hover:text-foreground transition-colors"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -164,7 +173,7 @@ export default function RegisterPage() {
 
           {/* Confirm Password */}
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword" className="text-slate-300 text-sm font-medium">
+            <Label htmlFor="confirmPassword" className="text-foreground text-sm font-medium">
               Confirm Password
             </Label>
             <div className="relative">
@@ -177,14 +186,16 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 autoComplete="new-password"
-                className="bg-[#0f3460]/60 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 focus-visible:border-blue-500 h-11 pr-10"
+                className="bg-input/50 border-border text-foreground placeholder:text-muted-foreground
+                           focus-visible:ring-primary focus-visible:border-primary h-11 pr-10 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm((v) => !v)}
                 tabIndex={-1}
                 aria-label={showConfirm ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground
+                           hover:text-foreground transition-colors"
               >
                 {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -193,8 +204,8 @@ export default function RegisterPage() {
 
           {/* Password rules */}
           {form.password.length > 0 && (
-            <div className="rounded-lg bg-white/5 border border-white/10 p-3">
-              <p className="text-xs text-slate-400 font-medium mb-2">Password Requirements:</p>
+            <div className="rounded-lg bg-muted/40 border border-border p-3 transition-colors">
+              <p className="text-xs text-muted-foreground font-medium mb-2">Password Requirements:</p>
               <div className="grid grid-cols-2 gap-1.5">
                 <PasswordRule met={passwordRules.length} label="Min 6 chars" />
                 <PasswordRule met={passwordRules.uppercase} label="Uppercase" />
@@ -206,12 +217,16 @@ export default function RegisterPage() {
 
           {/* Profile picture */}
           <div className="space-y-1.5">
-            <Label className="text-slate-400 text-sm">
-              Profile Picture{" "}<span className="text-slate-600">(optional)</span>
+            <Label className="text-muted-foreground text-sm">
+              Profile Picture{" "}
+              <span className="text-muted-foreground/60">(optional)</span>
             </Label>
             <label className="flex items-center gap-3 cursor-pointer group">
-              <div className="flex-1 h-11 flex items-center px-3 rounded-lg bg-[#0f3460]/60 border border-white/10 border-dashed group-hover:border-blue-500/50 transition-colors">
-                <span className="text-sm text-slate-500 truncate">
+              <div
+                className="flex-1 h-11 flex items-center px-3 rounded-lg border border-dashed
+                           bg-input/50 border-border group-hover:border-primary/50 transition-colors"
+              >
+                <span className="text-sm text-muted-foreground truncate">
                   {profilePicture ? profilePicture.name : "Choose image…"}
                 </span>
               </div>
@@ -228,7 +243,8 @@ export default function RegisterPage() {
           <Button
             type="submit"
             disabled={loading || !passwordValid}
-            className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-60 mt-2"
+            className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-lg
+                       transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60 mt-2"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -242,11 +258,11 @@ export default function RegisterPage() {
         </form>
 
         {/* Sign in link */}
-        <p className="text-center text-sm text-slate-500 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            className="text-primary hover:opacity-80 font-medium transition-opacity"
           >
             Sign in
           </Link>

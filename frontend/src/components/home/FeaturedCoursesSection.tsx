@@ -127,22 +127,22 @@ export function FeaturedCoursesSection() {
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
       <div className="mx-auto max-w-4xl text-center">
         <div className="mx-auto mb-4 h-1 w-28 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500" />
-        <h2 className="text-3xl font-black text-slate-900 dark:text-white md:text-5xl">
+        <h2 className="text-3xl font-black text-foreground md:text-5xl">
           វគ្គសិក្សាពេញនិយម
         </h2>
-        <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-600 dark:text-slate-400 md:text-base">
+        <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground md:text-base">
           បង្ហាញតែវគ្គសិក្សា Featured ប៉ុណ្ណោះ
         </p>
       </div>
 
-      <div className="mx-auto mt-8 max-w-7xl rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-900/60">
+      <div className="mx-auto mt-8 max-w-7xl rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm backdrop-blur">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="ស្វែងរកវគ្គសិក្សា..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-12 border-slate-200 bg-white pl-9 dark:border-white/15 dark:bg-slate-900/80"
+            className="h-12 border-border bg-card pl-9"
           />
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
@@ -152,9 +152,9 @@ export function FeaturedCoursesSection() {
               type="button"
               onClick={() => setSelectedCategory(category)}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                selectedCategory === category
+                  selectedCategory === category
                   ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-700 dark:border-white/15 dark:bg-slate-900 dark:text-slate-300"
+                  : "border-border bg-card text-foreground hover:border-primary/50 hover:text-primary"
               }`}
             >
               {category}
@@ -164,9 +164,23 @@ export function FeaturedCoursesSection() {
       </div>
 
       {loading && (
-        <div className="mt-10 flex items-center justify-center gap-2 text-slate-500">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>កំពុងផ្ទុកវគ្គសិក្សា...</span>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="h-44 animate-pulse bg-muted" />
+              <div className="p-5 space-y-3">
+                <div className="h-4 w-20 rounded-full animate-pulse bg-muted" />
+                <div className="h-6 w-full rounded-lg animate-pulse bg-muted" />
+                <div className="h-4 w-full rounded animate-pulse bg-muted/70" />
+                <div className="h-4 w-3/4 rounded animate-pulse bg-muted/70" />
+                <div className="mt-1 flex gap-3">
+                  <div className="h-3 w-20 rounded animate-pulse bg-muted/60" />
+                  <div className="h-3 w-16 rounded animate-pulse bg-muted/60" />
+                </div>
+                <div className="h-9 w-full rounded-xl animate-pulse bg-muted" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -174,7 +188,7 @@ export function FeaturedCoursesSection() {
         <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/30 dark:bg-red-500/10">
           <AlertTriangle className="mx-auto h-6 w-6 text-red-500" />
           <p className="mt-2 text-sm font-medium text-red-700 dark:text-red-300">
-            {error?.message ?? "មិនអាចទាញយកវគ្គសិក្សាពេញនិយមបានទេ។"}
+            {error ?? "មិនអាចទាញយកវគ្គសិក្សាពេញនិយមបានទេ។"}
           </p>
           <button
             type="button"
@@ -195,7 +209,7 @@ export function FeaturedCoursesSection() {
       )}
 
       {!loading && !error && filteredCourses.length === 0 && (
-        <div className="mt-10 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">
+        <div className="mt-10 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
           មិនមាន Featured Course ត្រូវនឹងពាក្យស្វែងរកទេ
         </div>
       )}
@@ -203,7 +217,7 @@ export function FeaturedCoursesSection() {
       <div className="mt-8 flex justify-center">
         <Link
           href="/courses"
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/15 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-muted/50"
         >
           មើលវគ្គសិក្សាទាំងអស់
           <ChevronRight className="h-4 w-4" />
@@ -219,7 +233,7 @@ function CourseCard({ course }: { course: HomeCourse }) {
   return (
     <Link
       href={`/courses/${course.slug}`}
-      className="group overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900/70"
+      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       <div
         className={`relative flex h-44 items-center justify-center bg-gradient-to-br ${visual.bg} p-6`}
@@ -261,14 +275,14 @@ function CourseCard({ course }: { course: HomeCourse }) {
           {course.levelLabel}
         </span>
 
-        <h4 className="mb-1.5 line-clamp-1 text-2xl font-bold text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">
+        <h4 className="mb-1.5 line-clamp-1 text-2xl font-bold text-foreground transition-colors group-hover:text-primary">
           {course.title}
         </h4>
-        <p className="line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+        <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
           {course.description}
         </p>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <BookOpen className="h-3.5 w-3.5" />
             {formatKmNumber(course.totalLessons)} មេរៀន

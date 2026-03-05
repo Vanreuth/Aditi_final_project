@@ -79,7 +79,7 @@ export function RoadmapSection() {
   const activePath = paths[activeIndex];
 
   return (
-    <section className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/30 py-20 dark:from-slate-950 dark:via-blue-950/10 dark:to-violet-950/10">
+    <section className="bg-muted/30 py-20">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <div className="mx-auto mb-4 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
@@ -87,10 +87,10 @@ export function RoadmapSection() {
             <Milestone className="mr-1.5 h-3 w-3" />
             ផ្លូវវិជ្ជាជីវៈ
           </Badge>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white md:text-5xl">
+          <h2 className="text-3xl font-black text-foreground md:text-5xl">
             ជ្រើសរើស Roadmap
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-slate-500 dark:text-slate-400">
+          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
             ជ្រើសផ្លូវមួយ រួចអនុវត្តតាមជំហានជាក់លាក់ ដើម្បីឆ្ពោះទៅគោលដៅអាជីពរបស់អ្នក
           </p>
         </div>
@@ -104,7 +104,7 @@ export function RoadmapSection() {
               className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                 activeIndex === index
                   ? `bg-gradient-to-r ${path.color} border-transparent text-white shadow`
-                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 dark:border-white/15 dark:bg-slate-900 dark:text-slate-300"
+                  : "border-border bg-card text-foreground hover:border-primary/50"
               }`}
             >
               {path.roleLabel}
@@ -125,11 +125,11 @@ export function RoadmapSection() {
                   >
                     {index + 1}
                   </span>
-                  <article className="rounded-2xl border border-blue-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
-                    <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                    <h3 className="text-2xl font-bold text-blue-600">
                       {step.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {step.description}
                     </p>
                   </article>

@@ -10,7 +10,7 @@ export function TestimonialsSection() {
           <MessageSquareQuote className="mr-1.5 h-3 w-3" />
           មតិយោបល់
         </Badge>
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">
+        <h2 className="text-3xl font-bold text-foreground md:text-4xl">
           អ្នករៀននិយាយ{" "}
           <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
             ដូចម្តេច?
@@ -22,7 +22,7 @@ export function TestimonialsSection() {
         {testimonials.map((t) => (
           <div
             key={t.name}
-            className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-slate-900/70"
+            className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
           >
             {/* Stars */}
             <div className="flex gap-0.5">
@@ -31,17 +31,17 @@ export function TestimonialsSection() {
               ))}
             </div>
 
-            <p className="flex-1 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="flex-1 text-sm leading-relaxed text-foreground/80">
               &ldquo;{t.text}&rdquo;
             </p>
 
-            <div className="flex items-center gap-3 border-t border-slate-100 pt-4 dark:border-white/8">
+            <div className="flex items-center gap-3 border-t border-border pt-4">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-violet-500 text-sm font-bold text-white">
                 {t.avatar}
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{t.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
+                <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.role}</p>
               </div>
             </div>
           </div>

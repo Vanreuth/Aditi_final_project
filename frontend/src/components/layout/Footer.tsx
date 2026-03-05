@@ -58,10 +58,10 @@ export default function Footer() {
   return (
     <footer className="relative mt-24 overflow-hidden">
       {/* ── Background layers ── */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/40 to-violet-50/30 dark:from-slate-950 dark:via-blue-950/20 dark:to-violet-950/20" />
+      <div className="absolute inset-0 bg-background" />
       {/* Subtle grid pattern */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
             "linear-gradient(#6366f1 1px, transparent 1px), linear-gradient(to right, #6366f1 1px, transparent 1px)",
@@ -74,7 +74,7 @@ export default function Footer() {
       <div className="relative">
 
         {/* ── Newsletter banner ─────────────────────────────────────────── */}
-        <div className="border-b border-blue-100/70 dark:border-white/8">
+        <div className="border-b border-border/70">
           <div className="container-app py-10">
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 px-7 py-8 shadow-xl shadow-blue-600/15 md:px-10">
               {/* Decorative blobs */}
@@ -120,12 +120,12 @@ export default function Footer() {
                 <GraduationCap className="h-5 w-5" />
               </div>
               <div className="leading-none">
-                <p className="text-[15px] font-bold text-slate-900 dark:text-white">ADUTI Learning</p>
-                <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">រៀនកូដជាភាសាខ្មែរ</p>
+                <p className="text-[15px] font-bold text-foreground">ADUTI Learning</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">រឹនកូតជាភាសាខ្មែរ</p>
               </div>
             </Link>
 
-            <p className="max-w-[260px] text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <p className="max-w-[260px] text-sm leading-relaxed text-muted-foreground">
               វេទិកាអប់រំ IT ជាភាសាខ្មែរ ដែលជួយអ្នករៀនក្លាយជា Frontend, Backend
               និង Fullstack Developer ក្នុង 6–12 ខែ។
             </p>
@@ -152,8 +152,7 @@ export default function Footer() {
                   aria-label={label}
                   title={label}
                   className={cn(
-                    "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all duration-200",
-                    "dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-400",
+                  "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition-all duration-200",
                     color
                   )}
                 >
@@ -165,7 +164,7 @@ export default function Footer() {
 
           {/* Quick links */}
           <div>
-            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
               Navigation
             </p>
             <ul className="space-y-3">
@@ -173,13 +172,13 @@ export default function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="group flex items-center justify-between text-sm text-slate-600 transition-colors hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-300"
+                    className="group flex items-center justify-between text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
                     <span className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 transition-all duration-200 group-hover:w-3 group-hover:bg-blue-500 dark:bg-slate-600 dark:group-hover:bg-blue-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-border transition-all duration-200 group-hover:w-3 group-hover:bg-primary" />
                       {item.label}
                     </span>
-                    <span className="text-[10px] text-slate-300 group-hover:text-blue-400 dark:text-slate-600 dark:group-hover:text-blue-500 transition-colors">
+                    <span className="text-[10px] text-border transition-colors group-hover:text-primary">
                       {item.en}
                     </span>
                   </Link>
@@ -190,7 +189,7 @@ export default function Footer() {
 
           {/* Courses */}
           <div>
-            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
               Courses
             </p>
             <ul className="space-y-3">
@@ -198,9 +197,9 @@ export default function Footer() {
                 <li key={c.label}>
                   <Link
                     href={c.href}
-                    className="group flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-300"
+                    className="group flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300 transition-all duration-200 group-hover:w-3 group-hover:bg-blue-500 dark:bg-slate-600 dark:group-hover:bg-blue-400" />
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-border transition-all duration-200 group-hover:w-3 group-hover:bg-primary" />
                     <span className="line-clamp-1">{c.label}</span>
                   </Link>
                 </li>
@@ -210,7 +209,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
               Contact Us
             </p>
             <ul className="space-y-3">
@@ -220,9 +219,11 @@ export default function Footer() {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-start gap-3 text-sm text-slate-600 transition-colors hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-300"
+                    className="group flex items-start gap-3 text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm transition-all group-hover:border-blue-300 group-hover:bg-blue-50 dark:border-white/10 dark:bg-slate-900/60 dark:group-hover:border-blue-500/30 dark:group-hover:bg-blue-950/40">
+                    <span
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition-all group-hover:border-primary/30 group-hover:bg-primary/5"
+                    >
                       <Icon className="h-3 w-3 text-blue-500 dark:text-blue-400" />
                     </span>
                     <span>{value}</span>
@@ -245,11 +246,11 @@ export default function Footer() {
         </div>
 
         {/* ── Bottom bar ────────────────────────────────────────────────── */}
-        <div className="border-t border-blue-100/60 dark:border-white/8">
+        <div className="border-t border-border/60">
           <div className="container-app flex flex-col items-center justify-between gap-3 py-4 sm:flex-row">
-            <p className="text-xs text-slate-400 dark:text-slate-600">
+            <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()}{" "}
-              <span className="font-semibold text-slate-600 dark:text-slate-400">ADUTI Learning</span>
+              <span className="font-semibold text-foreground">ADUTI Learning</span>
               . All rights reserved.
             </p>
             <div className="flex items-center gap-1">
@@ -257,12 +258,12 @@ export default function Footer() {
                 <span key={item} className="flex items-center">
                   <Link
                     href="#"
-                    className="text-xs text-slate-400 transition-colors hover:text-slate-700 dark:text-slate-600 dark:hover:text-slate-400"
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {item}
                   </Link>
                   {i < arr.length - 1 && (
-                    <span className="mx-3 h-3 w-px bg-slate-200 dark:bg-white/10" />
+                    <span className="mx-3 h-3 w-px bg-border" />
                   )}
                 </span>
               ))}
