@@ -279,7 +279,7 @@ export default function CoursesPage() {
 											className="mt-4 w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm shadow-violet-400/20 hover:from-violet-500 hover:to-indigo-500"
 											size="sm"
 										>
-											<Link href={`/courses/${course.slug}`}>
+											<Link href={`/${course.slug}`}>
 												{isFree ? "ចូលរៀនឥតគិតថ្លៃ" : "មើលវគ្គសិក្សា"}
 											</Link>
 										</Button>

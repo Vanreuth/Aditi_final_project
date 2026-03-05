@@ -56,4 +56,3 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.deleteLesson(id));
     }
 }
-

@@ -55,7 +55,11 @@ httpClient.interceptors.response.use(
       return httpClient(original)
     } catch (refreshError) {
       processQueue(refreshError)
-      if (!isOnAuthPage()) window.location.href = '/login'
+      // Do not redirect to login if the original request was just checking auth status (e.g., initial load)
+      const isAuthCheck = original.url?.includes('/api/v1/auth/me');
+      if (!isOnAuthPage() && !isAuthCheck) {
+        window.location.href = '/login'
+      }
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

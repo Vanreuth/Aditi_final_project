@@ -232,7 +232,7 @@ function CourseCard({ course }: { course: HomeCourse }) {
 
   return (
     <Link
-      href={`/courses/${course.slug}`}
+      href={`/${course.slug}`}
       className="group overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       <div

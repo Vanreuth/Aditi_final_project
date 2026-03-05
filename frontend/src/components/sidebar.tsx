@@ -99,6 +99,18 @@ const sidebarGroups = [
         badge: null,
       },
       {
+        title: "Lessons",
+        href: "/dashboard/lessons",
+        icon: GraduationCap,
+        badge: null,
+      },
+      {
+        title: "Chapters",
+        href: "/dashboard/chapters",
+        icon: GraduationCap,
+        badge: null,
+      },
+      {
         title: "Users",
         href: "/dashboard/users",
         icon: Users,

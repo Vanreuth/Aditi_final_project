@@ -1,530 +1,775 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
+import Link from "next/link";
 import {
-  Activity,
   BookOpen,
-  GraduationCap,
+  Users,
   Layers,
   TrendingUp,
-  Users,
-  ArrowUpRight,
-  ArrowDownRight,
+  Star,
   Eye,
+  GraduationCap,
+  Plus,
+  ArrowRight,
+  Sparkles,
   Clock,
+  Activity,
   BarChart3,
-  RefreshCw,
-  AlertCircle,
+  Mail,
+  Calendar,
+  Shield,
 } from "lucide-react";
-import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Area,
+  AreaChart,
+} from "recharts";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { useCourses } from "@/hooks/useCourses";
-import { useCategories } from "@/hooks/useCategories";
-import { useUsers } from "@/hooks/useUsers";
-import type { CourseResponse } from "@/types/courseType";
-import type { CategoryResponse } from "@/types/category";
-import type { UserResponse } from "@/types/userType";
 
+// ─── Stat Card ────────────────────────────────────────────────────────────────
 
-// ─── Stats Card Component ─────────────────────────────────────────────────────
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  description: string;
-  icon: React.ReactNode;
-  trend?: { value: number; isPositive: boolean };
-  loading?: boolean;
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  description,
+  color,
+  bgGradient,
+  loading,
+}: {
+  icon: typeof BookOpen;
+  label: string;
+  value: number | string;
+  description?: string;
   color: string;
-}
-
-function StatCard({ title, value, description, icon, trend, loading, color }: StatCardProps) {
+  bgGradient: string;
+  loading?: boolean;
+}) {
   if (loading) {
     return (
       <Card className="overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-10 w-10 rounded-xl" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-8 w-20 mb-2" />
-          <Skeleton className="h-4 w-32" />
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-3 flex-1">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+            <Skeleton className="h-14 w-14 rounded-2xl" />
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-l-4" style={{ borderLeftColor: color }}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div
-          className="p-2.5 rounded-xl transition-colors"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          {icon}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold tracking-tight">{value}</div>
-        <div className="flex items-center gap-2 mt-1">
-          {trend && (
-            <span
-              className={`flex items-center text-xs font-medium ${
-                trend.isPositive ? "text-emerald-600" : "text-red-600"
-              }`}
-            >
-              {trend.isPositive ? (
-                <ArrowUpRight className="h-3 w-3 mr-0.5" />
-              ) : (
-                <ArrowDownRight className="h-3 w-3 mr-0.5" />
-              )}
-              {Math.abs(trend.value)}%
-            </span>
-          )}
-          <p className="text-xs text-muted-foreground">{description}</p>
+    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/60">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <p className="text-3xl font-bold tracking-tight">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+            {description && (
+              <p className="text-xs text-muted-foreground">{description}</p>
+            )}
+          </div>
+          <div
+            className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${bgGradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}
+          >
+            <Icon className="h-7 w-7 text-white" />
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-// ─── Course Card Component ────────────────────────────────────────────────────
+// ─── Course Status Badge ──────────────────────────────────────────────────────
 
-function CourseCard({ course, loading }: { course?: CourseResponse; loading?: boolean }) {
-  if (loading || !course) {
-    return (
-      <div className="flex items-start gap-4 p-4 rounded-xl border bg-card hover:bg-muted/30 transition-colors">
-        <Skeleton className="h-14 w-14 rounded-xl flex-shrink-0" />
-        <div className="flex-1 min-w-0 space-y-2">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-3 w-1/2" />
-          <div className="flex gap-4">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const levelColors: Record<string, string> = {
-    BEGINNER: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-    INTERMEDIATE: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-    ADVANCED: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+function StatusBadge({ status }: { status: string }) {
+  const config: Record<string, { color: string; bg: string; dot: string }> = {
+    PUBLISHED: { color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-100 dark:bg-emerald-900/40", dot: "bg-emerald-500" },
+    DRAFT: { color: "text-slate-600 dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-800", dot: "bg-slate-400" },
+    ARCHIVED: { color: "text-red-700 dark:text-red-300", bg: "bg-red-100 dark:bg-red-900/40", dot: "bg-red-500" },
   };
-
-  const statusColors: Record<string, string> = {
-    PUBLISHED: "bg-emerald-100 text-emerald-700",
-    DRAFT: "bg-slate-100 text-slate-700",
-    ARCHIVED: "bg-red-100 text-red-700",
-  };
-
+  const { color, bg, dot } = config[status] || config.DRAFT;
   return (
-    <Link
-      href={`/dashboard/courses/${course.id}`}
-      className="flex items-start gap-4 p-4 rounded-xl border bg-card hover:bg-muted/30 hover:border-primary/20 transition-all duration-200 group"
-    >
-      <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg shadow-violet-500/20">
-        {course.title.charAt(0)}
-      </div>
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="flex items-start justify-between gap-2">
-          <h4 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-            {course.title}
-          </h4>
-          <Badge variant="outline" className={`${statusColors[course.status] || ""} text-[10px] flex-shrink-0`}>
-            {course.status}
-          </Badge>
-        </div>
-        <p className="text-xs text-muted-foreground truncate">{course.categoryName}</p>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {course.enrolledCount}
-          </span>
-          <span className="flex items-center gap-1">
-            <BookOpen className="h-3 w-3" />
-            {course.totalLessons} lessons
-          </span>
-          <Badge className={`${levelColors[course.level] || "bg-slate-100"} text-[10px]`}>
-            {course.level}
-          </Badge>
-        </div>
-      </div>
-    </Link>
+    <Badge variant="outline" className={`${bg} ${color} border-0 text-xs font-medium gap-1.5`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+      {status.charAt(0) + status.slice(1).toLowerCase()}
+    </Badge>
   );
 }
 
-// ─── User Row Component ───────────────────────────────────────────────────────
+// ─── Role Badge ───────────────────────────────────────────────────────────────
 
-function UserRow({ user, loading }: { user?: UserResponse; loading?: boolean }) {
-  if (loading || !user) {
-    return (
-      <div className="flex items-center gap-3 py-3">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="flex-1 space-y-1">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-3 w-32" />
-        </div>
-        <Skeleton className="h-5 w-16" />
-      </div>
-    );
-  }
-
-  const roleColors: Record<string, string> = {
-    ADMIN: "bg-violet-100 text-violet-700 border-violet-200",
-    INSTRUCTOR: "bg-blue-100 text-blue-700 border-blue-200",
-    USER: "bg-slate-100 text-slate-700 border-slate-200",
+function RoleBadge({ role }: { role: string }) {
+  const config: Record<string, { color: string; bg: string; icon: typeof Shield }> = {
+    ADMIN: { color: "text-violet-700 dark:text-violet-300", bg: "bg-violet-100 dark:bg-violet-900/40", icon: Shield },
+    INSTRUCTOR: { color: "text-blue-700 dark:text-blue-300", bg: "bg-blue-100 dark:bg-blue-900/40", icon: GraduationCap },
+    USER: { color: "text-slate-700 dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-800", icon: Users },
   };
-
+  const { color, bg, icon: RoleIcon } = config[role] || config.USER;
   return (
-    <div className="flex items-center gap-3 py-3 group">
-      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-        <AvatarImage src={user.avatar || undefined} alt={user.username} />
-        <AvatarFallback className="bg-gradient-to-br from-violet-500 to-indigo-500 text-white font-medium">
-          {user.username.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-          {user.username}
-        </p>
-        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-      </div>
-      <Badge
-        variant="outline"
-        className={`${roleColors[user.role] || "bg-slate-100"} text-[10px]`}
-      >
-        {user.role}
-      </Badge>
+    <Badge variant="outline" className={`${bg} ${color} border-0 gap-1 text-xs`}>
+      <RoleIcon className="h-3 w-3" />
+      {role}
+    </Badge>
+  );
+}
+
+// ─── Course Thumbnail ─────────────────────────────────────────────────────────
+
+const GRADIENTS = [
+  "from-violet-500 via-purple-500 to-indigo-600",
+  "from-blue-500 via-cyan-500 to-teal-500",
+  "from-emerald-500 via-green-500 to-lime-500",
+  "from-orange-500 via-amber-500 to-yellow-500",
+  "from-pink-500 via-rose-500 to-red-500",
+  "from-sky-500 via-blue-500 to-indigo-500",
+];
+
+// ─── Chart Custom Tooltip ─────────────────────────────────────────────────────
+
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-popover border border-border rounded-lg shadow-xl px-4 py-3">
+      <p className="text-sm font-semibold text-foreground">{label}</p>
+      <p className="text-sm text-muted-foreground mt-0.5">
+        <span className="font-bold text-primary">{payload[0].value}</span> courses
+      </p>
     </div>
   );
 }
 
-// ─── Category Item Component ──────────────────────────────────────────────────
-
-function CategoryItem({ category, loading }: { category?: CategoryResponse; loading?: boolean }) {
-  if (loading || !category) {
-    return (
-      <div className="flex items-center justify-between py-2">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-8 w-8 rounded-lg" />
-          <Skeleton className="h-4 w-24" />
-        </div>
-        <Skeleton className="h-4 w-12" />
-      </div>
-    );
-  }
-
-  const colors = [
-    "from-violet-500 to-purple-500",
-    "from-blue-500 to-cyan-500",
-    "from-emerald-500 to-teal-500",
-    "from-orange-500 to-amber-500",
-    "from-pink-500 to-rose-500",
-  ];
-  const colorIndex = category.id % colors.length;
-
-  return (
-    <div className="flex items-center justify-between py-2 group">
-      <div className="flex items-center gap-3">
-        <div
-          className={`h-8 w-8 rounded-lg bg-gradient-to-br ${colors[colorIndex]} flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-        >
-          {category.name.charAt(0)}
-        </div>
-        <span className="text-sm font-medium group-hover:text-primary transition-colors">
-          {category.name}
-        </span>
-      </div>
-      <Badge variant="secondary" className="font-mono text-xs">
-        {category.courseCount}
-      </Badge>
-    </div>
-  );
-}
-
-// ─── Main Dashboard Component ─────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { data: stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useDashboardStats();
-  const { data: coursesData, loading: coursesLoading } = useCourses({ page: 0, size: 5 });
-  const { data: categoriesData, loading: categoriesLoading } = useCategories({ page: 0, size: 10 });
-  const { data: usersData, loading: usersLoading } = useUsers({ page: 0, size: 5 });
+  const stats = useDashboardStats();
 
-  const courses = coursesData?.content || [];
-  const categories = categoriesData?.content || [];
-  const users = usersData?.content || [];
+  const now = new Date();
+  const greeting = useMemo(() => {
+    const hour = now.getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const totalCourses = stats?.totalCourses || coursesData?.totalElements || 0;
-  const totalUsers = stats?.totalUsers || usersData?.totalElements || 0;
-  const totalEnrollments = stats?.totalEnrollments || 0;
-  const totalLessons = stats?.totalLessons || 0;
+  const dateStr = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
-  const isLoading = statsLoading || coursesLoading || categoriesLoading || usersLoading;
+  const publishedPct = stats.totalCourses > 0
+    ? Math.round((stats.publishedCourses / stats.totalCourses) * 100)
+    : 0;
+
+  const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#6366f1"];
 
   return (
     <div className="space-y-8">
-      {/* Header Section */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Welcome back! Here&apos;s an overview of your e-learning platform.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchStats()}
-            disabled={statsLoading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${statsLoading ? "animate-spin" : ""}`} />
-            Refresh
+      {/* ─── Welcome Header ─────────────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {greeting} 👋
+          </h1>
+          <p className="text-muted-foreground">
+            Here&apos;s what&apos;s happening with your e-learning platform today.
+          </p>
+          <p className="text-xs text-muted-foreground/70 flex items-center gap-1.5">
+            <Calendar className="h-3 w-3" />
+            {dateStr}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/analytics">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
+            </Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link href="/dashboard/courses">
+              <Plus className="h-4 w-4 mr-2" />
+              New Course
+            </Link>
           </Button>
         </div>
       </div>
 
-      {/* Error Alert */}
-      {statsError && (
-        <Card className="border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-sm text-red-700 dark:text-red-400">
-              Failed to load dashboard data. Using cached values or defaults.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchStats()}
-              className="ml-auto"
-            >
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* ─── Stat Cards ─────────────────────────────────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Users"
-          value={totalUsers.toLocaleString()}
-          description="Registered users"
-          icon={<Users className="h-5 w-5" style={{ color: "#8b5cf6" }} />}
-          trend={{ value: 12.5, isPositive: true }}
-          loading={isLoading}
+          icon={BookOpen}
+          label="Total Courses"
+          value={stats.totalCourses}
+          description={`${stats.publishedCourses} published · ${stats.draftCourses} drafts`}
           color="#8b5cf6"
+          bgGradient="from-violet-500 to-purple-600"
+          loading={stats.loading}
         />
         <StatCard
-          title="Total Courses"
-          value={totalCourses.toLocaleString()}
-          description="Published courses"
-          icon={<BookOpen className="h-5 w-5" style={{ color: "#3b82f6" }} />}
-          trend={{ value: 8.2, isPositive: true }}
-          loading={isLoading}
+          icon={Users}
+          label="Total Users"
+          value={stats.totalUsers}
+          description={`${stats.activeUsers} active accounts`}
           color="#3b82f6"
+          bgGradient="from-blue-500 to-cyan-500"
+          loading={stats.loading}
         />
         <StatCard
-          title="Enrollments"
-          value={totalEnrollments.toLocaleString()}
-          description="Total enrollments"
-          icon={<GraduationCap className="h-5 w-5" style={{ color: "#10b981" }} />}
-          trend={{ value: 23.1, isPositive: true }}
-          loading={isLoading}
+          icon={Layers}
+          label="Categories"
+          value={stats.totalCategories}
+          description={`${stats.activeCategories} active categories`}
           color="#10b981"
+          bgGradient="from-emerald-500 to-teal-500"
+          loading={stats.loading}
         />
         <StatCard
-          title="Total Lessons"
-          value={totalLessons.toLocaleString()}
-          description="Across all courses"
-          icon={<Layers className="h-5 w-5" style={{ color: "#f59e0b" }} />}
-          trend={{ value: 5.4, isPositive: true }}
-          loading={isLoading}
+          icon={TrendingUp}
+          label="Total Enrollments"
+          value={stats.totalEnrollments}
+          description={`${stats.featuredCourses} featured courses`}
           color="#f59e0b"
+          bgGradient="from-amber-500 to-orange-500"
+          loading={stats.loading}
         />
       </div>
 
-      {/* Main Content Grid */}
+      {/* ─── Charts Section ─────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Popular Courses */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle className="text-lg font-semibold">Popular Courses</CardTitle>
-              <CardDescription>Top performing courses by enrollment</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/courses" className="gap-1">
-                View all
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {coursesLoading
-              ? Array.from({ length: 4 }).map((_, i) => <CourseCard key={i} loading />)
-              : courses.slice(0, 4).map((course) => (
-                  <CourseCard key={course.id} course={course} />
-                ))}
-            {!coursesLoading && courses.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No courses found</p>
+        {/* Course by Category — Bar Chart */}
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Courses by Category
+                </CardTitle>
+                <CardDescription>Distribution of courses across categories</CardDescription>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Categories */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle className="text-lg font-semibold">Categories</CardTitle>
-              <CardDescription>Course distribution</CardDescription>
+              <Badge variant="secondary" className="text-xs">
+                {stats.coursesByCategory.length} categories
+              </Badge>
             </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/categories" className="gap-1">
-                Manage
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {categoriesLoading
-              ? Array.from({ length: 5 }).map((_, i) => <CategoryItem key={i} loading />)
-              : categories.slice(0, 6).map((cat) => (
-                  <CategoryItem key={cat.id} category={cat} />
-                ))}
-            {!categoriesLoading && categories.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Layers className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No categories found</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Users & Quick Actions */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Users */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle className="text-lg font-semibold">Recent Users</CardTitle>
-              <CardDescription>Latest registered users</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/users" className="gap-1">
-                View all
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="divide-y">
-            {usersLoading
-              ? Array.from({ length: 4 }).map((_, i) => <UserRow key={i} loading />)
-              : users.slice(0, 4).map((user) => <UserRow key={user.id} user={user} />)}
-            {!usersLoading && users.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No users found</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
-            <CardDescription>Common management tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                className="flex flex-col items-center justify-center h-24 gap-2 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 dark:hover:bg-violet-900/20"
-                asChild
-              >
-                <Link href="/dashboard/courses/new">
-                  <BookOpen className="h-6 w-6" />
-                  <span className="text-sm font-medium">Add Course</span>
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center justify-center h-24 gap-2 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 dark:hover:bg-blue-900/20"
-                asChild
-              >
-                <Link href="/dashboard/users">
-                  <Users className="h-6 w-6" />
-                  <span className="text-sm font-medium">Manage Users</span>
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center justify-center h-24 gap-2 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20"
-                asChild
-              >
-                <Link href="/dashboard/analytics">
-                  <BarChart3 className="h-6 w-6" />
-                  <span className="text-sm font-medium">Analytics</span>
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center justify-center h-24 gap-2 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 dark:hover:bg-amber-900/20"
-                asChild
-              >
-                <Link href="/dashboard/settings">
-                  <Activity className="h-6 w-6" />
-                  <span className="text-sm font-medium">Settings</span>
-                </Link>
-              </Button>
-            </div>
+            {stats.loading ? (
+              <div className="h-[280px] flex items-center justify-center">
+                <div className="space-y-3 w-full">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                  ))}
+                </div>
+              </div>
+            ) : stats.coursesByCategory.length > 0 ? (
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.coursesByCategory} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 11 }}
+                      className="text-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      className="text-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar
+                      dataKey="courses"
+                      fill="url(#barGradient)"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={50}
+                    />
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#6366f1" />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Layers className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No category data available</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Course Level — Pie Chart */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              Course Levels
+            </CardTitle>
+            <CardDescription>Distribution by difficulty</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats.loading ? (
+              <div className="h-[280px] flex items-center justify-center">
+                <Skeleton className="h-40 w-40 rounded-full" />
+              </div>
+            ) : stats.coursesByLevel.length > 0 ? (
+              <div className="space-y-4">
+                <div className="h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.coursesByLevel}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {stats.coursesByLevel.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2">
+                  {stats.coursesByLevel.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                        />
+                        <span className="font-medium">{entry.name}</span>
+                      </div>
+                      <span className="text-muted-foreground font-semibold">{entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <GraduationCap className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No level data available</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Activity Timeline */}
+      {/* ─── Progress & Quick Stats ─────────────────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Publishing Progress */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Publishing Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stats.loading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Published Courses</span>
+                    <span className="font-bold text-lg">{publishedPct}%</span>
+                  </div>
+                  <Progress value={publishedPct} className="h-3" />
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
+                    <p className="text-2xl font-bold text-emerald-600">{stats.publishedCourses}</p>
+                    <p className="text-xs text-muted-foreground">Published</p>
+                  </div>
+                  <div className="text-center p-3 bg-slate-50 dark:bg-slate-900/30 rounded-xl">
+                    <p className="text-2xl font-bold text-slate-600 dark:text-slate-300">{stats.draftCourses}</p>
+                    <p className="text-xs text-muted-foreground">Drafts</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* User Distribution */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              User Roles
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats.loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : stats.usersByRole.length > 0 ? (
+              stats.usersByRole.map((role) => {
+                const pct = stats.totalUsers > 0 ? Math.round((role.value / stats.totalUsers) * 100) : 0;
+                return (
+                  <div key={role.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: role.fill }} />
+                        <span className="font-medium">{role.name}</span>
+                      </div>
+                      <span className="text-muted-foreground">
+                        {role.value} <span className="text-xs">({pct}%)</span>
+                      </span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No user data</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Featured Courses */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              Featured Courses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stats.loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stats.recentCourses
+                  .filter((c) => c.featured || c.isFeatured)
+                  .slice(0, 4)
+                  .map((course) => {
+                    const gradient = GRADIENTS[course.id % GRADIENTS.length];
+                    return (
+                      <div
+                        key={course.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        {course.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={course.thumbnail}
+                            alt={course.title}
+                            className="h-9 w-9 rounded-lg object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className={`h-9 w-9 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold flex-shrink-0 text-sm`}
+                          >
+                            {course.title.charAt(0)}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{course.title}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            {(course.avgRating ?? 0).toFixed(1)}
+                            <span className="mx-1">·</span>
+                            {course.enrolledCount ?? 0} enrolled
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {stats.recentCourses.filter((c) => c.featured || c.isFeatured).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No featured courses yet</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ─── Recent Activity ────────────────────────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Courses */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  Recent Courses
+                </CardTitle>
+                <CardDescription>Latest courses added to the platform</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="text-xs">
+                <Link href="/dashboard/courses">
+                  View All
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats.loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 hover:bg-muted/40">
+                      <TableHead className="font-semibold text-xs">Course</TableHead>
+                      <TableHead className="font-semibold text-xs">Category</TableHead>
+                      <TableHead className="font-semibold text-xs text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.recentCourses.map((course) => {
+                      const gradient = GRADIENTS[course.id % GRADIENTS.length];
+                      return (
+                        <TableRow key={course.id} className="hover:bg-muted/30">
+                          <TableCell className="py-3">
+                            <div className="flex items-center gap-3">
+                              {course.thumbnail ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={course.thumbnail}
+                                  alt={course.title}
+                                  className="h-9 w-9 rounded-lg object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div
+                                  className={`h-9 w-9 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold flex-shrink-0 text-sm`}
+                                >
+                                  {course.title.charAt(0)}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate max-w-[180px]">{course.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {course.totalLessons ?? 0} lessons · {(course.enrolledCount ?? 0).toLocaleString()} enrolled
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {course.categoryName ?? "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <StatusBadge status={course.status ?? "DRAFT"} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {stats.recentCourses.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                          No courses found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Users */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Recent Users
+                </CardTitle>
+                <CardDescription>Latest users registered on the platform</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="text-xs">
+                <Link href="/dashboard/users">
+                  View All
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats.loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 hover:bg-muted/40">
+                      <TableHead className="font-semibold text-xs">User</TableHead>
+                      <TableHead className="font-semibold text-xs">Role</TableHead>
+                      <TableHead className="font-semibold text-xs text-right">Joined</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.recentUsers.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-muted/30">
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9 border-2 border-background shadow-sm">
+                              <AvatarImage src={user.avatar || user.profilePicture || undefined} alt={user.username} />
+                              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-indigo-500 text-white font-medium text-xs">
+                                {user.username.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{user.username}</p>
+                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <RoleBadge role={user.role} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(user.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {stats.recentUsers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                          No users found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ─── Quick Actions ──────────────────────────────────────────── */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-          <CardDescription>Latest platform activities</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+          <CardDescription>Common tasks and shortcuts</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[
-              { icon: Users, text: "New user registered", time: "2 minutes ago", color: "bg-violet-500" },
-              { icon: BookOpen, text: "New course published", time: "15 minutes ago", color: "bg-blue-500" },
-              { icon: GraduationCap, text: "Student completed a course", time: "1 hour ago", color: "bg-emerald-500" },
-              { icon: Eye, text: "Course view milestone reached", time: "2 hours ago", color: "bg-amber-500" },
-            ].map((activity, i) => (
-              <div key={i} className="flex items-center gap-4 p-3 rounded-lg border bg-card/50 hover:bg-muted/30 transition-colors">
-                <div className={`w-2 h-2 rounded-full ${activity.color}`} />
-                <activity.icon className="h-4 w-4 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.text}</p>
-                </div>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {activity.time}
-                </span>
-              </div>
-            ))}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary/50 hover:bg-primary/5 transition-all" asChild>
+              <Link href="/dashboard/courses">
+                <BookOpen className="h-6 w-6 text-violet-500" />
+                <span className="font-medium">Manage Courses</span>
+                <span className="text-xs text-muted-foreground">View & edit all courses</span>
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary/50 hover:bg-primary/5 transition-all" asChild>
+              <Link href="/dashboard/categories">
+                <Layers className="h-6 w-6 text-emerald-500" />
+                <span className="font-medium">Manage Categories</span>
+                <span className="text-xs text-muted-foreground">Organize your content</span>
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary/50 hover:bg-primary/5 transition-all" asChild>
+              <Link href="/dashboard/users">
+                <Users className="h-6 w-6 text-blue-500" />
+                <span className="font-medium">Manage Users</span>
+                <span className="text-xs text-muted-foreground">User accounts & roles</span>
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary/50 hover:bg-primary/5 transition-all" asChild>
+              <Link href="/dashboard/analytics">
+                <BarChart3 className="h-6 w-6 text-amber-500" />
+                <span className="font-medium">View Analytics</span>
+                <span className="text-xs text-muted-foreground">Insights & reports</span>
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
