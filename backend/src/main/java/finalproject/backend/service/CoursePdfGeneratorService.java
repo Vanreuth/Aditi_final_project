@@ -18,24 +18,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-/**
- * CoursePdfGeneratorService — improved edition.
- *
- * Design language inspired by the Code-Khmer book series
- * (see /assets/pdfs/c_programming.pdf):
- *   • Deep-indigo dark cover with glow accents
- *   • Clean white content pages with left-indigo rule
- *   • Section numbers (1 · 1.1 · 1.2) in blue badges
- *   • Dark VS-Code–style code blocks
- *   • Distinct "Output" strip + green "Note" callout
- *   • Header/footer on every body page
- *
- * Khmer text improvements:
- *   • Five classpath font probe paths
- *   • CDN fallback (Hanuman v24)
- *   • Leading multiplier set to 1.9× for Khmer stacking marks
- *   • Every Khmer Paragraph uses setLeading(0, KHMER_LEADING)
- */
+
 @Slf4j
 @Service
 public class CoursePdfGeneratorService {
@@ -720,7 +703,6 @@ public class CoursePdfGeneratorService {
     // ═══════════════════════════════════════════════════════════════════
     //  HELPERS
     // ═══════════════════════════════════════════════════════════════════
-
     /** Strip basic HTML tags and entities from lesson content. */
     private String stripHtml(String s) {
         return s.replaceAll("<[^>]+>", " ")

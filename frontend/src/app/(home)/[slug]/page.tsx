@@ -154,9 +154,26 @@ function normalizeLessonSlug(value?: string | null) {
   return decodeURIComponent(value).replace(/\.asp$/i, "").trim().toLowerCase();
 }
 
-function lessonPathSegment(value?: string | null): string {
-  const slug = normalizeLessonSlug(value);
-  return slug ? encodeURIComponent(slug) : "";
+/** Convert a lesson/chapter title into a URL-friendly hyphenated slug. */
+function toUrlSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\u1780-\u17FF-]/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Build the URL path segment for a lesson.
+ * Prefers a slug derived from `title` (human-readable); falls back to the
+ * backend `slug` field only when no title is available.
+ */
+function lessonPathSegment(slug?: string | null, title?: string | null): string {
+  const raw = (title ? toUrlSlug(title) : null) || slug;
+  const normalized = normalizeLessonSlug(raw);
+  return normalized ? encodeURIComponent(normalized) : "";
 }
 
 function hasLessonPayload(lesson?: LessonResponse | null) {
@@ -353,15 +370,17 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
   const openLesson = useCallback(
     async (lesson: LessonResponse, options: OpenLessonOptions = {}) => {
       const { syncUrl = true, history = "push" } = options;
-      if (syncUrl && lesson.slug && typeof window !== "undefined") {
-        const lessonPath = lessonPathSegment(lesson.slug);
-        const href = `/courses/${slug}/${lessonPath}`;
-        const currentPath = window.location.pathname;
-        if (currentPath !== `/courses/${slug}/${lessonPath}`) {
-          if (history === "replace") {
-            router.replace(href, { scroll: false });
-          } else {
-            router.push(href, { scroll: false });
+      if (syncUrl && typeof window !== "undefined") {
+        const lessonPath = lessonPathSegment(lesson.slug, lesson.title);
+        if (lessonPath) {
+          const href = `/courses/${slug}/${lessonPath}`;
+          const currentPath = window.location.pathname;
+          if (currentPath !== href) {
+            if (history === "replace") {
+              router.replace(href, { scroll: false });
+            } else {
+              router.push(href, { scroll: false });
+            }
           }
         }
       }
@@ -374,7 +393,8 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
     if (!normalizedInit) return undefined;
     return (
       allLessons.find((l) => normalizeLessonSlug(l.slug) === normalizedInit) ??
-      allLessons.find((l) => normalizeLessonSlug(l.title) === normalizedInit)
+      allLessons.find((l) => normalizeLessonSlug(l.title) === normalizedInit) ??
+      allLessons.find((l) => toUrlSlug(l.title) === normalizedInit)
     );
   }, [allLessons, normalizedInit]);
 
@@ -616,7 +636,6 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
         style={{
           minHeight: "calc(100vh - 4rem)",
           background: "var(--cl-bg)",
-          fontFamily: "'Outfit', sans-serif",
           "--accent": visual.accent,
         } as React.CSSProperties}
       >
@@ -672,7 +691,7 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
             <Link
               href="/courses"
               className="inline-flex items-center gap-1.5 text-xs mb-4 transition-opacity hover:opacity-70"
-              style={{ color: "var(--cl-text)", fontFamily: "'Outfit', sans-serif" }}
+              style={{ color: "var(--cl-text)" }}
             >
               <ArrowLeft className="h-3 w-3" />
               <span>All Courses</span>
@@ -874,7 +893,7 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
                           return (
                             <Link
                               key={lesson.id}
-                              href={`/${slug}/${lessonPathSegment(lesson.slug)}`}
+                              href={`/courses/${slug}/${lessonPathSegment(lesson.slug, lesson.title)}`}
                               onClick={(e) => {
                                 if (
                                   e.button !== 0 ||
@@ -1406,7 +1425,6 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
                       border: "none",
                       cursor: "pointer",
                       boxShadow: `0 8px 24px ${visual.accent}40`,
-                      fontFamily: "'Outfit', sans-serif",
                     }}
                   >
                     <PlayCircle className="h-5 w-5" />

@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -342,3 +343,115 @@
     animation-play-state: paused;
   }
 }
+
+/* ── Course Learning Page ─────────────────────────────────────────────────── */
+
+.course-learning {
+  font-family: 'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif;
+  --cl-bg:         var(--background);
+  --cl-bg-card:    var(--card);
+  --cl-bg-raised:  var(--muted);
+  --cl-bg-muted:   color-mix(in oklch, var(--muted) 80%, var(--background));
+  --cl-border:     var(--border);
+  --cl-border-hi:  var(--input);
+  --cl-text-hi:    var(--foreground);
+  --cl-text:       var(--muted-foreground);
+  --cl-text-lo:    color-mix(in oklch, var(--muted-foreground) 75%, var(--foreground));
+  --cl-text-ghost: color-mix(in oklch, var(--muted-foreground) 45%, var(--background));
+}
+
+.course-learning * { box-sizing: border-box; }
+
+.lesson-link { transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
+.lesson-link:hover:not(.lesson-active) { background: rgba(128,128,128,0.07); }
+
+.chapter-trigger:hover { background: rgba(128,128,128,0.05); }
+.chapter-trigger.chapter-open { background: rgba(128,128,128,0.06); }
+
+.nav-btn { transition: background 0.2s, opacity 0.2s, transform 0.15s; }
+.nav-btn:not(:disabled):hover { transform: scale(1.02); }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.complete-btn { transition: background 0.2s, transform 0.15s, box-shadow 0.2s; }
+.complete-btn:hover { transform: translateY(-1px); }
+
+.sidebar-lesson-item { position: relative; transition: background 0.15s, color 0.15s; }
+
+@keyframes shimmer { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+.pulse-dot { animation: shimmer 2s ease-in-out infinite; }
+
+/* ── Content prose typography ─────────────────────────────────────────────── */
+
+.content-prose { font-size: 0.95rem; }
+
+.content-prose h1,
+.content-prose h2,
+.content-prose h3 {
+  font-family: 'DM Serif Display', Georgia, serif;
+  color: var(--cl-text-hi);
+  letter-spacing: -0.02em;
+}
+
+.content-prose h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.75rem; }
+.content-prose h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+
+.content-prose p {
+  color: var(--cl-text);
+  line-height: 2;
+  margin-bottom: 1.15rem;
+  white-space: pre-line;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.content-prose br { content: ''; display: block; margin-top: 0.4rem; }
+.content-prose strong { color: var(--cl-text-hi); font-weight: 600; }
+.content-prose em { color: var(--cl-text-lo); }
+
+.content-prose code {
+  background: var(--cl-bg-raised);
+  border: 1px solid var(--cl-border-hi);
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82em;
+  color: var(--accent, #a78bfa);
+}
+
+.content-prose pre {
+  background: var(--cl-bg-raised);
+  border: 1px solid var(--cl-border-hi);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82em;
+  line-height: 1.7;
+}
+
+.content-prose pre code { background: none; border: none; padding: 0; font-size: 1em; }
+
+.content-prose a { color: var(--accent, #a78bfa); text-decoration: none; }
+.content-prose a:hover { text-decoration: underline; }
+
+.content-prose ul,
+.content-prose ol { color: var(--cl-text); padding-left: 1.5rem; margin-bottom: 1rem; }
+.content-prose li { margin-bottom: 0.4rem; line-height: 1.85; }
+
+.content-prose img { border-radius: 12px; margin: 1.5rem 0; max-width: 100%; height: auto; }
+
+.content-prose blockquote {
+  border-left: 3px solid var(--accent, #a78bfa);
+  padding: 0.75rem 1rem;
+  margin: 1.5rem 0;
+  color: var(--cl-text-lo);
+  font-style: italic;
+  background: var(--cl-bg-raised);
+  border-radius: 0 8px 8px 0;
+}
+
+.content-prose table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; border-radius: 8px; overflow: hidden; }
+.content-prose th { background: var(--cl-bg-raised); color: var(--cl-text-hi); padding: 0.6rem 0.75rem; text-align: left; font-size: 0.8rem; border-bottom: 2px solid var(--cl-border); }
+.content-prose td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--cl-border); color: var(--cl-text); font-size: 0.85rem; }
+.content-prose hr { border: none; border-top: 1px solid var(--cl-border-hi); margin: 2rem 0; }

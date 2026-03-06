@@ -139,7 +139,6 @@ export function CommingCourseSection() {
                   {course.categoryName}
                 </span>
               </div>
-
               <div className="p-5">
                 <h3 className="line-clamp-1 text-xl font-bold text-foreground">
                   {course.title}

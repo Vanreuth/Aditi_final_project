@@ -9,6 +9,7 @@ import { Noto_Sans_Khmer } from "next/font/google";
 const notoSansKhmer = Noto_Sans_Khmer({
   subsets: ["khmer"],
   weight: ["400", "500", "600", "700"],
+  variable: "--font-khmer",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={notoSansKhmer.className}>
+      <body className={`${notoSansKhmer.variable} ${notoSansKhmer.className}`}>
         <QueryProvider>
         <AuthProvider>
           <ThemeProvider
