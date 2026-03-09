@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu, X, User, LogIn } from "lucide-react";
+import { ChevronRight, Menu, X, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -126,13 +126,24 @@ export default function Navbar() {
             {/* AUTH */}
             <Link
               href={authHref}
-              className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground hover:text-emerald-600 transition"
+              className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-emerald-600 transition"
             >
               {user ? (
-                <>
-                  <User className="h-4 w-4" />
-                  {authLabel}
-                </>
+                user.profilePicture ? (
+                  <Image
+                    src={user.profilePicture}
+                    alt={user.username ?? "Profile"}
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-full object-cover ring-2 ring-emerald-400/40 hover:ring-emerald-500/70 transition"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center ring-2 ring-emerald-400/40">
+                    <span className="text-white text-xs font-bold uppercase">
+                      {(user.username ?? "U").charAt(0)}
+                    </span>
+                  </div>
+                )
               ) : (
                 <>
                   <LogIn className="h-4 w-4" />

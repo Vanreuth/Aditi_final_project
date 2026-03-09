@@ -1,8 +1,3 @@
-
-// ─────────────────────────────────────────────────────────────
-//  Lesson Progress
-// ─────────────────────────────────────────────────────────────
-
 export interface LessonProgressResponse {
   id: number
   userId: number
@@ -14,19 +9,18 @@ export interface LessonProgressResponse {
   completed: boolean
   scrollPct?: number
   scrollPosition?: number
-  readTimeSeconds?: number
-  readingTimeSeconds?: number
+  readTimeSeconds?: number       // ← backend response field name
   pdfDownloaded: boolean
   completedAt?: string
-  updatedAt: string
+  updatedAt?: string
   createdAt?: string
 }
 
 export interface LessonProgressRequest {
   lessonId: number
   scrollPosition?: number
-  readingTimeSeconds?: number
+  readTimeSeconds?: number       // ✅ must match Java DTO field (getReadTimeSeconds)
   completed?: boolean
   pdfDownloaded?: boolean
-  userId?: number // injected server-side, optional on client
+  userId?: number                // injected server-side, optional on client
 }

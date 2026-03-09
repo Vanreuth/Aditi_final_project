@@ -77,7 +77,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-md max-auto">
       <div
         className="rounded-2xl border border-border bg-card/85 backdrop-blur-md p-8 shadow-2xl
                    shadow-black/30 ring-1 ring-white/10 transition-colors duration-300"

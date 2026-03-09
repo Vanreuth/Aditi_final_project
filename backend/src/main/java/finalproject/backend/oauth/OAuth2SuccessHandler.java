@@ -1,4 +1,4 @@
-package finalproject.backend.config;
+package finalproject.backend.oauth;
 
 import finalproject.backend.modal.RefreshToken;
 import finalproject.backend.modal.Role;
@@ -11,6 +11,7 @@ import finalproject.backend.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -43,7 +45,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
             String email = (String) oauthUser.getAttributes().get("email");
 
+            log.info("OAuth2SuccessHandler: extracted email={}, all attributes={}", email, oauthUser.getAttributes().keySet());
+
             if (email == null || email.isBlank()) {
+                log.error("OAuth2SuccessHandler: email is null or blank");
                 redirectWithError(request, response, "OAuth email is missing");
                 return;
             }
@@ -59,6 +64,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             CookieUtil.addCookie(response, CookieUtil.ACCESS_TOKEN, accessToken, 15 * 60 * 1000L);
             CookieUtil.addCookie(response, CookieUtil.REFRESH_TOKEN, refresh.getToken(), 24 * 60 * 60 * 1000L);
 
+            log.info("OAuth2SuccessHandler: Successfully authenticated user={}, redirecting to={}", email, redirectUri);
+
             String targetUrl = UriComponentsBuilder
                     .fromUriString(redirectUri)
                     .build()
@@ -66,6 +73,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
         } catch (Exception ex) {
+            log.error("OAuth2SuccessHandler: Exception occurred: {}", ex.getMessage(), ex);
             redirectWithError(request, response, ex.getMessage());
         }
     }
@@ -79,6 +87,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         while (userRepository.existsByUsername(username)) {
             username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
         }
+
+        log.info("Creating new OAuth2 user: email={}, username={}", email, username);
 
         User newUser = User.builder()
                 .email(email)
@@ -97,6 +107,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String message = (rawMessage == null || rawMessage.isBlank())
                 ? "OAuth login failed"
                 : rawMessage;
+
+        log.warn("OAuth2SuccessHandler redirectWithError: {}", message);
 
         String targetUrl = UriComponentsBuilder
                 .fromUriString(redirectUri)

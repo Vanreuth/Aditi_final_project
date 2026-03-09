@@ -1,561 +1,503 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import {
+  BookOpen, Users, Layers, TrendingUp, Plus, BarChart2,
+  ArrowUpRight, ArrowDownRight, Calendar, GraduationCap,
+  FileText, Activity, CheckCircle2, Clock, Star,
+  MoreHorizontal, Eye, ChevronRight, Flame,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
-  TrendingUp,
-  Users,
-  Activity,
-  BarChart3,
-  BookOpen,
-  Layers,
-  GraduationCap,
-  Download,
-  Filter,
-  Calendar,
-  Eye,
-  Star,
-  Sparkles,
-} from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  RadialBarChart,
-  RadialBar,
-  Legend,
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function MetricCard({
-  title,
-  value,
-  change,
-  trend,
-  icon: Icon,
-  color,
-  bgColor,
-  loading,
-}: {
-  title: string;
-  value: string | number;
-  change?: string;
-  trend?: "up" | "down" | "neutral";
-  icon: typeof BookOpen;
-  color: string;
-  bgColor: string;
-  loading?: boolean;
-}) {
-  if (loading) {
-    return (
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-8 w-20 mb-2" />
-          <Skeleton className="h-3 w-28" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className={`p-2.5 rounded-xl ${bgColor}`}>
-          <Icon className={`h-5 w-5 ${color}`} />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {typeof value === "number" ? value.toLocaleString() : value}
-        </div>
-        {change && (
-          <div className="flex items-center text-xs mt-1">
-            {trend === "up" && <TrendingUp className="mr-1 h-3 w-3 text-green-600" />}
-            {trend === "down" && <TrendingUp className="mr-1 h-3 w-3 text-red-600 rotate-180" />}
-            <span className={trend === "up" ? "text-green-600" : trend === "down" ? "text-red-600" : "text-muted-foreground"}>
-              {change}
-            </span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Custom Tooltip ───────────────────────────────────────────────────────────
-
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
+/* ── Chart tooltip ──────────────────────────────────────────────── */
+function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-popover border border-border rounded-lg shadow-xl px-4 py-3">
-      <p className="text-sm font-semibold text-foreground">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="text-sm text-muted-foreground mt-0.5">
-          <span className="font-bold text-primary">{p.value}</span> {p.name}
-        </p>
-      ))}
-    </div>
+      <div className="rounded-xl border border-border/50 bg-background/95 px-3 py-2.5 shadow-xl backdrop-blur-sm text-xs">
+        {label && <p className="mb-1.5 font-semibold text-foreground">{label}</p>}
+        {payload.map((p: any, i: number) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="size-2 rounded-full shrink-0" style={{ background: p.color }} />
+              <span className="capitalize text-muted-foreground">{p.name}</span>
+              <span className="ml-1 font-semibold text-foreground">{p.value}</span>
+            </div>
+        ))}
+      </div>
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+/* ── Stat card ──────────────────────────────────────────────────── */
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  sub: string;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  trend?: number;
+  loading?: boolean;
+}
 
-export default function AnalyticsPage() {
-  const stats = useDashboardStats();
-
-  const publishedPct = stats.totalCourses > 0
-    ? Math.round((stats.publishedCourses / stats.totalCourses) * 100)
-    : 0;
-  const activePct = stats.totalUsers > 0
-    ? Math.round((stats.activeUsers / stats.totalUsers) * 100)
-    : 0;
-  const activeCatPct = stats.totalCategories > 0
-    ? Math.round((stats.activeCategories / stats.totalCategories) * 100)
-    : 0;
-
-  const PIE_COLORS = ["#8b5cf6", "#3b82f6", "#64748b", "#10b981"];
-  const LEVEL_COLORS = ["#10b981", "#f59e0b", "#ef4444"];
-
-  // Create enrollment data from courses
-  const enrollmentData = stats.recentCourses
-    .filter(c => (c.enrolledCount ?? 0) > 0)
-    .slice(0, 8)
-    .map(c => ({
-      name: c.title.length > 15 ? c.title.slice(0, 15) + "…" : c.title,
-      enrolled: c.enrolledCount ?? 0,
-      lessons: c.totalLessons ?? 0,
-    }));
+function StatCard({ title, value, sub, icon: Icon, iconBg, iconColor, trend, loading }: StatCardProps) {
+  if (loading) return (
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between mb-4">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="size-10 rounded-xl" />
+        </div>
+        <Skeleton className="h-8 w-16 mb-2" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
-          <p className="text-muted-foreground">
-            Real-time insights from your e-learning platform data.
-          </p>
+      <div className="group rounded-xl border border-border bg-card p-5 hover:border-border/80 hover:shadow-sm transition-all duration-200">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-medium text-muted-foreground truncate">{title}</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-foreground tabular-nums">
+              {typeof value === "number" ? value.toLocaleString() : value}
+            </p>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">{sub}</p>
+          </div>
+          <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", iconBg)}>
+            <Icon className={cn("size-5", iconColor)} strokeWidth={1.75} />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <Button variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Live Data
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+        {trend !== undefined && trend !== 0 && (
+            <div className={cn(
+                "mt-3 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                trend > 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-red-500/10 text-red-500"
+            )}>
+              {trend > 0 ? <ArrowUpRight className="size-2.5" /> : <ArrowDownRight className="size-2.5" />}
+              {Math.abs(trend)}% this month
+            </div>
+        )}
+      </div>
+  );
+}
+
+/* ── Section header ─────────────────────────────────────────────── */
+function SectionHeader({
+                         icon: Icon, title, description, badge, action
+                       }: {
+  icon: React.ElementType; title: string; description?: string;
+  badge?: string; action?: React.ReactNode;
+}) {
+  return (
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground/5">
+            <Icon className="size-3.5 text-foreground" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-foreground">{title}</p>
+            {description && <p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {badge && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            {badge}
+          </span>
+          )}
+          {action}
         </div>
       </div>
+  );
+}
 
-      {/* Metrics Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Courses"
-          value={stats.totalCourses}
-          change={`${stats.publishedCourses} published`}
-          trend="up"
-          icon={BookOpen}
-          color="text-violet-600"
-          bgColor="bg-violet-50 dark:bg-violet-950/40"
-          loading={stats.loading}
-        />
-        <MetricCard
-          title="Total Users"
-          value={stats.totalUsers}
-          change={`${stats.activeUsers} active`}
-          trend="up"
-          icon={Users}
-          color="text-blue-600"
-          bgColor="bg-blue-50 dark:bg-blue-950/40"
-          loading={stats.loading}
-        />
-        <MetricCard
-          title="Total Enrollments"
-          value={stats.totalEnrollments}
-          change={`${stats.featuredCourses} featured courses`}
-          trend="up"
-          icon={Activity}
-          color="text-emerald-600"
-          bgColor="bg-emerald-50 dark:bg-emerald-950/40"
-          loading={stats.loading}
-        />
-        <MetricCard
-          title="Categories"
-          value={stats.totalCategories}
-          change={`${stats.activeCategories} active`}
-          trend="neutral"
-          icon={Layers}
-          color="text-amber-600"
-          bgColor="bg-amber-50 dark:bg-amber-950/40"
-          loading={stats.loading}
-        />
+/* ── Empty state ────────────────────────────────────────────────── */
+function EmptyState({ icon: Icon, title, sub }: { icon: React.ElementType; title: string; sub?: string }) {
+  return (
+      <div className="flex h-52 flex-col items-center justify-center gap-2 text-muted-foreground">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-muted/60">
+          <Icon className="size-5 opacity-40" />
+        </div>
+        <p className="text-[13px] font-medium">{title}</p>
+        {sub && <p className="text-[11px] opacity-60">{sub}</p>}
       </div>
+  );
+}
 
-      {/* Analytics Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-            </TabsList>
+/* ════════════════════════════════════════════════════════════════
+   Main Dashboard
+═══════════════════════════════════════════════════════════════ */
+export default function DashboardPage() {
+  const stats = useDashboardStats();
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-primary" />
-                      Courses by Category
-                    </CardTitle>
-                    <Badge variant="secondary">Live Data</Badge>
-                  </div>
-                  <CardDescription>Course distribution across content categories</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {stats.loading ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <div className="space-y-3 w-full">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Skeleton key={i} className="h-8 w-full rounded-lg" />
-                        ))}
-                      </div>
-                    </div>
-                  ) : stats.coursesByCategory.length > 0 ? (
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats.coursesByCategory} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                          <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                          <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                          <Tooltip content={<ChartTooltip />} />
-                          <Bar dataKey="courses" fill="url(#catBarGrad)" radius={[6, 6, 0, 0]} maxBarSize={50} />
-                          <defs>
-                            <linearGradient id="catBarGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#8b5cf6" />
-                              <stop offset="100%" stopColor="#6366f1" />
-                            </linearGradient>
-                          </defs>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      <div className="text-center">
-                        <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm font-medium">No category data available</p>
-                        <p className="text-xs mt-1">Create categories and courses to see analytics</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const emoji = hour < 12 ? "☀️" : hour < 17 ? "👋🏼" : "🌙";
+  const dateStr = now.toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
+  });
 
-            {/* Courses Tab */}
-            <TabsContent value="courses" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      Course Enrollment Overview
-                    </CardTitle>
-                    <Badge variant="secondary">Top Courses</Badge>
-                  </div>
-                  <CardDescription>Enrollment and lesson counts for top courses</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {stats.loading ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <div className="space-y-3 w-full">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Skeleton key={i} className="h-8 w-full rounded-lg" />
-                        ))}
-                      </div>
-                    </div>
-                  ) : enrollmentData.length > 0 ? (
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={enrollmentData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                          <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                          <Tooltip content={<ChartTooltip />} />
-                          <Area
-                            type="monotone"
-                            dataKey="enrolled"
-                            stroke="#8b5cf6"
-                            fill="url(#enrollGrad)"
-                            strokeWidth={2}
-                          />
-                          <defs>
-                            <linearGradient id="enrollGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      <div className="text-center">
-                        <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm font-medium">No enrollment data available</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+  /* Derived */
+  const publishedPct = stats.totalCourses > 0
+      ? Math.round((stats.publishedCourses / stats.totalCourses) * 100) : 0;
+  const activePct = stats.totalUsers > 0
+      ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0;
+  const activeCatPct = stats.totalCategories > 0
+      ? Math.round((stats.activeCategories / stats.totalCategories) * 100) : 0;
 
-            {/* Users Tab */}
-            <TabsContent value="users" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-primary" />
-                      User Role Distribution
-                    </CardTitle>
-                    <Badge variant="secondary">Real-time</Badge>
-                  </div>
-                  <CardDescription>Breakdown of users by role assignment</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {stats.loading ? (
-                    <div className="h-[300px] flex items-center justify-center">
-                      <Skeleton className="h-48 w-48 rounded-full" />
-                    </div>
-                  ) : stats.usersByRole.length > 0 ? (
-                    <div className="h-[300px] flex items-center">
-                      <div className="w-1/2 h-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={stats.usersByRole}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={4}
-                              dataKey="value"
-                              stroke="none"
-                            >
-                              {stats.usersByRole.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="w-1/2 space-y-4 pl-4">
-                        {stats.usersByRole.map((role, index) => {
-                          const pct = stats.totalUsers > 0 ? Math.round((role.value / stats.totalUsers) * 100) : 0;
-                          return (
-                            <div key={role.name} className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="h-3 w-3 rounded-full"
-                                    style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                                  />
-                                  <span className="font-medium">{role.name}</span>
-                                </div>
-                                <span className="text-muted-foreground">
-                                  {role.value} ({pct}%)
-                                </span>
-                              </div>
-                              <Progress value={pct} className="h-2" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      <div className="text-center">
-                        <Users className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm font-medium">No user data available</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+  const LEVEL_COLORS = ["#10b981", "#f59e0b", "#ef4444"];
+  const PIE_COLORS   = ["#6366f1", "#0ea5e9", "#64748b", "#10b981"];
+
+  /* Enrollment area data from recent courses */
+  const enrollmentData = stats.recentCourses
+      .filter(c => (c.enrolledCount ?? 0) > 0)
+      .slice(0, 7)
+      .map(c => ({
+        name: c.title.length > 12 ? c.title.slice(0, 12) + "…" : c.title,
+        enrolled: c.enrolledCount ?? 0,
+        lessons: c.totalLessons ?? 0,
+      }));
+
+  const STAT_CARDS: StatCardProps[] = [
+    {
+      title: "Total Courses",
+      value: stats.totalCourses,
+      sub: `${stats.publishedCourses} published · ${stats.totalCourses - stats.publishedCourses} drafts`,
+      icon: BookOpen,
+      iconBg: "bg-violet-500/10",
+      iconColor: "text-violet-500",
+      trend: 12,
+      loading: stats.loading,
+    },
+    {
+      title: "Total Users",
+      value: stats.totalUsers,
+      sub: `${stats.activeUsers} active accounts`,
+      icon: Users,
+      iconBg: "bg-sky-500/10",
+      iconColor: "text-sky-500",
+      trend: 5,
+      loading: stats.loading,
+    },
+    {
+      title: "Categories",
+      value: stats.totalCategories,
+      sub: `${stats.activeCategories} active categories`,
+      icon: Layers,
+      iconBg: "bg-amber-500/10",
+      iconColor: "text-amber-500",
+      trend: 0,
+      loading: stats.loading,
+    },
+    {
+      title: "Total Enrollments",
+      value: stats.totalEnrollments,
+      sub: `${stats.featuredCourses} featured courses`,
+      icon: TrendingUp,
+      iconBg: "bg-emerald-500/10",
+      iconColor: "text-emerald-500",
+      trend: 33,
+      loading: stats.loading,
+    },
+  ];
+
+  return (
+      <div className="space-y-6">
+
+        {/* ── Page header ─────────────────────────────────────── */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {greeting} <span>{emoji}</span>
+            </h1>
+            <p className="mt-0.5 text-[13px] text-muted-foreground">
+              Here's what's happening with your e-learning platform today.
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground/50 flex items-center gap-1">
+              <Calendar className="size-3" />
+              {dateStr}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-[12px]">
+              <BarChart2 className="size-3.5" />
+              Analytics
+            </Button>
+            <Button size="sm" className="h-8 gap-1.5 text-[12px]">
+              <Plus className="size-3.5" />
+              New Course
+            </Button>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Course Level Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <GraduationCap className="h-5 w-5 text-primary" />
-                Course Levels
-              </CardTitle>
-              <CardDescription>Difficulty distribution</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* ── KPI cards ───────────────────────────────────────── */}
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          {STAT_CARDS.map(card => <StatCard key={card.title} {...card} />)}
+        </div>
+
+        {/* ── Charts row ──────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Courses by Category — bar chart (2/3) */}
+          <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5">
+            <SectionHeader
+                icon={Activity}
+                title="Courses by Category"
+                description="Distribution of courses across categories"
+                badge={`${stats.coursesByCategory.length} categories`}
+            />
+            <div className="mt-5">
               {stats.loading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-10 w-full rounded-lg" />
-                  ))}
-                </div>
+                  <div className="space-y-3">
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full rounded-lg" />)}
+                  </div>
+              ) : stats.coursesByCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart
+                        data={stats.coursesByCategory}
+                        margin={{ top: 4, right: 4, bottom: 0, left: -24 }}
+                        barSize={36}
+                    >
+                      <defs>
+                        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366f1" />
+                          <stop offset="100%" stopColor="#8b5cf6" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.06} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip content={<ChartTooltip />} cursor={{ fill: "currentColor", opacity: 0.04 }} />
+                      <Bar dataKey="courses" fill="url(#barGrad)" radius={[5, 5, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+              ) : (
+                  <EmptyState icon={BarChart2} title="No category data yet" sub="Create categories and courses to see distribution" />
+              )}
+            </div>
+          </div>
+
+          {/* Course Levels — donut (1/3) */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <SectionHeader
+                icon={GraduationCap}
+                title="Course Levels"
+                description="Distribution by difficulty"
+            />
+            <div className="mt-4">
+              {stats.loading ? (
+                  <div className="flex justify-center mt-6"><Skeleton className="size-36 rounded-full" /></div>
               ) : stats.coursesByLevel.length > 0 ? (
-                <>
-                  <div className="h-[160px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                  <>
+                    <div className="flex justify-center my-2">
+                      <PieChart width={160} height={160}>
                         <Pie
-                          data={stats.coursesByLevel}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={70}
-                          paddingAngle={3}
-                          dataKey="value"
-                          stroke="none"
+                            data={stats.coursesByLevel}
+                            cx={75} cy={75}
+                            innerRadius={48} outerRadius={72}
+                            paddingAngle={3}
+                            dataKey="value"
+                            strokeWidth={0}
                         >
-                          {stats.coursesByLevel.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={LEVEL_COLORS[index % LEVEL_COLORS.length]} />
+                          {stats.coursesByLevel.map((_, i) => (
+                              <Cell key={i} fill={LEVEL_COLORS[i % LEVEL_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip content={<ChartTooltip />} />
                       </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-3">
-                    {stats.coursesByLevel.map((entry, index) => {
-                      const pct = stats.totalCourses > 0 ? Math.round((entry.value / stats.totalCourses) * 100) : 0;
-                      return (
-                        <div key={entry.name} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-3 w-3 rounded-full"
-                              style={{ backgroundColor: LEVEL_COLORS[index % LEVEL_COLORS.length] }}
-                            />
-                            <span className="font-medium">{entry.name}</span>
-                          </div>
-                          <span className="text-muted-foreground font-semibold">
-                            {entry.value} ({pct}%)
+                    </div>
+                    <div className="space-y-3 mt-2">
+                      {stats.coursesByLevel.map((entry, i) => {
+                        const pct = stats.totalCourses > 0
+                            ? Math.round((entry.value / stats.totalCourses) * 100) : 0;
+                        return (
+                            <div key={entry.name}>
+                              <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className="flex items-center gap-1.5 text-muted-foreground">
+                            <span className="size-2 rounded-full shrink-0" style={{ background: LEVEL_COLORS[i % LEVEL_COLORS.length] }} />
+                            {entry.name}
                           </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
+                                <span className="font-semibold text-foreground">{entry.value} ({pct}%)</span>
+                              </div>
+                              <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                                <div
+                                    className="h-full rounded-full transition-all duration-700"
+                                    style={{ width: `${pct}%`, background: LEVEL_COLORS[i % LEVEL_COLORS.length] }}
+                                />
+                              </div>
+                            </div>
+                        );
+                      })}
+                    </div>
+                  </>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">No data</p>
+                  <EmptyState icon={GraduationCap} title="No level data" />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
 
-          {/* Platform Health */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Activity className="h-5 w-5 text-primary" />
-                Platform Health
-              </CardTitle>
-              <CardDescription>Key metrics at a glance</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* ── Bottom row ──────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Recent courses table (2/3) */}
+          <div className="lg:col-span-2 rounded-xl border border-border bg-card overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
+              <div>
+                <p className="text-[13px] font-semibold text-foreground">Recent Courses</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Latest published content</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-[11px] text-muted-foreground">
+                View all <ChevronRight className="size-3" />
+              </Button>
+            </div>
+
+            <div className="divide-y divide-border/50">
               {stats.loading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full rounded-lg" />
-                  ))}
-                </div>
+                  [...Array(4)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 px-5 py-3">
+                        <Skeleton className="size-8 rounded-lg" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-3 w-40" />
+                          <Skeleton className="h-2.5 w-24" />
+                        </div>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                  ))
+              ) : stats.recentCourses.length > 0 ? (
+                  stats.recentCourses.slice(0, 5).map((course, i) => (
+                      <div
+                          key={i}
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-muted/30 transition-colors group"
+                      >
+                        {/* Course icon */}
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10">
+                          <BookOpen className="size-3.5 text-violet-500" strokeWidth={2} />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-medium text-foreground truncate">{course.title}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
+                      <span className="flex items-center gap-1">
+                        <Users className="size-2.5" />
+                        {course.enrolledCount ?? 0} enrolled
+                      </span>
+                            <span className="text-muted-foreground/30">·</span>
+                            <span className="flex items-center gap-1">
+                        <FileText className="size-2.5" />
+                              {course.totalLessons ?? 0} lessons
+                      </span>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        course.isPublished
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground"
+                    )}>
+                      {course.isPublished ? "Published" : "Draft"}
+                    </span>
+                          <Button
+                              variant="ghost" size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Eye className="size-3" />
+                          </Button>
+                        </div>
+                      </div>
+                  ))
               ) : (
-                <>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
-                        <Eye className="h-3.5 w-3.5" />
-                        Published Rate
-                      </span>
-                      <span className="font-bold">{publishedPct}%</span>
-                    </div>
-                    <Progress value={publishedPct} className="h-2" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5" />
-                        Active Users
-                      </span>
-                      <span className="font-bold">{activePct}%</span>
-                    </div>
-                    <Progress value={activePct} className="h-2" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
-                        <Layers className="h-3.5 w-3.5" />
-                        Active Categories
-                      </span>
-                      <span className="font-bold">{activeCatPct}%</span>
-                    </div>
-                    <Progress value={activeCatPct} className="h-2" />
-                  </div>
-
-                  <div className="pt-2 border-t">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                        </div>
-                        <p className="text-xl font-bold text-amber-600">{stats.featuredCourses}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Featured</p>
-                      </div>
-                      <div className="text-center p-3 bg-violet-50 dark:bg-violet-950/30 rounded-xl">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <TrendingUp className="h-3.5 w-3.5 text-violet-500" />
-                        </div>
-                        <p className="text-xl font-bold text-violet-600">{stats.totalEnrollments}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Enrollments</p>
-                      </div>
-                    </div>
-                  </div>
-                </>
+                  <EmptyState icon={BookOpen} title="No courses yet" sub="Create your first course to get started" />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          {/* Platform health (1/3) */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <SectionHeader
+                icon={Activity}
+                title="Platform Health"
+                description="Key metrics at a glance"
+            />
+
+            <div className="mt-5 space-y-5">
+              {stats.loading ? (
+                  [...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)
+              ) : (
+                  <>
+                    {[
+                      { label: "Published Rate",   value: publishedPct, color: "#6366f1" },
+                      { label: "Active Users",      value: activePct,    color: "#0ea5e9" },
+                      { label: "Active Categories", value: activeCatPct, color: "#f59e0b" },
+                    ].map(item => (
+                        <div key={item.label}>
+                          <div className="flex items-center justify-between text-[11px] mb-1.5">
+                            <span className="text-muted-foreground">{item.label}</span>
+                            <span className="font-bold text-foreground">{item.value}%</span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{ width: `${item.value}%`, background: item.color }}
+                            />
+                          </div>
+                        </div>
+                    ))}
+
+                    {/* Summary pills */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-border/50">
+                      <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-3 text-center">
+                        <Star className="mx-auto mb-1 size-4 text-amber-500" />
+                        <p className="text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                          {stats.featuredCourses}
+                        </p>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
+                          Featured
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-violet-50 dark:bg-violet-950/30 p-3 text-center">
+                        <TrendingUp className="mx-auto mb-1 size-4 text-violet-500" />
+                        <p className="text-xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
+                          {stats.totalEnrollments}
+                        </p>
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
+                          Enrollments
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* User role breakdown */}
+                    {stats.usersByRole.length > 0 && (
+                        <div className="pt-2 border-t border-border/50 space-y-2">
+                          <p className="text-[11px] font-semibold text-foreground">Users by Role</p>
+                          {stats.usersByRole.map((role, i) => (
+                              <div key={role.name} className="flex items-center justify-between text-[11px]">
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <span
+                              className="size-2 rounded-full shrink-0"
+                              style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                          />
+                          {role.name}
+                        </span>
+                                <span className="font-semibold text-foreground">{role.value}</span>
+                              </div>
+                          ))}
+                        </div>
+                    )}
+                  </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 }

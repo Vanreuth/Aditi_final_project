@@ -52,7 +52,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUsers } from "@/hooks/useUsers";
-import type { UserResponse } from "@/types/apiType";
+import type { UserResponse } from "@/types/userType";
 
 // ─── Stats Card ───────────────────────────────────────────────────────────────
 

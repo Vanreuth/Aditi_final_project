@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [error,            setError]            = useState<string | null>(null)
   const [loading,          setLoading]          = useState(false)
   const [googleLoading,    setGoogleLoading]    = useState(false)
-  const [facebookLoading,  setFacebookLoading]  = useState(false)
+  const [githubLoading,    setGithubLoading]    = useState(false)
 
   // ── Credential login ────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -39,13 +39,12 @@ export default function LoginPage() {
 
   // ── OAuth login ─────────────────────────────────────────────
   async function handleOAuth(
-    provider: 'google' | 'facebook',
+    provider: 'google' | 'github',
     setProviderLoading: (v: boolean) => void
   ) {
     setProviderLoading(true)
     try {
-      const url = await authService.getOAuthUrl(provider)
-      window.location.href = url
+      window.location.href = await authService.getOAuthUrl(provider)
     } catch {
       setError(`${provider} login failed. Please try again.`)
       setProviderLoading(false)
@@ -160,7 +159,7 @@ export default function LoginPage() {
             type="button"
             variant="outline"
             onClick={() => handleOAuth('google', setGoogleLoading)}
-            disabled={googleLoading || facebookLoading}
+            disabled={googleLoading || githubLoading}
             className="h-10 bg-transparent border-white/10 text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
           >
             {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
@@ -179,16 +178,16 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleOAuth('facebook', setFacebookLoading)}
-            disabled={googleLoading || facebookLoading}
+            onClick={() => handleOAuth('github', setGithubLoading)}
+            disabled={googleLoading || githubLoading}
             className="h-10 bg-transparent border-white/10 text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
           >
-            {facebookLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+            {githubLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
               <>
-                <svg className="h-4 w-4 mr-2 shrink-0 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                <svg className="h-4 w-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0.5C5.65 0.5 0.5 5.65 0.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.17c-3.2.7-3.88-1.37-3.88-1.37-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.24 3.33.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.27-5.24-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.17a11.1 11.1 0 0 1 5.79 0c2.21-1.48 3.17-1.17 3.17-1.17.63 1.58.24 2.75.12 3.04.73.8 1.18 1.82 1.18 3.07 0 4.41-2.69 5.37-5.25 5.66.41.36.78 1.08.78 2.19v3.24c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35 0.5 12 0.5z"/>
                 </svg>
-                Facebook
+                GitHub
               </>
             )}
           </Button>

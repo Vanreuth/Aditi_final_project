@@ -38,7 +38,9 @@ function toState<T>(q: { data?: T; isPending: boolean; error: Error | null }) {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  1. useLessonProgress — single lesson progress
+//  1. useLessonProgress — single lesson progress + mutations
+//     Use this when you need to READ a single lesson's progress
+//     (e.g. lesson detail page). It fires GET /lesson-progress?lessonId=
 // ═════════════════════════════════════════════════════════════
 
 export function useLessonProgress(lessonId: number) {
@@ -71,6 +73,8 @@ export function useLessonProgress(lessonId: number) {
     onSuccess : () => {
       qc.removeQueries({ queryKey: progressKeys.detail(lessonId) })
       qc.invalidateQueries({ queryKey: progressKeys.mine })
+      // ✅ deleted completed lesson must also decrement the count cache
+      qc.invalidateQueries({ queryKey: progressKeys.count })
     },
   })
 
@@ -84,7 +88,54 @@ export function useLessonProgress(lessonId: number) {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  2. useMyProgress — all progress for authenticated user
+//  2. useLessonProgressActions — mutations ONLY, no GET query
+//
+//     Use this in list rows (e.g. ActivityTab's LessonRow) where
+//     you already have the data from /me and do NOT want an extra
+//     GET /lesson-progress?lessonId= firing for every row.
+// ═════════════════════════════════════════════════════════════
+
+export function useLessonProgressActions(lessonId: number) {
+  const qc = useQueryClient()
+
+  const completeMutation = useMutation({
+    mutationFn: () => lessonProgressService.markCompleted(lessonId),
+    onSuccess : (data) => {
+      // Update detail cache if it exists (no-op if not cached)
+      qc.setQueryData(progressKeys.detail(lessonId), data)
+      qc.invalidateQueries({ queryKey: progressKeys.mine })
+      qc.invalidateQueries({ queryKey: progressKeys.count })
+    },
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: () => lessonProgressService.remove(lessonId),
+    onSuccess : () => {
+      qc.removeQueries({ queryKey: progressKeys.detail(lessonId) })
+      qc.invalidateQueries({ queryKey: progressKeys.mine })
+      qc.invalidateQueries({ queryKey: progressKeys.count })
+    },
+  })
+
+  const upsertMutation = useMutation({
+    mutationFn: (payload: LessonProgressRequest) => lessonProgressService.upsert(payload),
+    onSuccess : (data) => {
+      qc.setQueryData(progressKeys.detail(lessonId), data)
+      qc.invalidateQueries({ queryKey: progressKeys.mine })
+    },
+  })
+
+  return {
+    markCompleted    : () => completeMutation.mutateAsync(),
+    remove           : () => removeMutation.mutateAsync(),
+    upsert           : (payload: LessonProgressRequest) => upsertMutation.mutateAsync(payload),
+    isCompletePending: completeMutation.isPending,
+    isRemovePending  : removeMutation.isPending,
+  }
+}
+
+// ═════════════════════════════════════════════════════════════
+//  3. useMyProgress — all progress for authenticated user
 // ═════════════════════════════════════════════════════════════
 
 export function useMyProgress() {
@@ -112,7 +163,7 @@ export function useMyProgress() {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  3. useCourseProgress — progress within a specific course
+//  4. useCourseProgress — progress within a specific course
 // ═════════════════════════════════════════════════════════════
 
 export function useCourseProgress(courseId: number, totalLessons: number = 0) {
@@ -150,7 +201,8 @@ export function useCourseProgress(courseId: number, totalLessons: number = 0) {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  4. useCompletedCount — global completed lesson count
+//  5. useCompletedCount — global completed lesson count
+//     Hits GET /me/completed-count — fast, cheap, always accurate
 // ═════════════════════════════════════════════════════════════
 
 export function useCompletedCount() {
@@ -162,7 +214,8 @@ export function useCompletedCount() {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  5. useCompletedCountByCourse
+//  6. useCompletedCountByCourse
+//     Hits GET /course/{courseId}/completed-count
 // ═════════════════════════════════════════════════════════════
 
 export function useCompletedCountByCourse(courseId: number) {
@@ -175,19 +228,19 @@ export function useCompletedCountByCourse(courseId: number) {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  6. useScrollTracker — debounced scroll auto-save
+//  7. useScrollTracker — debounced scroll auto-save
 // ═════════════════════════════════════════════════════════════
 
 export function useScrollTracker(lessonId: number) {
   const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
 
   const saveScroll = useCallback(
-    (scrollPosition: number, readingTimeSeconds?: number) => {
+    (scrollPosition: number, readTimeSeconds?: number) => {
       if (!lessonId) return
       if (timer) clearTimeout(timer)
       const t = setTimeout(() => {
         lessonProgressService
-          .upsert({ lessonId, scrollPosition, readingTimeSeconds })
+          .upsert({ lessonId, scrollPosition, readTimeSeconds })
           .catch(() => {})
       }, 1500)
       setTimer(t)

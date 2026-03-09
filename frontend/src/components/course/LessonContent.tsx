@@ -95,7 +95,7 @@ export function LessonContent({
             {selectedLesson.chapterTitle}
           </span>
           <ChevronRight className="h-3 w-3 shrink-0 hidden sm:block" style={{ color: "var(--cl-border-hi)" }} />
-          <span className="truncate font-semibold" style={{ color: "var(--cl-text-hi)" }}>
+          <span className="truncate font-semibold" style={{ color: "var(--cl-text-hi)", fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif" }}>
             {selectedLesson.title}
           </span>
         </div>
@@ -160,8 +160,8 @@ export function LessonContent({
                 className="text-xl lg:text-2xl leading-tight mb-1"
                 style={{
                   color: "var(--cl-text-hi)",
-                  fontFamily: "'DM Serif Display', Georgia, serif",
                   letterSpacing: "-0.025em",
+                  fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif",
                 }}
               >
                 {selectedLesson.title}

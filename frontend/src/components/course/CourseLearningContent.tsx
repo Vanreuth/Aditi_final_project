@@ -8,12 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { courseService } from "@/services/courseService";
 import { lessonProgressService } from "@/services/lessonProgressService";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  BookOpen,
-  Menu,
-  X,
-} from "lucide-react";
+import { ArrowLeft, BookOpen, Menu, X } from "lucide-react";
 import {
   useCourseWithChapters,
   useChaptersByCourse,
@@ -26,6 +21,10 @@ import { useCoursePdf } from "@/hooks/useCoursesPdf";
 import { CourseSidebar } from "@/components/course/CourseSidebar";
 import { LessonContent } from "@/components/course/LessonContent";
 import { WelcomeScreen } from "@/components/course/WelcomeScreen";
+
+// ── ADD 1: import useReadingTimer ─────────────────────────────────────────────
+import { useReadingTimer } from "@/hooks/usereadingtimer";
+
 // ─── Visual helper ────────────────────────────────────────────────────────────
 
 function getCourseVisual(title: string): {
@@ -85,25 +84,19 @@ export function CourseDetailSkeleton() {
   );
 }
 
-
 // ─── Content processing ──────────────────────────────────────────────────────
 
 function processLessonContent(raw?: string | null): string {
   if (!raw || !raw.trim()) return "";
   const trimmed = raw.trim();
-  // If content already contains HTML block-level tags, return as-is
   if (/<(?:p|div|br|h[1-6]|ul|ol|li|table|blockquote|pre|section|article)[\/\s>]/i.test(trimmed)) {
     return trimmed;
   }
-  // Plain text: convert double newlines to paragraphs, single newlines to <br>
   return trimmed
     .split(/\n\s*\n/)
     .filter(Boolean)
     .map((para) => {
-      const lines = para
-        .split(/\n/)
-        .map((l) => l.trimEnd())
-        .join("<br/>");
+      const lines = para.split(/\n/).map((l) => l.trimEnd()).join("<br/>");
       return `<p>${lines}</p>`;
     })
     .join("\n");
@@ -116,7 +109,6 @@ function normalizeLessonSlug(value?: string | null) {
   return decodeURIComponent(value).replace(/\.asp$/i, "").trim().toLowerCase();
 }
 
-/** Convert a lesson/chapter title into a URL-friendly hyphenated slug. */
 function toUrlSlug(title: string): string {
   return title
     .toLowerCase()
@@ -127,11 +119,6 @@ function toUrlSlug(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
-/**
- * Build the URL path segment for a lesson.
- * Prefers a slug derived from `title` (human-readable); falls back to the
- * backend `slug` field only when no title is available.
- */
 function lessonPathSegment(slug?: string | null, title?: string | null): string {
   const raw = (title ? toUrlSlug(title) : null) || slug;
   const normalized = normalizeLessonSlug(raw);
@@ -176,8 +163,6 @@ interface OpenLessonOptions {
   history?: "push" | "replace";
 }
 
-
-
 export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) {
   const router = useRouter();
   const slug = courseSlug;
@@ -200,6 +185,7 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
     const url = result?.fileUrl ?? pdfData?.fileUrl;
     if (url) window.open(url, "_blank");
   };
+
   const shouldFetchFallbackChapters = Boolean(course?.id) && !(course?.chapters?.length);
   const shouldFetchFallbackLessons =
     Boolean(course?.id) &&
@@ -218,6 +204,13 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
   const [loadingLesson, setLoadingLesson] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
+
+  // ── ADD 2: start/restart timer whenever selectedLesson changes ────────────
+  // - lessonId=0 while no lesson is selected → hook does nothing (guarded by `if (!lessonId) return`)
+  // - When user switches lesson (42 → 67): effect cleanup saves lesson 42's
+  //   time first, then the new effect starts fresh for lesson 67
+  // - Saves automatically every 30s, on tab hide, and on navigate away
+  useReadingTimer(selectedLesson?.id ?? 0);
 
   const requestRef = useRef(0);
   const normalizedInit = useMemo(
@@ -447,8 +440,7 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
     if (!isAuthenticated) {
       toast.info("សូមចូលប្រើប្រាស់ដើម្បីរក្សាទុកវឌ្ឍនភាព", { duration: 2000 });
       setTimeout(
-        () =>
-          router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`),
+        () => router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`),
         1500
       );
       return;
@@ -477,32 +469,7 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
   const progressPct =
     allLessons.length > 0 ? Math.round((completedCount / allLessons.length) * 100) : 0;
 
-  // ─────────────────────────────────────────────────────────────────────────
-
-  if (courseLoading) return <CourseDetailSkeleton />;
-
-  if (!course)
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center min-h-screen bg-background">
-        <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-5 bg-muted border border-border">
-          <BookOpen className="h-9 w-9 text-muted-foreground" />
-        </div>
-        <h2 className="text-xl font-bold text-foreground" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
-          រកមិនឃើញវគ្គសិក្សា
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          វគ្គសិក្សានេះមិនមានក្នុងប្រព័ន្ធទេ
-        </p>
-        <Link
-          href="/courses"
-          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80 bg-muted text-muted-foreground border border-border"
-        >
-          <ArrowLeft className="h-4 w-4" /> ត្រឡប់ទៅវគ្គសិក្សា
-        </Link>
-      </div>
-    );
-
-  const visual = getCourseVisual(course.title);
+  const visual = getCourseVisual(course?.title ?? "");
   const prevLesson = canGoPrev ? allLessons[currentIdx - 1] : null;
   const nextLesson = canGoNext ? allLessons[currentIdx + 1] : null;
 
@@ -514,6 +481,27 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
     },
     [openLesson]
   );
+
+  // ─── Guards ───────────────────────────────────────────────────────────────
+
+  if (courseLoading) return <CourseDetailSkeleton />;
+
+  if (!course)
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center min-h-screen bg-background">
+        <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-5 bg-muted border border-border">
+          <BookOpen className="h-9 w-9 text-muted-foreground" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">រកមិនឃើញវគ្គសិក្សា</h2>
+        <p className="mt-2 text-sm text-muted-foreground">វគ្គសិក្សានេះមិនមានក្នុងប្រព័ន្ធទេ</p>
+        <Link
+          href="/courses"
+          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80 bg-muted text-muted-foreground border border-border"
+        >
+          <ArrowLeft className="h-4 w-4" /> ត្រឡប់ទៅវគ្គសិក្សា
+        </Link>
+      </div>
+    );
 
   return (
     <div

@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: codekhmer_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-backend}
+      POSTGRES_USER:     ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-260403}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Spring Boot + Playwright ──────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codekhmer_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+
+      # ── Database ──────────────────────────────────────────────────────────
+      DB_URL:      jdbc:postgresql://postgres:5432/${DB_NAME:-backend}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-260403}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+      # ── File upload limits ────────────────────────────────────────────────
+      MAX_FILE_SIZE:    ${MAX_FILE_SIZE:-10MB}
+      MAX_REQUEST_SIZE: ${MAX_REQUEST_SIZE:-20MB}
+
+      # ── Google/GitHub OAuth2 ──────────────────────────────────────────────
+      GOOGLE_CLIENT_ID:     ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI:  ${GOOGLE_REDIRECT_URI}
+      GITHUB_CLIENT_ID:     ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_REDIRECT_URI:  ${GITHUB_REDIRECT_URI}
+      OAUTH2_REDIRECT_URI:  ${OAUTH2_REDIRECT_URI:-http://localhost:3000/oauth2/redirect}
+
+      # ── JWT ───────────────────────────────────────────────────────────────
+      JWT_SECRET:             ${JWT_SECRET}
+      JWT_EXPIRATION:         ${JWT_EXPIRATION:-3600}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-86400000}
+
+      # ── Cloudflare R2 ─────────────────────────────────────────────────────
+      R2_ACCOUNT_ID:        ${R2_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID:     ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_NAME:       ${R2_BUCKET_NAME}
+      R2_ENDPOINT:          ${R2_ENDPOINT}
+      R2_PUBLIC_URL:        ${R2_PUBLIC_URL}
+      R2_REGION:            ${R2_REGION:-auto}
+
+      # ── Playwright: required for containerised Chromium ───────────────────
+      PLAYWRIGHT_CHROMIUM_LAUNCH_OPTIONS: "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+
+      PORT: 8080
+
+    ports:
+      - "8080:8080"
+    shm_size: "256mb"    # Chromium needs more than Docker's default 64mb
+
+volumes:
+  postgres_data:
