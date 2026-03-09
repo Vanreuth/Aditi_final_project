@@ -16,9 +16,19 @@ export const metadata: Metadata = {
   title: "GrowCodeKhmer — Practical IT Education",
   description: "Learn programming lanaguage with a roadmap built for real product work. Frontend, Backend, DevOps, and more.",
   icons: {
-    icon: "/growth.png",
-    shortcut: "/growth.png",
-    apple: "/growth.png",
+    icon: [
+      { url: "/growth.png", type: "image/png", sizes: "32x32" },
+      { url: "/growth.png", type: "image/png", sizes: "16x16" },
+    ],
+    shortcut: { url: "/growth.png", type: "image/png" },
+    apple: { url: "/growth.png", type: "image/png", sizes: "180x180" },
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/growth.png",
+        color: "#10b981",
+      },
+    ],
   },
 };
 

@@ -478,6 +478,7 @@
   background-image:
     radial-gradient(ellipse 80% 50% at 0% 0%,   oklch(0.922 0 0 / 0.25), transparent),
     radial-gradient(ellipse 50% 60% at 100% 100%, oklch(0.97 0 0 / 0.3),  transparent);
+  position: relative;
 }
 
 /* DARK */
@@ -560,6 +561,23 @@
   );
 }
 
+.dashboard-main-panel {
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--card) 94%, transparent), color-mix(in oklch, var(--background) 92%, transparent));
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+.dashboard-sidebar {
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklch, var(--sidebar) 94%, transparent),
+      color-mix(in oklch, var(--sidebar) 82%, var(--background))
+    );
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+}
+
 .dark .dashboard-content-glow {
   background: radial-gradient(
     ellipse 70% 100% at 50% 0%,
@@ -582,6 +600,39 @@
     oklch(0.63 0.19 14 / 0.07),
     transparent
   );
+}
+
+.dark .dashboard-main-panel {
+  background:
+    linear-gradient(180deg, oklch(0.17 0.01 260 / 0.88), oklch(0.14 0 0 / 0.82));
+  box-shadow: 0 24px 70px oklch(0 0 0 / 0.28);
+}
+
+.aurora .dashboard-main-panel {
+  background:
+    linear-gradient(180deg, oklch(0.98 0.01 220 / 0.78), oklch(0.95 0.03 214 / 0.84));
+  box-shadow: 0 24px 64px oklch(0.58 0.18 224 / 0.10);
+}
+
+.sakura .dashboard-main-panel {
+  background:
+    linear-gradient(180deg, oklch(0.99 0.015 8 / 0.8), oklch(0.97 0.03 8 / 0.86));
+  box-shadow: 0 24px 64px oklch(0.63 0.19 14 / 0.10);
+}
+
+.dark .dashboard-sidebar {
+  background:
+    linear-gradient(180deg, oklch(0.16 0.005 250 / 0.96), oklch(0.12 0 0 / 0.96));
+}
+
+.aurora .dashboard-sidebar {
+  background:
+    linear-gradient(180deg, oklch(0.93 0.05 214 / 0.94), oklch(0.9 0.04 220 / 0.96));
+}
+
+.sakura .dashboard-sidebar {
+  background:
+    linear-gradient(180deg, oklch(0.95 0.05 8 / 0.95), oklch(0.93 0.04 12 / 0.96));
 }
 
 /* ── Sidebar — force correct background per theme ───────────────── */

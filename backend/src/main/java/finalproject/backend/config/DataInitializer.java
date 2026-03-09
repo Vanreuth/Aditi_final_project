@@ -52,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
         userRepository.save(User.builder()
                 .username("admin")
                 .email("admin@codekhmerlearning.site")
-                .password(passwordEncoder.encode("Admin@1234"))
+                .password(passwordEncoder.encode(""))
                 .status("ACTIVE")
                 .roles(Set.of(
                         roleRepository.findByName("ADMIN").orElseThrow(),
