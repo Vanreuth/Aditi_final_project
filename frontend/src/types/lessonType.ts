@@ -25,7 +25,9 @@ export interface LessonResponse {
 
 export interface LessonRequest {
   title: string
+  description?: string
   content?: string
   orderIndex?: number
   chapterId: number
+  courseId: number
 }

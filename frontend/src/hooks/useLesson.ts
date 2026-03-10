@@ -71,10 +71,15 @@ export function useLessonAdmin() {
   const qc         = useQueryClient()
   const invalidateChapter = (chapterId: number) =>
     qc.invalidateQueries({ queryKey: lessonKeys.byChapter(chapterId) })
+  const invalidateCourse = (courseId: number) =>
+    qc.invalidateQueries({ queryKey: lessonKeys.byCourse(courseId) })
 
   const createMutation = useMutation({
     mutationFn: (payload: LessonRequest) => lessonService.create(payload),
-    onSuccess : (data) => invalidateChapter(data.chapterId),
+    onSuccess : (data) => {
+      invalidateChapter(data.chapterId)
+      invalidateCourse(data.courseId)
+    },
   })
 
   const updateMutation = useMutation({
@@ -83,6 +88,7 @@ export function useLessonAdmin() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: lessonKeys.detail(data.id) })
       invalidateChapter(data.chapterId)
+      invalidateCourse(data.courseId)
     },
   })
 

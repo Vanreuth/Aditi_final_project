@@ -1,25 +1,33 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
 import { toast } from "sonner";
 import {
   BookOpen,
+  ChevronRight,
+  Code,
+  Edit,
+  Eye,
+  FileText,
+  Layers,
+  Loader2,
+  MoreHorizontal,
   Plus,
   Search,
-  Edit,
   Trash2,
-  FileText,
-  Hash,
-  Calendar,
-  MoreHorizontal,
-  Loader2,
-  Code,
-  Layers,
   X,
-  Eye,
-  ChevronRight,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,12 +73,69 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+const MDEditor = dynamic(
+  () => import("@uiw/react-md-editor"),
+  { ssr: false },
+);
+
 import { useCourses } from "@/hooks/useCourses";
 import { useChaptersByCourse } from "@/hooks/useChapter";
-import { useLessonsByChapter, useLessonsByCourse, useLessonAdmin } from "@/hooks/useLesson";
-import type { LessonResponse, LessonRequest } from "@/types/lessonType";
+import {
+  useLessonAdmin,
+  useLessonsByChapter,
+  useLessonsByCourse,
+} from "@/hooks/useLesson";
+import { useSnippetAdmin, useSnippetsByLesson } from "@/hooks/useSnippetCode";
+import type {
+  CodeSnippetRequest,
+  CodeSnippetResponse,
+} from "@/types/codeSnippetType";
+import type { LessonRequest, LessonResponse } from "@/types/lessonType";
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+type EditableSnippet = {
+  clientId: string;
+  id?: number;
+  title: string;
+  language: string;
+  code: string;
+  explanation: string;
+  orderIndex: number;
+};
+
+function createSnippetDraft(orderIndex = 0): EditableSnippet {
+  return {
+    clientId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: "",
+    language: "javascript",
+    code: "",
+    explanation: "",
+    orderIndex,
+  };
+}
+
+function toSnippetDraft(
+  snippet: CodeSnippetResponse,
+  index: number,
+): EditableSnippet {
+  return {
+    clientId: `snippet-${snippet.id}`,
+    id: snippet.id,
+    title: snippet.title ?? "",
+    language: snippet.language ?? "javascript",
+    code: snippet.code ?? "",
+    explanation: snippet.explanation ?? snippet.description ?? "",
+    orderIndex: snippet.orderIndex ?? index,
+  };
+}
+
+function hasSnippetContent(snippet: EditableSnippet) {
+  return Boolean(
+    snippet.title.trim() ||
+      snippet.language.trim() ||
+      snippet.code.trim() ||
+      snippet.explanation.trim(),
+  );
+}
 
 function StatCard({
   icon: Icon,
@@ -100,11 +165,14 @@ function StatCard({
       </Card>
     );
   }
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="transition-shadow hover:shadow-md">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}>
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}
+          >
             <Icon className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -117,9 +185,10 @@ function StatCard({
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function LessonsPage() {
+  const { resolvedTheme } = useTheme();
+  const colorMode = resolvedTheme === "dark" ? "dark" : "light";
+
   const [selectedCourseId, setSelectedCourseId] = useState<number>(0);
   const [selectedChapterId, setSelectedChapterId] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,43 +196,105 @@ export default function LessonsPage() {
   const [editingLesson, setEditingLesson] = useState<LessonResponse | null>(null);
   const [deleteLessonId, setDeleteLessonId] = useState<number | null>(null);
 
-  // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formContent, setFormContent] = useState("");
   const [formOrder, setFormOrder] = useState(0);
   const [formChapterId, setFormChapterId] = useState<number>(0);
+  const [snippetDrafts, setSnippetDrafts] = useState<EditableSnippet[] | null>(null);
+  const [deletedSnippetIds, setDeletedSnippetIds] = useState<number[]>([]);
 
-  // Hooks
   const { data: coursesData, loading: coursesLoading } = useCourses({ size: 100 });
-  const { data: chaptersData, loading: chaptersLoading } = useChaptersByCourse(selectedCourseId);
-  const { data: lessonsByChapter, loading: lessonsLoading, refetch } = useLessonsByChapter(selectedChapterId);
-  const { data: allCourseLessons, loading: allLessonsLoading } = useLessonsByCourse(selectedCourseId);
-  const { creating, updating, removing, create, update, remove } = useLessonAdmin();
+  const { data: chaptersData, loading: chaptersLoading } =
+    useChaptersByCourse(selectedCourseId);
+  const {
+    data: lessonsByChapter,
+    loading: lessonsLoading,
+    refetch: refetchChapterLessons,
+  } = useLessonsByChapter(selectedChapterId);
+  const {
+    data: allCourseLessons,
+    loading: allLessonsLoading,
+    refetch: refetchCourseLessons,
+  } = useLessonsByCourse(selectedCourseId);
+  const { creating, updating, removing, create, update, remove } =
+    useLessonAdmin();
+  const {
+    data: lessonSnippets,
+    loading: snippetsLoading,
+    refetch: refetchSnippets,
+  } = useSnippetsByLesson(editingLesson?.id ?? 0);
+  const {
+    creating: creatingSnippet,
+    updating: updatingSnippet,
+    removing: removingSnippet,
+    create: createSnippet,
+    update: updateSnippet,
+    remove: removeSnippet,
+  } = useSnippetAdmin();
 
   const courses = coursesData?.content ?? [];
   const chapters = chaptersData ?? [];
-  
-  // If a specific chapter is selected, show those lessons. Otherwise show all course lessons.
-  const lessons = selectedChapterId > 0 ? (lessonsByChapter ?? []) : (allCourseLessons ?? []);
-  const isLoadingLessons = selectedChapterId > 0 ? lessonsLoading : allLessonsLoading;
+  const lessons = useMemo(
+    () => (selectedChapterId > 0 ? lessonsByChapter ?? [] : allCourseLessons ?? []),
+    [allCourseLessons, lessonsByChapter, selectedChapterId],
+  );
+  const isLoadingLessons =
+    selectedChapterId > 0 ? lessonsLoading : allLessonsLoading;
+  const isSaving =
+    creating || updating || creatingSnippet || updatingSnippet || removingSnippet;
+  const resolvedSnippetDrafts = useMemo(() => {
+    if (!editingLesson) return [] as EditableSnippet[];
 
-  // Filtered
+    const source =
+      lessonSnippets ?? editingLesson.codeSnippets ?? editingLesson.snippets ?? [];
+
+    return source.map((snippet, index) => toSnippetDraft(snippet, index));
+  }, [editingLesson, lessonSnippets]);
+  const currentSnippetDrafts = snippetDrafts ?? resolvedSnippetDrafts;
+
   const filteredLessons = useMemo(() => {
     if (!searchQuery.trim()) return lessons;
-    const q = searchQuery.toLowerCase();
-    return lessons.filter(l => l.title.toLowerCase().includes(q));
+    const query = searchQuery.toLowerCase();
+    return lessons.filter((lesson) => lesson.title.toLowerCase().includes(query));
   }, [lessons, searchQuery]);
 
   const totalLessons = lessons.length;
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId);
+  const selectedChapter = chapters.find((chapter) => chapter.id === selectedChapterId);
 
-  // Reset chapter when course changes
-  const handleCourseChange = (val: string) => {
-    setSelectedCourseId(Number(val));
-    setSelectedChapterId(0);
+  const resetEditorState = () => {
+    setEditingLesson(null);
+    setFormTitle("");
+    setFormDescription("");
+    setFormContent("");
+    setFormOrder(0);
+    setFormChapterId(0);
+    setSnippetDrafts(null);
+    setDeletedSnippetIds([]);
   };
 
-  // ── Dialog handlers ─────────────────────────────────────────
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      resetEditorState();
+    }
+  };
+
+  const refreshLessonViews = async () => {
+    if (selectedCourseId > 0) {
+      await refetchCourseLessons();
+    }
+    if (selectedChapterId > 0) {
+      await refetchChapterLessons();
+    }
+  };
+
+  const handleCourseChange = (value: string) => {
+    setSelectedCourseId(Number(value));
+    setSelectedChapterId(0);
+    setSearchQuery("");
+  };
 
   const openCreateDialog = () => {
     setEditingLesson(null);
@@ -172,6 +303,8 @@ export default function LessonsPage() {
     setFormContent("");
     setFormOrder(lessons.length);
     setFormChapterId(selectedChapterId > 0 ? selectedChapterId : (chapters[0]?.id ?? 0));
+    setSnippetDrafts([createSnippetDraft(0)]);
+    setDeletedSnippetIds([]);
     setDialogOpen(true);
   };
 
@@ -179,43 +312,143 @@ export default function LessonsPage() {
     setEditingLesson(lesson);
     setFormTitle(lesson.title);
     setFormDescription(lesson.description ?? "");
-    setFormContent(lesson.content ?? "");
+    setFormContent(lesson.content ?? lesson.content_raw ?? "");
     setFormOrder(lesson.orderIndex);
     setFormChapterId(lesson.chapterId);
+    setSnippetDrafts(null);
+    setDeletedSnippetIds([]);
     setDialogOpen(true);
   };
 
+  const updateSnippetDraft = (
+    clientId: string,
+    field: keyof Omit<EditableSnippet, "clientId" | "id">,
+    value: string | number,
+  ) => {
+    setSnippetDrafts((current) =>
+      (current ?? currentSnippetDrafts).map((snippet) =>
+        snippet.clientId === clientId ? { ...snippet, [field]: value } : snippet,
+      ),
+    );
+  };
+
+  const addSnippetDraft = () => {
+    setSnippetDrafts((current) => {
+      const base = current ?? currentSnippetDrafts;
+      return [...base, createSnippetDraft(base.length)];
+    });
+  };
+
+  const removeSnippetDraft = (clientId: string) => {
+    setSnippetDrafts((current) => {
+      const base = current ?? currentSnippetDrafts;
+      const target = base.find((snippet) => snippet.clientId === clientId);
+      if (!target) return base;
+
+      if (target.id) {
+        setDeletedSnippetIds((existing) =>
+          existing.includes(target.id!) ? existing : [...existing, target.id!],
+        );
+      }
+
+      return base.filter((snippet) => snippet.clientId !== clientId);
+    });
+  };
+
+  const syncSnippets = async (lessonId: number, drafts: EditableSnippet[]) => {
+    for (const snippetId of deletedSnippetIds) {
+      const ok = await removeSnippet(snippetId);
+      if (!ok) {
+        throw new Error("Failed to delete code snippet");
+      }
+    }
+
+    for (const [index, snippet] of drafts.entries()) {
+      const payload: CodeSnippetRequest = {
+        title: snippet.title.trim() || undefined,
+        language: snippet.language.trim(),
+        code: snippet.code,
+        explanation: snippet.explanation.trim() || undefined,
+        orderIndex: Number.isFinite(snippet.orderIndex) ? snippet.orderIndex : index,
+        lessonId,
+      };
+
+      if (snippet.id) {
+        await updateSnippet(snippet.id, payload);
+      } else {
+        await createSnippet(payload);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
+    if (!selectedCourseId && !editingLesson?.courseId) {
+      toast.error("Please select a course");
+      return;
+    }
+
     if (!formTitle.trim()) {
       toast.error("Lesson title is required");
       return;
     }
+
     if (!formContent.trim()) {
       toast.error("Lesson content is required");
       return;
     }
+
     if (!formChapterId) {
       toast.error("Please select a chapter");
       return;
     }
 
+    const preparedSnippets = currentSnippetDrafts
+      .map((snippet, index) => ({
+        ...snippet,
+        title: snippet.title.trim(),
+        language: snippet.language.trim(),
+        explanation: snippet.explanation.trim(),
+        orderIndex: Number.isFinite(snippet.orderIndex) ? snippet.orderIndex : index,
+      }))
+      .filter(hasSnippetContent);
+
+    for (const [index, snippet] of preparedSnippets.entries()) {
+      if (!snippet.language) {
+        toast.error(`Snippet ${index + 1} needs a language`);
+        return;
+      }
+
+      if (!snippet.code.trim()) {
+        toast.error(`Snippet ${index + 1} needs code content`);
+        return;
+      }
+    }
+
     const payload: LessonRequest = {
       title: formTitle.trim(),
+      description: formDescription.trim() || undefined,
       content: formContent,
       orderIndex: formOrder,
       chapterId: formChapterId,
+      courseId: selectedCourseId || editingLesson?.courseId || 0,
     };
 
     try {
+      const savedLesson = editingLesson
+        ? await update(editingLesson.id, payload)
+        : await create(payload);
+
+      await syncSnippets(savedLesson.id, preparedSnippets);
+      await refreshLessonViews();
+
       if (editingLesson) {
-        await update(editingLesson.id, payload);
+        await refetchSnippets();
         toast.success("Lesson updated successfully");
       } else {
-        await create(payload);
         toast.success("Lesson created successfully");
       }
-      setDialogOpen(false);
-      refetch();
+
+      handleDialogChange(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Operation failed");
     }
@@ -223,42 +456,42 @@ export default function LessonsPage() {
 
   const handleDelete = async () => {
     if (!deleteLessonId) return;
+
     const ok = await remove(deleteLessonId);
     if (ok) {
       toast.success("Lesson deleted successfully");
-      refetch();
+      await refreshLessonViews();
     } else {
       toast.error("Failed to delete lesson");
     }
     setDeleteLessonId(null);
   };
 
-  const selectedCourse = courses.find(c => c.id === selectedCourseId);
-  const selectedChapter = chapters.find(ch => ch.id === selectedChapterId);
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Lessons</h2>
           <p className="text-muted-foreground">
-            Manage course lessons and their content.
+            Manage lesson content and attach code snippets in one editor.
           </p>
         </div>
-        <Button onClick={openCreateDialog} disabled={!selectedCourseId || chapters.length === 0}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button
+          onClick={openCreateDialog}
+          disabled={!selectedCourseId || chapters.length === 0}
+        >
+          <Plus className="mr-2 h-4 w-4" />
           Add Lesson
         </Button>
       </div>
 
-      {/* Cascading Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-end gap-4 flex-wrap">
-            {/* Course Selector */}
-            <div className="flex-1 min-w-[220px]">
-              <Label className="text-sm text-muted-foreground mb-1.5 block">Course</Label>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="min-w-[220px] flex-1">
+              <Label className="mb-1.5 block text-sm text-muted-foreground">
+                Course
+              </Label>
               <Select
                 value={selectedCourseId ? String(selectedCourseId) : ""}
                 onValueChange={handleCourseChange}
@@ -268,13 +501,15 @@ export default function LessonsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {coursesLoading ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Loading...
+                    </div>
                   ) : (
-                    courses.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
+                    courses.map((course) => (
+                      <SelectItem key={course.id} value={String(course.id)}>
                         <div className="flex items-center gap-2">
                           <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                          {c.title}
+                          {course.title}
                         </div>
                       </SelectItem>
                     ))
@@ -283,15 +518,18 @@ export default function LessonsPage() {
               </Select>
             </div>
 
-            {/* Chapter Filter */}
             {selectedCourseId > 0 && (
               <>
-                <ChevronRight className="h-4 w-4 text-muted-foreground mb-2" />
-                <div className="flex-1 min-w-[220px]">
-                  <Label className="text-sm text-muted-foreground mb-1.5 block">Chapter (optional)</Label>
+                <ChevronRight className="mb-2 h-4 w-4 text-muted-foreground" />
+                <div className="min-w-[220px] flex-1">
+                  <Label className="mb-1.5 block text-sm text-muted-foreground">
+                    Chapter (optional)
+                  </Label>
                   <Select
                     value={selectedChapterId ? String(selectedChapterId) : "all"}
-                    onValueChange={(val) => setSelectedChapterId(val === "all" ? 0 : Number(val))}
+                    onValueChange={(value) =>
+                      setSelectedChapterId(value === "all" ? 0 : Number(value))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="All chapters" />
@@ -299,15 +537,17 @@ export default function LessonsPage() {
                     <SelectContent>
                       <SelectItem value="all">All Chapters</SelectItem>
                       {chaptersLoading ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Loading...
+                        </div>
                       ) : (
-                        chapters.map((ch) => (
-                          <SelectItem key={ch.id} value={String(ch.id)}>
+                        chapters.map((chapter) => (
+                          <SelectItem key={chapter.id} value={String(chapter.id)}>
                             <div className="flex items-center gap-2">
                               <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                              {ch.title}
+                              {chapter.title}
                               <Badge variant="outline" className="ml-1.5 text-[10px]">
-                                {ch.lessonCount || ch.lessons?.length || 0}
+                                {chapter.lessonCount || chapter.lessons?.length || 0}
                               </Badge>
                             </div>
                           </SelectItem>
@@ -319,20 +559,19 @@ export default function LessonsPage() {
               </>
             )}
 
-            {/* Search */}
             {selectedCourseId > 0 && (
               <div className="relative min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search lessons..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   className="pl-9"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -343,7 +582,6 @@ export default function LessonsPage() {
         </CardContent>
       </Card>
 
-      {/* Stats */}
       {selectedCourseId > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard
@@ -370,14 +608,13 @@ export default function LessonsPage() {
         </div>
       )}
 
-      {/* Lessons Table */}
       {!selectedCourseId ? (
         <Card>
           <CardContent className="py-16">
-            <div className="text-center space-y-3">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground/30" />
+            <div className="space-y-3 text-center">
+              <FileText className="mx-auto h-16 w-16 text-muted-foreground/30" />
               <h3 className="text-lg font-medium">Select a Course</h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              <p className="mx-auto max-w-md text-sm text-muted-foreground">
                 Choose a course from the dropdown above to view and manage its lessons.
               </p>
             </div>
@@ -394,7 +631,8 @@ export default function LessonsPage() {
                     : `All Lessons for "${selectedCourse?.title}"`}
                 </CardTitle>
                 <CardDescription>
-                  {filteredLessons.length} lesson{filteredLessons.length !== 1 ? "s" : ""} found
+                  {filteredLessons.length} lesson
+                  {filteredLessons.length !== 1 ? "s" : ""} found
                 </CardDescription>
               </div>
             </div>
@@ -402,8 +640,8 @@ export default function LessonsPage() {
           <CardContent>
             {isLoadingLessons ? (
               <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3">
                     <Skeleton className="h-5 w-8" />
                     <Skeleton className="h-5 w-48 flex-1" />
                     <Skeleton className="h-5 w-20" />
@@ -414,107 +652,123 @@ export default function LessonsPage() {
               </div>
             ) : filteredLessons.length === 0 ? (
               <div className="py-12 text-center">
-                <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <FileText className="mx-auto mb-3 h-12 w-12 opacity-30" />
                 <p className="text-sm text-muted-foreground">
                   {searchQuery
                     ? "No lessons match your search"
-                    : "No lessons yet. Click \"Add Lesson\" to create one."}
+                    : 'No lessons yet. Click "Add Lesson" to create one.'}
                 </p>
               </div>
             ) : (
-              <div className="rounded-lg border overflow-hidden">
+              <div className="overflow-hidden rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="w-[70px] font-semibold text-xs">Order</TableHead>
-                      <TableHead className="font-semibold text-xs">Title</TableHead>
-                      <TableHead className="font-semibold text-xs">Chapter</TableHead>
-                      <TableHead className="font-semibold text-xs text-center">Content</TableHead>
-                      <TableHead className="font-semibold text-xs">Created</TableHead>
-                      <TableHead className="w-[60px] font-semibold text-xs text-right">Actions</TableHead>
+                      <TableHead className="w-[70px] text-xs font-semibold">
+                        Order
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold">Title</TableHead>
+                      <TableHead className="text-xs font-semibold">Chapter</TableHead>
+                      <TableHead className="text-center text-xs font-semibold">
+                        Content
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold">Created</TableHead>
+                      <TableHead className="w-[60px] text-right text-xs font-semibold">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredLessons
-                      .sort((a, b) => a.orderIndex - b.orderIndex)
-                      .map((lesson) => (
-                        <TableRow key={lesson.id} className="hover:bg-muted/30">
-                          <TableCell>
-                            <Badge variant="secondary" className="font-mono text-xs">
-                              {lesson.orderIndex}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
-                                {lesson.title.charAt(0)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-sm truncate max-w-[200px]">{lesson.title}</p>
-                                {lesson.description && (
-                                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                    {lesson.description}
+                      .slice()
+                      .sort((left, right) => left.orderIndex - right.orderIndex)
+                      .map((lesson) => {
+                        const snippetCount =
+                          lesson.codeSnippets?.length ?? lesson.snippets?.length ?? 0;
+
+                        return (
+                          <TableRow key={lesson.id} className="hover:bg-muted/30">
+                            <TableCell>
+                              <Badge variant="secondary" className="font-mono text-xs">
+                                {lesson.orderIndex}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 text-xs font-bold text-white">
+                                  {lesson.title.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="max-w-[200px] truncate text-sm font-medium">
+                                    {lesson.title}
                                   </p>
+                                  {lesson.description && (
+                                    <p className="max-w-[200px] truncate text-xs text-muted-foreground">
+                                      {lesson.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {lesson.chapterTitle ?? `Ch ${lesson.chapterId}`}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                {lesson.content ? (
+                                  <Badge variant="secondary" className="gap-1 text-xs">
+                                    <Eye className="h-3 w-3" />
+                                    {lesson.content.length > 100
+                                      ? `${Math.round(lesson.content.length / 100) * 100}+`
+                                      : lesson.content.length} chars
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                                {snippetCount > 0 && (
+                                  <Badge variant="outline" className="gap-1 text-xs">
+                                    <Code className="h-3 w-3" />
+                                    {snippetCount}
+                                  </Badge>
                                 )}
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">
-                              {lesson.chapterTitle ?? `Ch ${lesson.chapterId}`}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              {lesson.content ? (
-                                <Badge variant="secondary" className="text-xs gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  {lesson.content.length > 100 ? `${Math.round(lesson.content.length / 100) * 100}+` : lesson.content.length} chars
-                                </Badge>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              )}
-                              {((lesson as any).codeSnippets?.length ?? 0) > 0 && (
-                                <Badge variant="outline" className="text-xs gap-1">
-                                  <Code className="h-3 w-3" />
-                                  {(lesson as any).codeSnippets.length}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(lesson.createdAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEditDialog(lesson)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => setDeleteLessonId(lesson.id)}
-                                  className="text-red-600 focus:text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(lesson.createdAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEditDialog(lesson)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleteLessonId(lesson.id)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               </div>
@@ -523,114 +777,268 @@ export default function LessonsPage() {
         </Card>
       )}
 
-      {/* ─── Create / Edit Dialog ──────────────────────────────── */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>
               {editingLesson ? "Edit Lesson" : "Add New Lesson"}
             </DialogTitle>
             <DialogDescription>
               {editingLesson
-                ? "Update the lesson details below."
-                : "Fill in the details to create a new lesson."}
+                ? "Update the lesson content and keep its code examples in sync."
+                : "Create a lesson, write its content, and attach code snippets in one step."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Chapter Selector */}
-            <div className="space-y-2">
-              <Label>Chapter</Label>
-              <Select
-                value={formChapterId ? String(formChapterId) : ""}
-                onValueChange={(val) => setFormChapterId(Number(val))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select chapter..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {chapters.map((ch) => (
-                    <SelectItem key={ch.id} value={String(ch.id)}>
-                      {ch.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+          <div className="space-y-6 py-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Chapter</Label>
+                <Select
+                  value={formChapterId ? String(formChapterId) : ""}
+                  onValueChange={(value) => setFormChapterId(Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select chapter..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chapters.map((chapter) => (
+                      <SelectItem key={chapter.id} value={String(chapter.id)}>
+                        {chapter.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Order Index</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={formOrder}
+                  onChange={(event) =>
+                    setFormOrder(parseInt(event.target.value, 10) || 0)
+                  }
+                />
+              </div>
             </div>
 
-            {/* Title */}
             <div className="space-y-2">
               <Label>Title</Label>
               <Input
                 placeholder="e.g., Introduction to Variables"
                 value={formTitle}
-                onChange={(e) => setFormTitle(e.target.value)}
+                onChange={(event) => setFormTitle(event.target.value)}
               />
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label>Description (optional)</Label>
               <Textarea
-                placeholder="Brief description of the lesson..."
+                placeholder="Short summary of what this lesson covers..."
                 value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
+                onChange={(event) => setFormDescription(event.target.value)}
                 rows={2}
                 className="resize-none"
               />
             </div>
 
-            {/* Content */}
             <div className="space-y-2">
               <Label>Content</Label>
-              <Textarea
-                placeholder="Write the lesson content here... (supports markdown)"
-                value={formContent}
-                onChange={(e) => setFormContent(e.target.value)}
-                rows={8}
-                className="font-mono text-sm"
-              />
+              <div data-color-mode={colorMode} className="rounded-md overflow-hidden">
+                <MDEditor
+                  value={formContent}
+                  onChange={(val) => setFormContent(val ?? "")}
+                  height={340}
+                  preview="live"
+                  visibleDragbar={false}
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 {formContent.length} characters
               </p>
             </div>
 
-            {/* Order */}
-            <div className="space-y-2">
-              <Label>Order Index</Label>
-              <Input
-                type="number"
-                min={0}
-                value={formOrder}
-                onChange={(e) => setFormOrder(parseInt(e.target.value) || 0)}
-              />
+            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Code className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold">Code Snippets</p>
+                    <Badge variant="secondary">{currentSnippetDrafts.length}</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Add examples, starter code, or exercises for this lesson.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSnippetDraft}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Snippet
+                </Button>
+              </div>
+
+              {editingLesson && snippetsLoading ? (
+                <div className="mt-4 space-y-3">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="space-y-3 rounded-xl border bg-background p-4">
+                      <Skeleton className="h-5 w-24" />
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-40 w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : currentSnippetDrafts.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed bg-background/60 px-4 py-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No snippets added yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {currentSnippetDrafts.map((snippet, index) => (
+                    <div
+                      key={snippet.clientId}
+                      className="space-y-4 rounded-xl border bg-background p-4 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">Snippet {index + 1}</Badge>
+                          <Badge variant="secondary">
+                            {snippet.id ? "Saved" : "New"}
+                          </Badge>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                          onClick={() => removeSnippetDraft(snippet.clientId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_120px]">
+                        <div className="space-y-2">
+                          <Label>Snippet Title (optional)</Label>
+                          <Input
+                            placeholder="e.g., Basic example"
+                            value={snippet.title}
+                            onChange={(event) =>
+                              updateSnippetDraft(snippet.clientId, "title", event.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Language</Label>
+                          <Input
+                            placeholder="javascript"
+                            value={snippet.language}
+                            onChange={(event) =>
+                              updateSnippetDraft(
+                                snippet.clientId,
+                                "language",
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Order</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={snippet.orderIndex}
+                            onChange={(event) =>
+                              updateSnippetDraft(
+                                snippet.clientId,
+                                "orderIndex",
+                                parseInt(event.target.value, 10) || 0,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Explanation (optional)</Label>
+                        <Textarea
+                          placeholder="Explain what this snippet demonstrates..."
+                          value={snippet.explanation}
+                          onChange={(event) =>
+                            updateSnippetDraft(
+                              snippet.clientId,
+                              "explanation",
+                              event.target.value,
+                            )
+                          }
+                          rows={2}
+                          className="resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Code</Label>
+                        <Textarea
+                          placeholder="Write the snippet code here..."
+                          value={snippet.code}
+                          onChange={(event) =>
+                            updateSnippetDraft(snippet.clientId, "code", event.target.value)
+                          }
+                          rows={8}
+                          className="font-mono text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {snippet.code.length} characters
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => handleDialogChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={creating || updating}>
-              {(creating || updating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleSubmit} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingLesson ? "Save Changes" : "Create Lesson"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Delete Confirmation ───────────────────────────────── */}
-      <AlertDialog open={!!deleteLessonId} onOpenChange={(o) => !o && setDeleteLessonId(null)}>
+      <AlertDialog
+        open={!!deleteLessonId}
+        onOpenChange={(open) => !open && setDeleteLessonId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Lesson</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this lesson? This will also remove all code snippets within it. This action cannot be undone.
+              Are you sure you want to delete this lesson? This will also remove all
+              code snippets within it. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 text-white hover:bg-red-700"
               disabled={removing}
             >
               {removing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

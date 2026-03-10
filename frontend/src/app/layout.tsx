@@ -21,14 +21,7 @@ export const metadata: Metadata = {
       { url: "/growth.png", type: "image/png", sizes: "16x16" },
     ],
     shortcut: { url: "/growth.png", type: "image/png" },
-    apple: { url: "/growth.png", type: "image/png", sizes: "180x180" },
-    other: [
-      {
-        rel: "mask-icon",
-        url: "/growth.png",
-        color: "#10b981",
-      },
-    ],
+    apple: { url: "/growth.png", type: "image/png", sizes: "180x180" }
   },
 };
 

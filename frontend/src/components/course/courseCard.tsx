@@ -32,7 +32,7 @@ export function CourseCard({
             <div className="relative h-44 overflow-hidden">
 
                 <Image
-                    src={course.thumbnail || "/placeholder-course.jpg"}
+                    src={course.thumbnail || "/eduction_online.png"}
                     alt={course.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

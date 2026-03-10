@@ -555,7 +555,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <StatusBadge status={course.status ?? (course.isPublished ? "PUBLISHED" : "DRAFT")} />
+                    <StatusBadge status={course.status ?? "DRAFT"} />
                     <Button variant="ghost" size="icon"
                       className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Eye className="size-3" />

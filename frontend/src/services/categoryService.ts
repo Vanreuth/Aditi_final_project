@@ -1,16 +1,13 @@
 import { get, post, put, del} from '../lib/BaseApi' // Adjust path to your new functional utilities
 import type {
   PageResponse,
-  PaginationParams,
+  CategoryFilterParams,
 } from '@/types/apiType'
 
 import type {
   CategoryResponse,
   CategoryRequest,
 } from '@/types/category'
-
-
-
 
 
 // ═════════════════════════════════════════════════════════════
@@ -21,9 +18,13 @@ const CATEGORY_PATH = '/api/v1/categories'
 
 export const categoryService = {
   /** GET / — paginated list of categories */
-  getAll: (params: PaginationParams = {}): Promise<PageResponse<CategoryResponse>> => {
-    const { page = 0, size = 10, sortBy = 'orderIndex', sortDir = 'asc' } = params
-    return get<PageResponse<CategoryResponse>>(CATEGORY_PATH, { params: { page, size, sortBy, sortDir } })
+  getAll: (params: CategoryFilterParams = {}): Promise<PageResponse<CategoryResponse>> => {
+    const { page = 0, size = 10, sortBy = 'orderIndex', sortDir = 'asc', search, status, hasCourses } = params
+    const query: Record<string, unknown> = { page, size, sortBy, sortDir }
+    if (search)                              query.search    = search
+    if (status !== undefined)                query.status    = status
+    if (hasCourses !== undefined && hasCourses !== null) query.hasCourses = hasCourses
+    return get<PageResponse<CategoryResponse>>(CATEGORY_PATH, { params: query })
   },
 
   /** GET /:id */

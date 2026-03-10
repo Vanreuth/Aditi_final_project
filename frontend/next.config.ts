@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // ✅ Stops double renders in development
+  reactStrictMode: false,
+
   images: {
     remotePatterns: [
       {
@@ -14,6 +17,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
   async rewrites() {
     return [
       {

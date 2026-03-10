@@ -46,3 +46,9 @@ export interface CourseFilterParams extends PaginationParams {
   level?: import('./courseType').CourseLevel
   search?: string
 }
+
+export interface CategoryFilterParams extends PaginationParams {
+  search?: string
+  status?: string
+  hasCourses?: boolean | string
+}
