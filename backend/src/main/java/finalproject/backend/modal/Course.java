@@ -26,7 +26,9 @@ public class Course {
     @Column(nullable = false, unique = true)
     private String slug;
 
-    private String description;
+    @Column(columnDefinition = "TEXT DEFAULT ''")
+    @Builder.Default
+    private String description = "";
 
     private String thumbnail;
 
@@ -56,9 +58,6 @@ public class Course {
     @Column(name = "is_free")
     @Builder.Default
     private Boolean isFree = false;
-
-    @Column(name = "launch_date")
-    private LocalDateTime launchDate;   // expected release date for COMING_SOON courses
 
     @Column(name = "total_lessons", columnDefinition = "integer default 0")
     @Builder.Default
@@ -110,6 +109,7 @@ public class Course {
     @PrePersist
     protected void onCreate() {
         if (createdAt    == null) createdAt    = LocalDateTime.now();
+        if (description  == null) description  = "";
         if (status       == null) status       = CourseStatus.DRAFT;
         if (level        == null) level        = CourseLevel.BEGINNER;
         if (isFeatured   == null) isFeatured   = false;

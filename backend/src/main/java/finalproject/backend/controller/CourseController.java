@@ -27,22 +27,29 @@ public class CourseController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getAllCourses(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) CourseStatus status,
-            @RequestParam(required = false) CourseLevel level,
-            @RequestParam(required = false) String search
+            @RequestParam(defaultValue = "0")         int     page,
+            @RequestParam(defaultValue = "10")        int     size,
+            @RequestParam(defaultValue = "createdAt") String  sortBy,
+            @RequestParam(defaultValue = "desc")      String  sortDir,
+            @RequestParam(required = false)           String  search,
+            @RequestParam(required = false)           String  status,
+            @RequestParam(required = false)           String  level,
+            @RequestParam(required = false)           Long    categoryId,
+            @RequestParam(required = false)           Boolean isFeatured,
+            @RequestParam(required = false)           Boolean isFree
     ) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
+
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<CourseResponse> courses = courseService.getAllCourses(pageable, categoryId, status, level, search);
-        return ResponseEntity.ok(ApiResponse.success(courses, "Courses retrieved successfully"));
+
+        return ResponseEntity.ok(ApiResponse.success(
+                courseService.getAllCourses(
+                        pageable, search, status, level, categoryId, isFeatured, isFree),
+                "Courses retrieved successfully"));
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseById(@PathVariable Long id) {

@@ -34,8 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -103,39 +101,79 @@ public class CourseServiceImpl implements CourseService {
     @Transactional(readOnly = true)
     public PageResponse<CourseResponse> getAllCourses(
             Pageable pageable,
-            Integer categoryId,
-            CourseStatus status,
-            CourseLevel level,
-            String search
-    ) {
-        Specification<Course> spec = buildSpec(categoryId, status, level, search);
+            String  search,
+            String  status,
+            String  level,
+            Long    categoryId,
+            Boolean isFeatured,
+            Boolean isFree) {
+
+        Specification<Course> spec = Specification
+                .where(searchByTitleOrSlug(search))
+                .and(hasStatus(status))
+                .and(hasLevel(level))
+                .and(hasCategory(categoryId))
+                .and(isFeatured(isFeatured))
+                .and(isFree(isFree));
+
         Page<Course> page = courseRepository.findAll(spec, pageable);
         return PageResponse.of(page.map(courseMapper::toResponse));
     }
 
-    /** Build a JPA Specification from optional filter parameters. */
-    private Specification<Course> buildSpec(
-            Integer categoryId, CourseStatus status, CourseLevel level, String search) {
-        List<Specification<Course>> specs = new ArrayList<>();
-        if (categoryId != null)
-            specs.add((root, q, cb) -> cb.equal(root.get("category").get("id"), categoryId));
-        if (status != null)
-            specs.add((root, q, cb) -> cb.equal(root.get("status"), status));
-        if (level != null)
-            specs.add((root, q, cb) -> cb.equal(root.get("level"), level));
-        if (search != null && !search.isBlank()) {
-            String pattern = "%" + search.toLowerCase() + "%";
-            specs.add((root, q, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("title")), pattern),
-                    cb.like(cb.lower(root.get("description")), pattern)
-            ));
-        }
-        if (specs.isEmpty()) {
-            return (root, query, cb) -> cb.conjunction();
-        }
+    // ─── Specifications ───────────────────────────────────────────────────────
 
-        return specs.stream()
-                .reduce((root, query, cb) -> cb.conjunction(), Specification::and);
+    private Specification<Course> searchByTitleOrSlug(String search) {
+        return (root, query, cb) -> {
+            if (search == null || search.isBlank()) return null;
+            String like = "%" + search.toLowerCase() + "%";
+            return cb.or(
+                    cb.like(cb.lower(root.get("title")), like),
+                    cb.like(cb.lower(root.get("slug")),  like)
+            );
+        };
+    }
+
+    private Specification<Course> hasStatus(String status) {
+        return (root, query, cb) -> {
+            if (status == null || status.isBlank()) return null;
+            try {
+                return cb.equal(root.get("status"), CourseStatus.valueOf(status.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                return null; // invalid status → ignored
+            }
+        };
+    }
+
+    private Specification<Course> hasLevel(String level) {
+        return (root, query, cb) -> {
+            if (level == null || level.isBlank()) return null;
+            try {
+                return cb.equal(root.get("level"), CourseLevel.valueOf(level.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        };
+    }
+
+    private Specification<Course> hasCategory(Long categoryId) {
+        return (root, query, cb) -> {
+            if (categoryId == null) return null;
+            return cb.equal(root.get("category").get("id"), categoryId);
+        };
+    }
+
+    private Specification<Course> isFeatured(Boolean isFeatured) {
+        return (root, query, cb) -> {
+            if (isFeatured == null) return null;
+            return cb.equal(root.get("isFeatured"), isFeatured);
+        };
+    }
+
+    private Specification<Course> isFree(Boolean isFree) {
+        return (root, query, cb) -> {
+            if (isFree == null) return null;
+            return cb.equal(root.get("isFree"), isFree);
+        };
     }
 
     @Override

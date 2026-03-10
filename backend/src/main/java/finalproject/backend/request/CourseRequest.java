@@ -33,8 +33,6 @@ public class CourseRequest {
     private Boolean featured = false;
     private Boolean free = false;
 
-    /** Expected launch date — used when status = COMING_SOON */
-    private LocalDateTime launchDate;
 
     @NotNull(message = "Category ID is required")
     private Integer categoryId;

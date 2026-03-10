@@ -39,7 +39,6 @@ public class CourseResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime publishedAt;
-    private LocalDateTime launchDate;   // set when status = COMING_SOON
 
     // Nested summary info
     private Long instructorId;

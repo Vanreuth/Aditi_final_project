@@ -16,10 +16,12 @@ public interface CourseService {
 
     PageResponse<CourseResponse> getAllCourses(
             Pageable pageable,
-            Integer categoryId,
-            CourseStatus status,
-            CourseLevel level,
-            String search
+            String search,
+            String status,
+            String level,
+            Long categoryId,
+            Boolean isFeatured,
+            Boolean isFree
     );
     ApiResponse<CourseResponse> getCourseById(Long id);
 

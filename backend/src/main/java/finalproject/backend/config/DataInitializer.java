@@ -2,6 +2,7 @@ package finalproject.backend.config;
 
 import finalproject.backend.modal.*;
 import finalproject.backend.repository.*;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -28,14 +29,35 @@ public class DataInitializer implements CommandLineRunner {
     private final LessonRepository      lessonRepository;
     private final CodeSnippetRepository codeSnippetRepository;
     private final PasswordEncoder       passwordEncoder;
+    private final EntityManager         entityManager;
 
     // ══════════════════════════════════════════════════════════════════════════
     @Override
     @Transactional
     public void run(String... args) {
+        fixSchema();
         seedRoles();
         seedAdmin();
-        seedAll();
+        try {
+            seedAll();
+        } catch (Exception e) {
+            log.error("⚠️ seedAll failed (non-fatal): {}", e.getMessage());
+        }
+    }
+
+    /** Drop NOT NULL on description so courses can be created without it. */
+    private void fixSchema() {
+        try {
+            entityManager.createNativeQuery(
+                "ALTER TABLE course ALTER COLUMN description DROP NOT NULL"
+            ).executeUpdate();
+            entityManager.createNativeQuery(
+                "ALTER TABLE course ALTER COLUMN description SET DEFAULT ''"
+            ).executeUpdate();
+            log.info("✅ Schema fix: course.description is now nullable");
+        } catch (Exception e) {
+            log.debug("Schema fix skipped (already applied or not needed): {}", e.getMessage());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -49,7 +71,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAdmin() {
-        String encodedPassword = passwordEncoder.encode("Admin@1234");
+        String encodedPassword = passwordEncoder.encode("260403");
 
         // ✅ Mutable HashSet — Hibernate can modify it
         Set<Role> adminRoles = new HashSet<>();
@@ -62,17 +84,17 @@ public class DataInitializer implements CommandLineRunner {
                     admin.setStatus("ACTIVE");
                     admin.setRoles(adminRoles);  // ✅ mutable set
                     userRepository.save(admin);
-                    log.info("✅ Admin password updated → admin / Admin@1234");
+                    log.info("✅ Admin password updated → admin / 260403");
                 },
                 () -> {
                     userRepository.save(User.builder()
                             .username("admin")
-                            .email("admin@codekhmerlearning.site")
+                            .email("admin@growcodekh.site")
                             .password(encodedPassword)
                             .status("ACTIVE")
                             .roles(adminRoles)       // ✅ mutable set
                             .build());
-                    log.info("✅ Admin seeded → admin / Admin@1234");
+                    log.info("✅ Admin seeded → admin / 260403");
                 }
         );
     }
@@ -86,7 +108,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // ── Categories ────────────────────────────────────────────────────────
         Category webDev = cat(
-                "ការអភិវឌ្ឍន៍គេហទំព័រ",
+                "ការអភិវឌ្ឍន៍គេហទំព័រ(Web Development)",
                 "web-development",
                 "សិក្សា HTML, CSS និង JavaScript ពីមូលដ្ឋានរហូតដល់ Framework ទំនើប",
                 1
@@ -7372,7 +7394,9 @@ public class DataInitializer implements CommandLineRunner {
 
         final CourseLevel finalLevel = parsedLevel;
 
-        return courseRepository.findBySlug(slug).orElseGet(() -> {
+        return courseRepository.findBySlug(slug)
+                .or(() -> courseRepository.findByTitle(title))
+                .orElseGet(() -> {
             log.info("Course: {}", title);
             return courseRepository.save(Course.builder()
                     .title(title).slug(slug).description(desc)

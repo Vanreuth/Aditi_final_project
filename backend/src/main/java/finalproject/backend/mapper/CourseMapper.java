@@ -46,7 +46,6 @@ public class CourseMapper {
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .publishedAt(course.getPublishedAt())
-                .launchDate(course.getLaunchDate())
                 .instructorId(course.getInstructor() != null ? course.getInstructor().getId() : null)
                 .instructorName(course.getInstructor() != null ? course.getInstructor().getUsername() : null)
                 .categoryId(course.getCategory() != null ? course.getCategory().getId() : 0)
@@ -65,7 +64,6 @@ public class CourseMapper {
                 .status(request.getStatus())
                 .isFeatured(request.getFeatured())
                 .isFree(request.getFree())
-                .launchDate(request.getLaunchDate())
                 .instructor(instructor)
                 .category(category)
                 .build();
@@ -96,8 +94,6 @@ public class CourseMapper {
         course.setIsFeatured(request.getFeatured());
         course.setIsFree(request.getFree());
 
-        // launchDate: always overwrite (null = clear it, value = set it)
-        course.setLaunchDate(request.getLaunchDate());
 
         if (instructor != null)
             course.setInstructor(instructor);

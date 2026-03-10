@@ -16,6 +16,7 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     boolean existsByTitle(String title);
     boolean existsBySlug(String slug);
     Optional<Course> findBySlug(String slug);
+    Optional<Course> findByTitle(String title);
     Page<Course> findByCategoryId(int categoryId, Pageable pageable);
     Page<Course> findByInstructorId(Long instructorId, Pageable pageable);
     Page<Course> findByStatus(CourseStatus status, Pageable pageable);
