@@ -11,7 +11,9 @@ import finalproject.backend.modal.CourseStatus;
 import finalproject.backend.modal.Lesson;
 import finalproject.backend.modal.User;
 import finalproject.backend.repository.CategoryRepository;
+import finalproject.backend.repository.CoursePdfExportRepository;
 import finalproject.backend.repository.CourseRepository;
+import finalproject.backend.repository.LessonProgressRepository;
 import finalproject.backend.repository.LessonRepository;
 import finalproject.backend.repository.UserRepository;
 import finalproject.backend.request.CourseRequest;
@@ -49,6 +51,8 @@ public class CourseServiceImpl implements CourseService {
     private final ChapterMapper chapterMapper;
     private final LessonMapper lessonMapper;
     private final LessonRepository lessonRepository;
+    private final LessonProgressRepository lessonProgressRepository;
+    private final CoursePdfExportRepository coursePdfExportRepository;
     private final R2StorageService r2StorageService;
 
     @Override
@@ -301,11 +305,23 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public ApiResponse<Void> deleteCourse(Long id) {
         Course course = findCourseOrThrow(id);
+
+        // 1) Delete all lesson-progress records that reference this course's lessons
+        lessonProgressRepository.deleteByCourseId(id);
+
+        // 2) Delete PDF export metadata if it exists
+        if (coursePdfExportRepository.existsByCourseId(id)) {
+            coursePdfExportRepository.deleteByCourseId(id);
+        }
+
+        // 3) Delete thumbnail from R2 storage
         String thumb = course.getThumbnail();
         if (thumb != null && !thumb.isBlank()) {
             try { r2StorageService.deleteFile(thumb); }
             catch (Exception e) { log.warn("R2 thumbnail delete failed for course id={}: {}", id, e.getMessage()); }
         }
+
+        // 4) Delete course (cascades to chapters → lessons → code_snippets)
         courseRepository.delete(course);
         log.info("Deleted course id={}", id);
         return ApiResponse.success("Course deleted successfully");

@@ -22,32 +22,38 @@ public class CoursePdfGeneratorService {
     private static final String PRISM_CDN =
             "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0";
 
+    // ── GFG Green palette ────────────────────────────────────────────────
+    private static final String G_PRIMARY = "#2f8d46";
+    private static final String G_DEEP    = "#1e6b33";
+    private static final String G_LIGHT   = "#f0fdf4";
+    private static final String G_MUTED   = "rgba(47,141,70,0.12)";
+    private static final String G_BORDER  = "rgba(47,141,70,0.25)";
+
     // ── Language accent colours ──────────────────────────────────────────
     private static String langAccent(String lang) {
-        if (lang == null) return "#4361ee";
+        if (lang == null) return G_PRIMARY;
         return switch (lang.toUpperCase()) {
             case "HTML"                         -> "#e44d26";
             case "CSS"                          -> "#268fe4";
-            case "JS", "JAVASCRIPT"             -> "#f7df1e";
+            case "JS", "JAVASCRIPT"             -> "#f0a500";
             case "TS", "TYPESCRIPT"             -> "#3178c6";
             case "JAVA", "SPRING", "SPRINGBOOT" -> "#5382a1";
             case "PYTHON"                       -> "#3572a5";
             case "SQL"                          -> "#e38c00";
-            case "BASH", "SH", "SHELL"          -> "#89e051";
+            case "BASH", "SH", "SHELL"          -> "#4caf50";
             case "JSON"                         -> "#cbcb41";
             case "XML"                          -> "#f1672d";
             case "KOTLIN"                       -> "#a97bff";
             case "DART"                         -> "#00b4ab";
             case "PHP"                          -> "#8993be";
-            case "C", "CPP", "C++"             -> "#555555";
+            case "C", "CPP", "C++"             -> "#607d8b";
             case "SWIFT"                        -> "#f05138";
             case "GO"                           -> "#00acd7";
             case "RUST"                         -> "#dea584";
-            default                             -> "#4361ee";
+            default                             -> G_PRIMARY;
         };
     }
 
-    /** Map our language name → Prism.js grammar token */
     private static String prismLang(String lang) {
         if (lang == null) return "markup";
         return switch (lang.toUpperCase()) {
@@ -89,12 +95,11 @@ public class CoursePdfGeneratorService {
                     new Page.SetContentOptions()
                             .setWaitUntil(WaitUntilState.NETWORKIDLE));
 
-            // Wait for Prism.js to finish syntax-highlighting all blocks
             page.waitForFunction(
                     "() => typeof Prism !== 'undefined' && " +
-                            "document.querySelectorAll('pre.line-numbers').length >= 0"
+                            "document.querySelectorAll('pre').length >= 0"
             );
-            page.waitForTimeout(500);   // small buffer for print styles
+            page.waitForTimeout(600);
 
             byte[] pdf = page.pdf(new Page.PdfOptions()
                     .setFormat("A4")
@@ -120,51 +125,25 @@ public class CoursePdfGeneratorService {
         String lang       = course.getLanguage()   != null ? course.getLanguage()          : "Khmer";
         boolean isFree    = Boolean.TRUE.equals(course.getIsFree());
         String instructor = course.getInstructor() != null
-                ? course.getInstructor().getUsername() : "Code Khmer";
+                ? course.getInstructor().getUsername() : "GrowCodeKH";
         String date       = LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy"));
         int lessons       = course.getTotalLessons() != null ? course.getTotalLessons() : 0;
-
-        // Collect distinct Prism grammar tokens used in this course
-        // (so we can emit their <script> tags dynamically)
-        java.util.Set<String> usedLangs = new java.util.LinkedHashSet<>();
-        for (Chapter ch : course.getChapters())
-            for (Lesson ls : ch.getLessons())
-                for (CodeSnippet cs : ls.getCodeSnippets())
-                    usedLangs.add(prismLang(cs.getLanguage()));
 
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html>\n<html lang=\"km\">\n<head>\n")
                 .append("<meta charset=\"UTF-8\">\n")
-
-                // ── Google Fonts ──────────────────────────────────────────────
                 .append("<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n")
                 .append("<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n")
                 .append("<link href=\"https://fonts.googleapis.com/css2?")
                 .append("family=Noto+Serif+Khmer:wght@300;400;600;700")
-                .append("&family=Inter:wght@300;400;500;600;700;800")
+                .append("&family=Inter:wght@300;400;500;600;700;800;900")
                 .append("&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400")
                 .append("&display=swap\" rel=\"stylesheet\">\n")
-
-                // ── Prism.js CDN ── VSCode Dark+ theme ────────────────────────
-                // 1. Theme CSS (VSCode Dark+)
-                .append("<!-- Prism.js CDN – VSCode Dark+ theme -->\n")
+                // ── Prism Tomorrow theme (light base, overridden below) ──
                 .append("<link rel=\"stylesheet\" href=\"")
-                .append(PRISM_CDN).append("/themes/prism-vsc-dark-plus.min.css\">\n")
-
-                // 2. Line-numbers plugin CSS
-                .append("<!-- Prism line-numbers plugin -->\n")
-                .append("<link rel=\"stylesheet\" href=\"")
-                .append(PRISM_CDN).append("/plugins/line-numbers/prism-line-numbers.min.css\">\n")
-
-                // 3. Toolbar plugin CSS (needed by copy-to-clipboard)
-                .append("<!-- Prism toolbar plugin -->\n")
-                .append("<link rel=\"stylesheet\" href=\"")
-                .append(PRISM_CDN).append("/plugins/toolbar/prism-toolbar.min.css\">\n")
-
-                // ── Custom overrides ──────────────────────────────────────────
+                .append(PRISM_CDN).append("/themes/prism-tomorrow.min.css\">\n")
                 .append("<style>\n").append(css()).append("</style>\n</head>\n<body>\n");
 
-        // ── Pages ─────────────────────────────────────────────────────────
         html.append(coverPage(course, level, lang, isFree, instructor, date, lessons));
         html.append(tocPage(course));
 
@@ -172,13 +151,8 @@ public class CoursePdfGeneratorService {
         for (Chapter ch : course.getChapters())
             html.append(chapterPage(ch, ++ci));
 
-        // ── Prism.js scripts — placed right before </body> ───────────────
-        // 4. Prism core  (bundles: markup / css / javascript / clike)
-        html.append("\n<!-- ═══ Prism.js core ═══ -->\n")
-                .append("<script src=\"").append(PRISM_CDN).append("/prism.min.js\"></script>\n")
-
-                // 5-22. Individual language grammars
-                .append("<!-- Prism language grammars -->\n")
+        // ── Prism.js scripts ──────────────────────────────────────────
+        html.append("\n<script src=\"").append(PRISM_CDN).append("/prism.min.js\"></script>\n")
                 .append("<script src=\"").append(PRISM_CDN).append("/components/prism-typescript.min.js\"></script>\n")
                 .append("<script src=\"").append(PRISM_CDN).append("/components/prism-java.min.js\"></script>\n")
                 .append("<script src=\"").append(PRISM_CDN).append("/components/prism-python.min.js\"></script>\n")
@@ -197,20 +171,7 @@ public class CoursePdfGeneratorService {
                 .append("<script src=\"").append(PRISM_CDN).append("/components/prism-docker.min.js\"></script>\n")
                 .append("<script src=\"").append(PRISM_CDN).append("/components/prism-graphql.min.js\"></script>\n")
                 .append("<script src=\"").append(PRISM_CDN).append("/components/prism-regex.min.js\"></script>\n")
-
-                // 23. Line-numbers plugin JS
-                .append("<!-- Prism plugins -->\n")
-                .append("<script src=\"").append(PRISM_CDN).append("/plugins/line-numbers/prism-line-numbers.min.js\"></script>\n")
-
-                // 24. Toolbar plugin JS
-                .append("<script src=\"").append(PRISM_CDN).append("/plugins/toolbar/prism-toolbar.min.js\"></script>\n")
-
-                // 25. Copy-to-clipboard plugin JS (depends on toolbar)
-                .append("<script src=\"").append(PRISM_CDN).append("/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js\"></script>\n")
-
-                // 26. Re-highlight everything after all grammars have loaded
                 .append("<script>if(typeof Prism !== 'undefined') Prism.highlightAll();</script>\n")
-
                 .append("</body>\n</html>");
 
         return html.toString();
@@ -222,69 +183,103 @@ public class CoursePdfGeneratorService {
 
     private String coverPage(Course course, String level, String lang,
                              boolean isFree, String instructor, String date, int lessons) {
-        String accessColor = isFree ? "#10b981" : "#d97706";
+        String accessColor = isFree ? "#10b981" : "#f59e0b";
+        String accessBg    = isFree ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)";
         String access      = isFree ? "FREE"    : "PREMIUM";
         String desc        = course.getDescription() != null ? course.getDescription() : "";
+        int    chCount     = course.getChapters() != null ? course.getChapters().size() : 0;
 
         return """
             <div class="page cover">
-              <div class="bar-top"></div>
-              <div class="bar-bottom"></div>
-              <div class="bar-left"></div>
-              <div class="glow"></div>
-              <div class="glow2"></div>
-              <div class="brand">GrowCodeKH &nbsp;·&nbsp; growcodekh.site</div>
-              <div class="cover-title">%s</div>
-              <div class="cover-rule"></div>
-              <div class="cover-desc">%s</div>
-              <div class="stat-grid">
-                <div class="stat-card" style="--a:#6346f6;">
-                  <div class="stat-icon">📊</div>
-                  <div class="stat-lbl">LEVEL</div>
-                  <div class="stat-val">%s</div>
+              <div class="cv-stripe-top"></div>
+              <div class="cv-stripe-left"></div>
+              <div class="cv-glow-tr"></div>
+              <div class="cv-glow-bl"></div>
+
+              <div class="cv-brand">
+                <span class="cv-brand-dot"></span>
+                GrowCodeKH &nbsp;·&nbsp; growcodekh.site
+              </div>
+
+              <div class="cv-hero">
+                <div class="cv-tag">COURSE DOCUMENTATION</div>
+                <h1 class="cv-title">%s</h1>
+                <div class="cv-rule"></div>
+                <p class="cv-desc">%s</p>
+              </div>
+
+              <div class="cv-stats">
+                <div class="cv-stat">
+                  <div class="cv-stat-icon">📊</div>
+                  <div class="cv-stat-info">
+                    <div class="cv-stat-lbl">Level</div>
+                    <div class="cv-stat-val">%s</div>
+                  </div>
                 </div>
-                <div class="stat-card" style="--a:#0694a2;">
-                  <div class="stat-icon">🌐</div>
-                  <div class="stat-lbl">LANGUAGE</div>
-                  <div class="stat-val">%s</div>
+                <div class="cv-stat-div"></div>
+                <div class="cv-stat">
+                  <div class="cv-stat-icon">🌐</div>
+                  <div class="cv-stat-info">
+                    <div class="cv-stat-lbl">Language</div>
+                    <div class="cv-stat-val">%s</div>
+                  </div>
                 </div>
-                <div class="stat-card" style="--a:#4f6dff;">
-                  <div class="stat-icon">📚</div>
-                  <div class="stat-lbl">LESSONS</div>
-                  <div class="stat-val">%d</div>
+                <div class="cv-stat-div"></div>
+                <div class="cv-stat">
+                  <div class="cv-stat-icon">📚</div>
+                  <div class="cv-stat-info">
+                    <div class="cv-stat-lbl">Lessons</div>
+                    <div class="cv-stat-val">%d</div>
+                  </div>
                 </div>
-                <div class="stat-card" style="--a:%s;">
-                  <div class="stat-icon">🔑</div>
-                  <div class="stat-lbl">ACCESS</div>
-                  <div class="stat-val" style="color:%s;">%s</div>
+                <div class="cv-stat-div"></div>
+                <div class="cv-stat">
+                  <div class="cv-stat-icon">📂</div>
+                  <div class="cv-stat-info">
+                    <div class="cv-stat-lbl">Chapters</div>
+                    <div class="cv-stat-val">%d</div>
+                  </div>
+                </div>
+                <div class="cv-stat-div"></div>
+                <div class="cv-stat">
+                  <div class="cv-stat-icon">🔑</div>
+                  <div class="cv-stat-info">
+                    <div class="cv-stat-lbl">Access</div>
+                    <div class="cv-stat-val" style="color:%s;background:%s;padding:2px 8px;border-radius:4px;font-size:9pt;">%s</div>
+                  </div>
                 </div>
               </div>
-              <div class="meta-card">
-                <div class="meta-row">
-                  <span class="meta-key">👨‍🏫  Instructor</span>
-                  <span class="meta-sep">:</span>
-                  <span class="meta-val">%s</span>
+
+              <div class="cv-meta">
+                <div class="cv-meta-row">
+                  <span class="cv-meta-icon">👨‍🏫</span>
+                  <span class="cv-meta-key">Instructor</span>
+                  <span class="cv-meta-sep">·</span>
+                  <span class="cv-meta-val">%s</span>
                 </div>
-                <div class="meta-row">
-                  <span class="meta-key">📅  Generated</span>
-                  <span class="meta-sep">:</span>
-                  <span class="meta-val">%s</span>
+                <div class="cv-meta-row">
+                  <span class="cv-meta-icon">📅</span>
+                  <span class="cv-meta-key">Generated</span>
+                  <span class="cv-meta-sep">·</span>
+                  <span class="cv-meta-val">%s</span>
                 </div>
-                <div class="meta-row">
-                  <span class="meta-key">🌍  Website</span>
-                  <span class="meta-sep">:</span>
-                  <span class="meta-val" style="color:#4f6dff;">growcodekh.site</span>
+                <div class="cv-meta-row">
+                  <span class="cv-meta-icon">🌍</span>
+                  <span class="cv-meta-key">Platform</span>
+                  <span class="cv-meta-sep">·</span>
+                  <span class="cv-meta-val" style="color:#2f8d46;">growcodekh.site</span>
                 </div>
               </div>
-              <div class="cover-footer">
-                <span>© %s GrowCodeKH — All rights reserved</span>
-                <span style="color:#4f6dff;">growcodekh.site</span>
+
+              <div class="cv-footer">
+                <span>© %d GrowCodeKH — All rights reserved</span>
+                <span style="color:#2f8d46;font-weight:700;">growcodekh.site</span>
               </div>
             </div>
             """.formatted(
                 esc(course.getTitle()), esc(desc),
-                esc(level), esc(lang), lessons,
-                accessColor, accessColor, access,
+                esc(level), esc(lang), lessons, chCount,
+                accessColor, accessBg, access,
                 esc(instructor), esc(date),
                 LocalDate.now().getYear());
     }
@@ -301,30 +296,32 @@ public class CoursePdfGeneratorService {
                 <span class="pg-site">growcodekh.site</span>
                 <span class="pg-title">%s</span>
               </div>
-              <div class="toc-label-tag">TABLE OF CONTENTS</div>
-              <div class="toc-h">តារាងមាតិកា <span class="toc-sub">/ Table of Contents</span></div>
-              <div class="rule-blue"></div>
+              <div class="toc-eyebrow">TABLE OF CONTENTS</div>
+              <div class="toc-heading">តារាងមាតិកា <span class="toc-heading-sub">/ Table of Contents</span></div>
+              <div class="toc-rule"></div>
             """.formatted(esc(course.getTitle())));
 
         int ci = 0;
         for (Chapter ch : course.getChapters()) {
             ci++;
             sb.append("""
-                <div class="toc-ch">
-                  <div class="toc-ch-n">%d</div>
-                  <div class="toc-ch-t">%s</div>
-                  <div class="toc-ch-c">%d Lessons</div>
+                <div class="toc-chapter">
+                  <div class="toc-ch-num">%d</div>
+                  <div class="toc-ch-body">
+                    <div class="toc-ch-title">%s</div>
+                    <div class="toc-ch-count">%d lessons</div>
+                  </div>
                 </div>
                 """.formatted(ci, esc(ch.getTitle()), ch.getLessons().size()));
 
             int li = 0;
             for (Lesson ls : ch.getLessons()) {
                 li++;
-                String bg = (li % 2 == 0) ? " style=\"background:#f8fafc;\"" : "";
-                sb.append("<div class=\"toc-ls\"%s>".formatted(bg))
-                        .append("<span class=\"toc-ls-n\">%d.%d</span>".formatted(ci, li))
-                        .append("<span class=\"toc-ls-t\">%s</span>".formatted(esc(ls.getTitle())))
-                        .append("<span class=\"toc-ls-dot\"></span>")
+                String altBg = (li % 2 == 0) ? " style=\"background:rgba(47,141,70,0.035);\"" : "";
+                sb.append("<div class=\"toc-lesson\"%s>".formatted(altBg))
+                        .append("<span class=\"toc-ls-num\">%d.%d</span>".formatted(ci, li))
+                        .append("<span class=\"toc-ls-title\">%s</span>".formatted(esc(ls.getTitle())))
+                        .append("<span class=\"toc-ls-dots\"></span>")
                         .append("</div>\n");
             }
         }
@@ -353,14 +350,15 @@ public class CoursePdfGeneratorService {
                 <span class="pg-title">Chapter %d · %s</span>
               </div>
               <div class="ch-banner">
-                <div class="ch-num-box">
-                  <div class="ch-sup">ជំពូក</div>
-                  <div class="ch-num">%02d</div>
+                <div class="ch-badge">
+                  <div class="ch-badge-label">ជំពូក</div>
+                  <div class="ch-badge-num">%02d</div>
                 </div>
-                <div class="ch-title-box">
-                  <div class="ch-sup2">CHAPTER %d</div>
-                  <div class="ch-title">%s</div>
+                <div class="ch-banner-body">
+                  <div class="ch-banner-eyebrow">CHAPTER %d</div>
+                  <div class="ch-banner-title">%s</div>
                 </div>
+                <div class="ch-banner-deco"></div>
               </div>
             """.formatted(ci, esc(chapter.getTitle()), ci, ci, esc(chapter.getTitle())));
 
@@ -419,8 +417,8 @@ public class CoursePdfGeneratorService {
             String b = stripHtml(block).trim();
             if (b.isEmpty()) continue;
 
-            String[] lines  = b.split("\n");
-            boolean isList  = Arrays.stream(lines).anyMatch(this::isBulletLine);
+            String[] lines = b.split("\n");
+            boolean isList = Arrays.stream(lines).anyMatch(this::isBulletLine);
 
             if (isList) {
                 sb.append("<ul>\n");
@@ -471,53 +469,45 @@ public class CoursePdfGeneratorService {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    //  CODE SNIPPET  ── powered by Prism.js (CDN, VSCode Dark+ theme)
+    //  CODE SNIPPET  ── GFG light-blue style (matches screenshot)
     // ═══════════════════════════════════════════════════════════════════
 
     private String snippetHtml(CodeSnippet cs) {
         String rawLang = cs.getLanguage() != null ? cs.getLanguage().toUpperCase() : "CODE";
-        String pLang   = prismLang(cs.getLanguage());      // e.g. "java"
-        String accent  = langAccent(cs.getLanguage());     // e.g. "#5382a1"
+        String pLang   = prismLang(cs.getLanguage());
+        String accent  = langAccent(cs.getLanguage());
         String title   = (cs.getTitle() != null && !cs.getTitle().isBlank())
                 ? cs.getTitle() : "ឧទាហរណ៍ / Example";
-        String codeRaw = cs.getCode() != null ? cs.getCode() : "";
-
-        // HTML-escape code content so Prism won't double-escape it
-        String codeEsc = esc(codeRaw);
+        String codeEsc = esc(cs.getCode() != null ? cs.getCode() : "");
 
         StringBuilder sb = new StringBuilder();
 
-        // ── Outer wrapper ── carries accent via CSS custom property ─────
-        sb.append("<div class=\"snippet\" style=\"--lc:").append(accent).append(";\">\n");
+        // GFG-style wrapper
+        sb.append("<div class=\"snippet\">\n");
 
-        // ── Header bar: macOS dots · title · language badge ─────────────
+        // Top bar: language pill left · title center · action icons right
         sb.append("""
-            <div class="sn-header">
-              <div class="sn-dots">
-                <span class="dot dr"></span>
-                <span class="dot dy"></span>
-                <span class="dot dg"></span>
-              </div>
-              <div class="sn-title">%s</div>
-              <div class="sn-lang-badge" style="background:%s;">%s</div>
+            <div class="sn-topbar">
+              <span class="sn-lang-pill" style="color:%s;border-color:%s55;">%s</span>
+              <span class="sn-topbar-title">%s</span>
+              <span class="sn-actions">
+                <span class="sn-act sn-act-close">✕</span>
+                <span class="sn-act sn-act-run">▷</span>
+                <span class="sn-act sn-act-copy">⎘</span>
+              </span>
             </div>
-            """.formatted(esc(title), accent, rawLang));
+            """.formatted(accent, accent, rawLang, esc(title)));
 
-        // ── Code body ──
-        //   • <pre class="line-numbers"> activates the line-numbers plugin
-        //   • <code class="language-XXX"> activates syntax highlighting
+        // Code body — light blue-gray background
         sb.append("<div class=\"sn-body\">\n")
-                .append("<pre class=\"line-numbers\" style=\"margin:0;border-radius:0;\">")
-                .append("<code class=\"language-").append(pLang).append("\">")
+                .append("<pre><code class=\"language-").append(pLang).append("\">")
                 .append(codeEsc)
                 .append("</code></pre>\n")
                 .append("</div>\n");
 
-        // ── Accent footer stripe ─────────────────────────────────────────
-        sb.append("<div class=\"sn-foot\"></div>\n");
-        sb.append("</div>\n");   // .snippet
+        sb.append("</div>\n");
 
-        // ── Explanation / Output block ───────────────────────────────────
+        // Explanation / output below block
         if (cs.getExplanation() != null && !cs.getExplanation().isBlank()) {
             String expl = cs.getExplanation().trim();
             if (expl.toLowerCase().startsWith("output:")
@@ -532,7 +522,8 @@ public class CoursePdfGeneratorService {
             } else {
                 sb.append("""
                     <div class="note-block">
-                      <span class="note-lbl">💡 Note: </span>%s
+                      <span class="note-icon">💡</span>
+                      <span class="note-text">%s</span>
                     </div>
                     """.formatted(esc(expl)));
             }
@@ -541,7 +532,7 @@ public class CoursePdfGeneratorService {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    //  CSS
+    //  CSS  ── Light page + Darcula code blocks
     // ═══════════════════════════════════════════════════════════════════
 
     private String css() {
@@ -550,124 +541,324 @@ public class CoursePdfGeneratorService {
 
             body {
               font-family: 'Noto Serif Khmer', 'Inter', sans-serif;
-              font-size: 11pt; color: #334155; background: #fff;
+              font-size: 11pt; color: #1e293b;
+              background: #f8f9fa;
               -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
             @page { size: A4; margin: 0; }
 
-            /* ─────── Pages ─────── */
+            /* ─────── Layout ─────── */
             .page { width: 210mm; min-height: 297mm; page-break-after: always; overflow: hidden; display: flex; flex-direction: column; }
             .page:last-child { page-break-after: avoid; }
 
-            /* ═════════ COVER ═════════ */
-            .cover { background: #070b1a; color: #fff; padding: 52px 56px; position: relative; }
-            .bar-top    { position:absolute; top:0; left:0; right:0; height:10px; background:linear-gradient(90deg,#4f6dff 0%,#8b5cf6 55%,#ec4899 100%); }
-            .bar-bottom { position:absolute; bottom:0; left:0; right:0; height:6px; background:linear-gradient(90deg,#4f6dff,#8b5cf6); }
-            .bar-left   { position:absolute; top:0; left:0; bottom:0; width:5px; background:linear-gradient(180deg,#4f6dff,#8b5cf6); }
-            .glow  { position:absolute; top:-80px; right:-80px; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(79,109,255,.14) 0%,transparent 70%); pointer-events:none; }
-            .glow2 { position:absolute; bottom:40px; left:60px; width:250px; height:250px; border-radius:50%; background:radial-gradient(circle,rgba(139,92,246,.08) 0%,transparent 70%); pointer-events:none; }
-            .brand { font-family:'Inter',sans-serif; font-size:8pt; font-weight:700; color:#4f6dff; letter-spacing:.1em; margin:28px 0 40px; text-transform:uppercase; }
-            .cover-title { font-size:26pt; font-weight:800; line-height:1.55; margin-bottom:12px; }
-            .cover-rule  { width:38%; height:3px; background:linear-gradient(90deg,#4f6dff,#8b5cf6); margin:16px 0 20px; border-radius:2px; }
-            .cover-desc  { font-size:10.5pt; color:#94a3b8; line-height:2.1; margin-bottom:36px; }
-            .stat-grid   { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; margin-bottom:28px; }
-            .stat-card   { background:#111827; border-top:3px solid var(--a); padding:14px 12px; display:flex; flex-direction:column; gap:4px; }
-            .stat-icon   { font-size:14pt; margin-bottom:4px; }
-            .stat-lbl    { font-family:'Inter',sans-serif; font-size:7pt; font-weight:700; color:#64748b; letter-spacing:.07em; text-transform:uppercase; }
-            .stat-val    { font-family:'Inter',sans-serif; font-size:11pt; font-weight:700; color:#f1f5f9; }
-            .meta-card   { background:#111827; border-left:4px solid #4f6dff; padding:16px 18px; display:flex; flex-direction:column; gap:2px; border-radius:0 4px 4px 0; }
-            .meta-row    { display:flex; align-items:center; font-size:9.5pt; color:#94a3b8; line-height:2.4; gap:8px; }
-            .meta-key    { font-family:'Inter',sans-serif; font-weight:600; min-width:120px; }
-            .meta-sep    { color:#4f6dff; font-weight:700; }
-            .meta-val    { color:#e2e8f0; }
-            .cover-footer { margin-top:auto; padding-top:28px; display:flex; justify-content:space-between; font-family:'Inter',sans-serif; font-size:8pt; color:#475569; border-top:1px solid #1e293b; }
-
-            /* ═════════ Inner Pages ═════════ */
-            .inner-page { padding:48px 56px; flex:1; }
-            .pg-header  { font-family:'Inter',sans-serif; font-size:8pt; display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #4361ee; padding-bottom:8px; margin-bottom:24px; }
-            .pg-site    { font-weight:700; color:#4361ee; letter-spacing:.04em; }
-            .pg-title   { color:#64748b; font-size:7.5pt; }
-            .pg-footer  { font-family:'Inter',sans-serif; font-size:8pt; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:10px; margin-top:24px; }
-            .pg-num     { font-weight:800; color:#4361ee; font-size:9pt; }
-            .pf-brand   { font-weight:600; color:#475569; }
-            .pf-site    { color:#4361ee; font-weight:600; }
-
-            /* ═════════ TOC ═════════ */
-            .toc-label-tag { display:inline-block; font-family:'Inter',sans-serif; font-size:7.5pt; font-weight:700; color:#fff; background:#4361ee; padding:3px 10px; letter-spacing:.08em; border-radius:2px; margin-bottom:8px; }
-            .toc-h    { font-size:22pt; font-weight:700; color:#0f172a; line-height:1.5; }
-            .toc-sub  { font-family:'Inter',sans-serif; font-size:13pt; font-weight:400; color:#64748b; }
-            .rule-blue { width:48%; height:3px; background:linear-gradient(90deg,#4361ee,#8b5cf6); margin:16px 0 22px; border-radius:2px; }
-            .toc-ch   { display:flex; align-items:stretch; margin-top:14px; border-radius:4px; overflow:hidden; }
-            .toc-ch-n { background:#4361ee; color:#fff; font-family:'Inter',sans-serif; font-size:10pt; font-weight:800; padding:8px 12px; display:flex; align-items:center; min-width:38px; justify-content:center; }
-            .toc-ch-t { background:#eef2ff; border-left:3px solid #4361ee; padding:8px 14px; font-size:11pt; font-weight:700; color:#312e81; flex:1; line-height:1.7; }
-            .toc-ch-c { background:#eef2ff; padding:8px 14px; font-family:'Inter',sans-serif; font-size:8pt; color:#64748b; display:flex; align-items:center; white-space:nowrap; }
-            .toc-ls   { display:flex; align-items:center; font-size:10pt; color:#334155; padding:2px 0; }
-            .toc-ls-n { font-family:'Inter',sans-serif; font-size:8.5pt; font-weight:700; color:#4361ee; padding:5px 10px 5px 52px; min-width:86px; }
-            .toc-ls-t { padding:5px 0; line-height:1.8; flex:1; }
-            .toc-ls-dot { width:40px; text-align:right; padding-right:8px; border-bottom:1px dotted #cbd5e1; align-self:center; flex-shrink:0; }
-
-            /* ═════════ Chapter ═════════ */
-            .ch-banner    { display:flex; margin-bottom:28px; border-radius:6px; overflow:hidden; }
-            .ch-num-box   { background:#312e81; padding:16px 18px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:82px; }
-            .ch-sup       { font-family:'Inter',sans-serif; font-size:7.5pt; font-weight:700; color:#c4b5fd; margin-bottom:4px; letter-spacing:.04em; }
-            .ch-num       { font-family:'Inter',sans-serif; font-size:28pt; font-weight:800; color:#fff; line-height:1; }
-            .ch-title-box { background:linear-gradient(135deg,#4361ee 0%,#5b21b6 100%); padding:16px 22px; flex:1; display:flex; flex-direction:column; justify-content:center; }
-            .ch-sup2      { font-family:'Inter',sans-serif; font-size:7.5pt; font-weight:700; color:#c4b5fd; margin-bottom:6px; letter-spacing:.06em; }
-            .ch-title     { font-size:16pt; font-weight:700; color:#fff; line-height:1.6; }
-            .ch-desc      { color:#64748b; font-size:10pt; margin-bottom:16px; line-height:2.1; }
-
-            /* ═════════ Lesson ═════════ */
-            .lesson    { margin-bottom:10px; }
-            .ls-header { display:flex; margin:22px 0 10px; border-radius:4px; overflow:hidden; }
-            .ls-num    { background:#4361ee; color:#fff; font-family:'Inter',sans-serif; font-size:8.5pt; font-weight:700; padding:8px 10px; display:flex; align-items:center; min-width:46px; justify-content:center; letter-spacing:.02em; }
-            .ls-title  { background:#eef2ff; border-left:3px solid #4361ee; padding:8px 16px; font-size:12pt; font-weight:700; color:#0f172a; flex:1; line-height:1.7; }
-            .ls-body   { font-size:10.5pt; line-height:2.1; color:#334155; margin-bottom:10px; }
-            .ls-body p { margin-bottom:10px; }
-            .ls-body ul { padding-left:22px; margin-bottom:10px; }
-            .ls-body li { margin-bottom:4px; line-height:2; }
-            .h-rule    { border:none; border-top:1px solid #e2e8f0; margin:16px 0 6px; }
-
-            /* ═════════ Code Snippet (Prism.js) ═════════ */
-            .snippet { margin:14px 0 6px; border-radius:8px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.22); }
-
-            /* Header bar */
-            .sn-header { display:flex; align-items:stretch; border-top:3px solid var(--lc,#4361ee); background:#1e1e2e; }
-            .sn-dots   { padding:9px 12px; display:flex; align-items:center; gap:5px; background:#1e1e2e; }
-            .dot  { width:11px; height:11px; border-radius:50%; display:inline-block; }
-            .dr   { background:#ff6059; }
-            .dy   { background:#ffbd2e; }
-            .dg   { background:#28c840; }
-            .sn-title {
-              padding:9px 10px; font-size:9pt; font-weight:600; color:#cdd6f4; flex:1;
-              display:flex; align-items:center; line-height:1.5; background:#1e1e2e;
-              font-family:'JetBrains Mono','Courier New',monospace;
+            /* ════════════════════════════════════════════
+               COVER PAGE
+            ════════════════════════════════════════════ */
+            .cover {
+              background: #07100f;
+              color: #f0fdf4;
+              padding: 48px 56px;
+              position: relative;
             }
-            .sn-lang-badge {
-              font-family:'Inter',sans-serif; font-size:7.5pt; font-weight:800;
-              color:#fff; padding:0 14px; display:flex; align-items:center;
-              letter-spacing:.06em; text-transform:uppercase;
+            .cv-stripe-top {
+              position: absolute; top: 0; left: 0; right: 0; height: 6px;
+              background: linear-gradient(90deg, #2f8d46 0%, #059669 50%, #10b981 100%);
+            }
+            .cv-stripe-left {
+              position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+              background: linear-gradient(180deg, #2f8d46, #059669 60%, transparent);
+            }
+            .cv-glow-tr {
+              position: absolute; top: -100px; right: -60px;
+              width: 380px; height: 380px; border-radius: 50%;
+              background: radial-gradient(circle, rgba(47,141,70,.18) 0%, transparent 68%);
+              pointer-events: none;
+            }
+            .cv-glow-bl {
+              position: absolute; bottom: 20px; left: 40px;
+              width: 220px; height: 220px; border-radius: 50%;
+              background: radial-gradient(circle, rgba(5,150,105,.10) 0%, transparent 68%);
+              pointer-events: none;
+            }
+            .cv-brand {
+              font-family: 'Inter', sans-serif; font-size: 8pt; font-weight: 700;
+              color: #2f8d46; letter-spacing: .12em; text-transform: uppercase;
+              display: flex; align-items: center; gap: 8px; margin-bottom: 52px;
+            }
+            .cv-brand-dot { display: inline-block; width: 8px; height: 8px; background: #2f8d46; border-radius: 50%; }
+            .cv-hero    { margin-bottom: 40px; }
+            .cv-tag {
+              display: inline-block;
+              font-family: 'Inter', sans-serif; font-size: 7.5pt; font-weight: 700;
+              color: #2f8d46; letter-spacing: .12em;
+              border: 1px solid rgba(47,141,70,.40);
+              padding: 3px 12px; border-radius: 3px; margin-bottom: 14px;
+            }
+            .cv-title { font-size: 28pt; font-weight: 800; line-height: 1.5; color: #f0fdf4; margin-bottom: 16px; }
+            .cv-rule { width: 56px; height: 4px; background: linear-gradient(90deg, #2f8d46, #10b981); border-radius: 2px; margin-bottom: 18px; }
+            .cv-desc { font-size: 10.5pt; color: #6ee7b7; line-height: 2.15; max-width: 88%; }
+            .cv-stats {
+              display: flex; align-items: stretch; gap: 0;
+              background: rgba(255,255,255,.04); border: 1px solid rgba(47,141,70,.22);
+              border-radius: 8px; overflow: hidden; margin-bottom: 24px;
+            }
+            .cv-stat { flex: 1; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+            .cv-stat-div { width: 1px; background: rgba(47,141,70,.20); flex-shrink: 0; }
+            .cv-stat-icon { font-size: 15pt; line-height: 1; }
+            .cv-stat-info { display: flex; flex-direction: column; gap: 2px; }
+            .cv-stat-lbl { font-family: 'Inter', sans-serif; font-size: 7pt; font-weight: 700; color: #6b7280; letter-spacing: .08em; text-transform: uppercase; }
+            .cv-stat-val { font-family: 'Inter', sans-serif; font-size: 10.5pt; font-weight: 700; color: #ecfdf5; }
+            .cv-meta {
+              background: rgba(47,141,70,.08); border-left: 4px solid #2f8d46;
+              border-radius: 0 6px 6px 0; padding: 14px 18px;
+              display: flex; flex-direction: column; gap: 0; margin-bottom: auto;
+            }
+            .cv-meta-row { display: flex; align-items: center; gap: 8px; font-size: 9.5pt; color: #a7f3d0; line-height: 2.4; font-family: 'Inter', sans-serif; }
+            .cv-meta-icon { font-size: 10pt; }
+            .cv-meta-key { font-weight: 600; color: #6ee7b7; min-width: 90px; }
+            .cv-meta-sep { color: #2f8d46; font-weight: 700; }
+            .cv-meta-val { color: #ecfdf5; }
+            .cv-footer {
+              margin-top: 32px; display: flex; justify-content: space-between; align-items: center;
+              font-family: 'Inter', sans-serif; font-size: 8pt; color: #374151;
+              border-top: 1px solid rgba(47,141,70,.18); padding-top: 16px;
             }
 
-            /* Code body — Prism handles colours; we only override font & spacing */
+            /* ════════════════════════════════════════════
+               INNER PAGE  ── light background
+            ════════════════════════════════════════════ */
+            .inner-page { padding: 40px 52px; flex: 1; background: #ffffff; }
+
+            .pg-header {
+              font-family: 'Inter', sans-serif; font-size: 8pt;
+              display: flex; justify-content: space-between; align-items: center;
+              border-bottom: 2px solid #2f8d46;
+              padding-bottom: 8px; margin-bottom: 24px;
+            }
+            .pg-site  { font-weight: 800; color: #2f8d46; letter-spacing: .05em; }
+            .pg-title { color: #64748b; font-size: 7.5pt; max-width: 65%; text-align: right; }
+
+            .pg-footer {
+              font-family: 'Inter', sans-serif; font-size: 8pt; color: #64748b;
+              display: flex; justify-content: space-between; align-items: center;
+              border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 24px;
+            }
+            .pg-num  { font-weight: 800; color: #2f8d46; font-size: 9pt; }
+            .pf-brand { font-weight: 600; color: #475569; }
+            .pf-site  { color: #2f8d46; font-weight: 600; }
+
+            /* ════════════════════════════════════════════
+               TABLE OF CONTENTS
+            ════════════════════════════════════════════ */
+            .toc-eyebrow {
+              display: inline-block; font-family: 'Inter', sans-serif; font-size: 7.5pt; font-weight: 800;
+              color: #fff; background: #2f8d46; padding: 3px 12px; letter-spacing: .10em; border-radius: 3px; margin-bottom: 8px;
+            }
+            .toc-heading { font-size: 22pt; font-weight: 700; color: #0f172a; line-height: 1.5; }
+            .toc-heading-sub { font-family: 'Inter', sans-serif; font-size: 13pt; font-weight: 400; color: #64748b; }
+            .toc-rule { width: 52%; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #2f8d46, #10b981); margin: 14px 0 22px; }
+            .toc-chapter {
+              display: flex; align-items: stretch; margin-top: 14px; border-radius: 6px; overflow: hidden;
+              box-shadow: 0 1px 4px rgba(47,141,70,.12);
+            }
+            .toc-ch-num {
+              background: #2f8d46; color: #fff; font-family: 'Inter', sans-serif; font-size: 11pt; font-weight: 800;
+              padding: 10px 14px; display: flex; align-items: center; justify-content: center; min-width: 42px;
+            }
+            .toc-ch-body {
+              background: #f0fdf4; border-left: 3px solid #2f8d46; padding: 10px 16px; flex: 1;
+              display: flex; align-items: center; gap: 12px;
+            }
+            .toc-ch-title { font-size: 11pt; font-weight: 700; color: #14532d; flex: 1; line-height: 1.7; }
+            .toc-ch-count {
+              font-family: 'Inter', sans-serif; font-size: 7.5pt; font-weight: 600; color: #2f8d46; white-space: nowrap;
+              background: rgba(47,141,70,.12); padding: 2px 8px; border-radius: 10px;
+            }
+            .toc-lesson { display: flex; align-items: center; font-size: 10pt; color: #334155; padding: 1px 0; }
+            .toc-ls-num { font-family: 'Inter', sans-serif; font-size: 8.5pt; font-weight: 700; color: #2f8d46; padding: 5px 10px 5px 56px; min-width: 90px; }
+            .toc-ls-title { padding: 5px 0; line-height: 1.85; flex: 1; }
+            .toc-ls-dots { width: 40px; border-bottom: 1px dashed #cbd5e1; align-self: center; flex-shrink: 0; margin-right: 8px; }
+
+            /* ════════════════════════════════════════════
+               CHAPTER BANNER
+            ════════════════════════════════════════════ */
+            .ch-banner {
+              display: flex; align-items: stretch; border-radius: 8px; overflow: hidden;
+              margin-bottom: 24px; box-shadow: 0 2px 12px rgba(47,141,70,.18);
+            }
+            .ch-badge {
+              background: #1a5c2e; padding: 18px 16px;
+              display: flex; flex-direction: column; align-items: center; justify-content: center;
+              min-width: 78px; gap: 2px;
+            }
+            .ch-badge-label { font-family: 'Inter', sans-serif; font-size: 7pt; font-weight: 700; color: #86efac; letter-spacing: .05em; }
+            .ch-badge-num { font-family: 'Inter', sans-serif; font-size: 28pt; font-weight: 900; color: #fff; line-height: 1; }
+            .ch-banner-body {
+              background: linear-gradient(135deg, #2f8d46 0%, #059669 100%);
+              padding: 18px 24px; flex: 1; display: flex; flex-direction: column; justify-content: center;
+            }
+            .ch-banner-eyebrow { font-family: 'Inter', sans-serif; font-size: 7.5pt; font-weight: 700; color: #a7f3d0; letter-spacing: .10em; margin-bottom: 5px; }
+            .ch-banner-title { font-size: 16pt; font-weight: 700; color: #fff; line-height: 1.6; }
+            .ch-banner-deco { width: 5px; background: rgba(255,255,255,.15); }
+            .ch-desc {
+              color: #475569; font-size: 10pt; line-height: 2.15; margin-bottom: 16px;
+              padding: 10px 14px; background: #f0fdf4;
+              border-left: 3px solid rgba(47,141,70,.30); border-radius: 0 4px 4px 0;
+            }
+
+            /* ════════════════════════════════════════════
+               LESSON
+            ════════════════════════════════════════════ */
+            .lesson    { margin-bottom: 10px; }
+            .ls-header {
+              display: flex; align-items: stretch; margin: 18px 0 10px;
+              border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(47,141,70,.10);
+            }
+            .ls-num {
+              background: #2f8d46; color: #fff; font-family: 'Inter', sans-serif;
+              font-size: 8.5pt; font-weight: 800; padding: 8px 10px;
+              display: flex; align-items: center; justify-content: center; min-width: 44px; letter-spacing: .03em;
+            }
+            .ls-title {
+              background: #f0fdf4; border-left: 3px solid #2f8d46;
+              padding: 8px 16px; font-size: 12pt; font-weight: 700; color: #14532d; flex: 1; line-height: 1.7;
+            }
+            .ls-body { font-size: 10.5pt; line-height: 2.1; color: #334155; margin-bottom: 10px; }
+            .ls-body p  { margin-bottom: 10px; }
+            .ls-body ul { padding-left: 22px; margin-bottom: 10px; }
+            .ls-body li { margin-bottom: 4px; line-height: 2; list-style: none; padding-left: 4px; position: relative; }
+            .ls-body li::before { content: "▸"; color: #2f8d46; font-size: 9pt; position: absolute; left: -16px; }
+            .h-rule { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 6px; }
+
+            /* ════════════════════════════════════════════
+               CODE SNIPPET  ── GFG light-blue style
+               Matches: pale blue-gray body, darker top bar,
+               dark navy keywords, red strings, action icons
+            ════════════════════════════════════════════ */
+
+            .snippet {
+              margin: 12px 0 6px;
+              border-radius: 8px;
+              overflow: hidden;
+              border: 1px solid #c8d8e8;
+              box-shadow: 0 2px 8px rgba(0,0,0,.08);
+            }
+
+            /* Top bar — slightly darker than code body */
+            .sn-topbar {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              background: #dce8f4;
+              border-bottom: 1px solid #c0d4e8;
+              padding: 7px 14px;
+              min-height: 36px;
+            }
+
+            /* Language pill */
+            .sn-lang-pill {
+              font-family: 'Inter', sans-serif;
+              font-size: 7pt;
+              font-weight: 800;
+              letter-spacing: .08em;
+              text-transform: uppercase;
+              padding: 2px 9px;
+              border-radius: 20px;
+              border: 1px solid;
+              background: rgba(255,255,255,.55);
+              white-space: nowrap;
+            }
+
+            /* Title */
+            .sn-topbar-title {
+              font-family: 'Inter', sans-serif;
+              font-size: 8pt;
+              font-weight: 500;
+              color: #3d5a7a;
+              flex: 1;
+            }
+
+            /* Action icons — ✕ ▷ ⎘ */
+            .sn-actions {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            .sn-act {
+              font-size: 9pt;
+              color: #7a9bbb;
+              background: rgba(255,255,255,.6);
+              border: 1px solid #b0c8de;
+              border-radius: 4px;
+              padding: 1px 6px;
+              line-height: 1.6;
+              font-family: 'Inter', sans-serif;
+            }
+            .sn-act-run  { color: #2f8d46; border-color: #8fccaa; }
+            .sn-act-copy { color: #5382a1; border-color: #9bbdd4; }
+
+            /* Code body — light blue-gray, GFG signature */
+            .sn-body {
+              background: #eef4fb;
+              padding: 0;
+            }
+
             .sn-body pre[class*="language-"] {
-              margin:0 !important; border-radius:0 !important;
-              font-family:'JetBrains Mono','Courier New',monospace !important;
-              font-size:8.5pt !important; line-height:1.75 !important;
-              background:#1e1e1e !important;
+              margin: 0 !important;
+              border-radius: 0 !important;
+              font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+              font-size: 8.8pt !important;
+              line-height: 1.85 !important;
+              padding: 16px 20px !important;
+              background: #eef4fb !important;
+              border: none !important;
+              color: #1a1a2e !important;
             }
-            /* Line-numbers gutter */
-            .sn-body .line-numbers .line-numbers-rows        { border-right:1px solid #3c3c3c !important; background:#252526 !important; }
-            .sn-body .line-numbers-rows > span::before        { color:#636363 !important; }
 
-            /* Accent footer stripe */
-            .sn-foot { height:3px; background:var(--lc,#4361ee); }
+            /* GFG light-theme token colors — match screenshot */
+            .sn-body .token.keyword      { color: #0033b3 !important; font-weight: 600 !important; }
+            .sn-body .token.builtin      { color: #0033b3 !important; font-weight: 600 !important; }
+            .sn-body .token.class-name   { color: #1a1a2e !important; font-weight: 600 !important; }
+            .sn-body .token.function     { color: #00627a !important; }
+            .sn-body .token.string       { color: #067d17 !important; }
+            .sn-body .token.number       { color: #1750eb !important; }
+            .sn-body .token.boolean      { color: #0033b3 !important; }
+            .sn-body .token.comment      { color: #8c8c8c !important; font-style: italic !important; }
+            .sn-body .token.operator     { color: #1a1a2e !important; }
+            .sn-body .token.punctuation  { color: #1a1a2e !important; }
+            .sn-body .token.variable     { color: #1a1a2e !important; }
+            .sn-body .token.property     { color: #871094 !important; }
+            .sn-body .token.annotation   { color: #808000 !important; }
+            .sn-body .token.attr-name    { color: #0033b3 !important; }
+            .sn-body .token.attr-value   { color: #067d17 !important; }
+            .sn-body .token.tag          { color: #0033b3 !important; }
+            .sn-body .token.selector     { color: #871094 !important; }
+            .sn-body code                { color: #1a1a2e !important; background: none !important; }
 
-            /* ═════════ Note / Output ═════════ */
-            .note-block { background:#ecfdf5; border-left:4px solid #10b981; padding:10px 14px; margin:6px 0 18px; font-size:9.5pt; line-height:1.9; border-radius:0 6px 6px 0; }
-            .note-lbl   { font-family:'Inter',sans-serif; font-weight:700; color:#059669; margin-right:6px; }
-            .out-block  { margin:6px 0 18px; border-radius:0 0 6px 6px; overflow:hidden; }
-            .out-lbl    { background:#14b8a6; padding:5px 14px; font-family:'JetBrains Mono','Courier New',monospace; font-size:8pt; color:#fff; font-weight:700; letter-spacing:.04em; }
-            .out-body   { background:#0f172a; border-left:3px solid #14b8a6; padding:10px 16px; font-family:'JetBrains Mono','Courier New',monospace; font-size:8.5pt; color:#a3e6b4; line-height:1.75; white-space:pre; }
+            /* ════════════════════════════════════════════
+               NOTE / OUTPUT
+            ════════════════════════════════════════════ */
+            .note-block {
+              display: flex; align-items: flex-start; gap: 8px;
+              background: #f0fdf4; border-left: 4px solid #2f8d46;
+              padding: 10px 14px; margin: 6px 0 18px;
+              font-size: 9.5pt; line-height: 1.9; border-radius: 0 6px 6px 0;
+            }
+            .note-icon { font-size: 11pt; flex-shrink: 0; margin-top: 1px; }
+            .note-text { color: #15803d; }
+
+            .out-block  { margin: 4px 0 18px; border-radius: 0 0 8px 8px; overflow: hidden; }
+            .out-lbl {
+              background: #2f8d46; padding: 5px 14px;
+              font-family: 'JetBrains Mono', 'Courier New', monospace;
+              font-size: 8pt; color: #fff; font-weight: 700; letter-spacing: .05em;
+            }
+            .out-body {
+              background: #f0f7f0; border: 1px solid #c8e0c8; border-top: none;
+              padding: 12px 18px;
+              font-family: 'JetBrains Mono', 'Courier New', monospace;
+              font-size: 8.5pt; color: #1a3a1a; line-height: 1.8; white-space: pre;
+            }
             """;
     }
 
