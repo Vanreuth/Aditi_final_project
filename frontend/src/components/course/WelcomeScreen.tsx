@@ -40,21 +40,18 @@ export function WelcomeScreen({
   return (
     <div
       className="flex items-center justify-center min-h-full p-8"
-      style={{ minHeight: "calc(100vh - 4rem)" }}
+      style={{ minHeight: "calc(100vh - 4rem)", background: "var(--cl-bg)" }}
     >
       <div className="text-center max-w-2xl w-full">
-        {/* Hero icon with glow */}
-        <div className="relative mx-auto mb-8 inline-flex">
+
+        {/* Hero icon */}
+        <div className="relative mx-auto mb-6 inline-flex">
           <div
-            className="absolute inset-0 rounded-3xl blur-2xl opacity-40"
-            style={{ background: visual.accent, transform: "scale(1.3)" }}
-          />
-          <div
-            className="relative w-24 h-24 rounded-3xl flex items-center justify-center"
+            className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold"
             style={{
-              background: visual.accentMuted,
-              border: `1px solid ${visual.accentRing}`,
-              fontSize: "3rem",
+              background: "#2f8d46",
+              boxShadow: "0 8px 28px rgba(47,141,70,0.28)",
+              fontSize: "2.5rem",
             }}
           >
             {visual.icon}
@@ -63,22 +60,23 @@ export function WelcomeScreen({
 
         {/* Tag */}
         <div
-          className="inline-block text-[10px] font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-widest"
+          className="inline-block text-[10px] font-bold px-3 py-1 rounded tracking-widest uppercase mb-4"
           style={{
-            background: visual.accentMuted,
-            color: visual.accent,
-            border: `1px solid ${visual.accentRing}`,
+            background: "rgba(47,141,70,0.10)",
+            color: "#2f8d46",
+            border: "1px solid rgba(47,141,70,0.22)",
           }}
         >
           {visual.tag}
         </div>
 
+        {/* Title */}
         <h2
-          className="text-2xl lg:text-3xl mb-3 leading-tight"
+          className="text-2xl lg:text-3xl font-bold mb-3 leading-tight"
           style={{
             color: "var(--cl-text-hi)",
-            fontFamily: "'DM Serif Display', Georgia, serif",
-            letterSpacing: "-0.03em",
+            fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif",
+            letterSpacing: "-0.02em",
           }}
         >
           {course.title}
@@ -105,14 +103,14 @@ export function WelcomeScreen({
           ].map(({ icon, label }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium"
               style={{
-                background: "#0f0f17",
-                border: "1px solid #1a1a2e",
-                color: "#64748b",
+                background: "var(--cl-bg-card)",
+                border: "1px solid var(--cl-border)",
+                color: "var(--cl-text)",
               }}
             >
-              <span style={{ color: visual.accent }}>{icon}</span>
+              <span style={{ color: "#2f8d46" }}>{icon}</span>
               {label}
             </span>
           ))}
@@ -122,13 +120,12 @@ export function WelcomeScreen({
         {allLessons.length > 0 && (
           <button
             onClick={onStartLearning}
-            className="complete-btn inline-flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-sm font-semibold"
+            className="complete-btn inline-flex items-center gap-2.5 px-8 py-3.5 rounded-xl text-sm font-semibold text-white"
             style={{
-              background: visual.accent,
-              color: "var(--cl-bg)",
+              background: "#2f8d46",
               border: "none",
               cursor: "pointer",
-              boxShadow: `0 8px 24px ${visual.accent}40`,
+              boxShadow: "0 8px 24px rgba(47,141,70,0.30)",
             }}
           >
             <PlayCircle className="h-5 w-5" />
@@ -152,6 +149,7 @@ export function WelcomeScreen({
             to save your progress
           </p>
         )}
+
       </div>
     </div>
   );

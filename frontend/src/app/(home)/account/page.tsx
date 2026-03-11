@@ -1,3 +1,4 @@
+// app/account/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -24,7 +25,7 @@ import type { ProfileFormValues } from "@/components/account";
 import type { LessonProgressResponse } from "@/types/lessonProgressType";
 
 // ─────────────────────────────────────────────────────────────
-//  deriveStats — memoised, never recomputes on unrelated renders
+//  deriveStats
 // ─────────────────────────────────────────────────────────────
 
 function deriveStats(list: LessonProgressResponse[] | null) {
@@ -40,13 +41,11 @@ function deriveStats(list: LessonProgressResponse[] | null) {
   const distinctCourses =
     new Set(data.map((p) => p.courseId).filter(Boolean)).size;
 
-  // Sum all reading time tracked via POST /upsert (readTimeSeconds field)
   const totalReadSeconds = data.reduce(
     (sum, p) => sum + (p.readTimeSeconds ?? p.readingTimeSeconds ?? 0),
     0,
   );
 
-  // Sort newest first, then group by course title
   const progressByCourse = [...data]
     .sort(
       (a, b) =>
@@ -76,7 +75,10 @@ function deriveStats(list: LessonProgressResponse[] | null) {
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, initialized, updateProfile, logout } = useAuth();
+
+  // ✅ FIX 1: destructure `isRefreshing` from useAuth
+  const { user, initialized, isRefreshing, updateProfile, logout } = useAuth();
+
   const { data: progressData, loading: progressLoading } = useMyProgress();
   const { data: completedCount } = useCompletedCount();
   const stats = useMemo(() => deriveStats(progressData), [progressData]);
@@ -95,28 +97,51 @@ export default function AccountPage() {
     defaultValues: { username: "", phoneNumber: "", address: "", bio: "" },
   });
 
-  // ── Auth guards ───────────────────────────────────────────
+  // ✅ FIX 2: destructure `reset` — it's a stable ref, safe in deps
+  const { reset } = form;
+
+  // ── Auth guard ────────────────────────────────────────────
+  // ✅ FIX 3: wait for BOTH initialized AND isRefreshing===false
+  //    before deciding to redirect — prevents mid-refresh redirects
   useEffect(() => {
-    if (!initialized) return;
-    if (!user) { router.replace("/login?returnUrl=/account"); return; }
+    if (!initialized)  return;   // auth hasn't settled yet
+    if (isRefreshing)  return;   // token refresh still in-flight
+
+    if (!user) {
+      // Guest confirmed — send to login
+      router.replace("/login?callbackUrl=/account");
+      return;
+    }
+
+    // ✅ FIX 4: use primitive user.id / user.role, not the whole user object
     const isAdmin =
       user.roles?.includes("ADMIN") ||
       user.roles?.includes("ROLE_ADMIN") ||
       user.role === "ROLE_ADMIN";
-    if (isAdmin) router.replace("/dashboard");
-  }, [initialized, user, router]);
 
+    if (isAdmin) router.replace("/dashboard");
+  }, [
+    initialized,
+    isRefreshing,
+    user?.id,       // ✅ primitive — only changes when user actually changes
+    user?.role,
+    user?.roles,
+    router,
+  ]);
+
+  // ── Populate form when user loads ─────────────────────────
+  // ✅ FIX 5: `reset` (stable) instead of `form` (new ref every render)
   useEffect(() => {
     if (!user) return;
-    form.reset({
+    reset({
       username:    user.username    || "",
       phoneNumber: user.phoneNumber || "",
       address:     user.address     || "",
       bio:         user.bio         || "",
     });
-  }, [user, form]);
+  }, [user?.id, reset]); // ✅ user.id: only re-runs when user actually changes
 
-  // Revoke object URL on unmount to avoid memory leaks
+  // ── Revoke preview URL on unmount ─────────────────────────
   useEffect(
     () => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); },
     [previewUrl],
@@ -126,8 +151,8 @@ export default function AccountPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024)       { toast.error("រូបភាពត្រូវតែតូចជាង 5MB");   return; }
-    if (!file.type.startsWith("image/"))   { toast.error("សូមជ្រើសរើសឯកសាររូបភាព"); return; }
+    if (file.size > 5 * 1024 * 1024)     { toast.error("រូបភាពត្រូវតែតូចជាង 5MB");   return; }
+    if (!file.type.startsWith("image/")) { toast.error("សូមជ្រើសរើសឯកសាររូបភាព"); return; }
     setProfilePicture(file);
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
@@ -139,7 +164,7 @@ export default function AccountPage() {
     setIsEditing(false);
     setProfilePicture(null);
     setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
-    form.reset({
+    reset({
       username:    user?.username    || "",
       phoneNumber: user?.phoneNumber || "",
       address:     user?.address     || "",
@@ -178,20 +203,25 @@ export default function AccountPage() {
     finally { router.push("/"); }
   };
 
-  // ── Guards ────────────────────────────────────────────────
-  if (!initialized) {
+  // ── Loading state — auth not yet settled ──────────────────
+  // ✅ FIX 6: show spinner while refreshing too, not just !initialized
+  if (!initialized || isRefreshing) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-12 w-12 animate-spin text-violet-600" />
-          <p className="text-sm text-muted-foreground">កំពុងផ្ទុកព័ត៌មានគណនី...</p>
+          <p className="text-sm text-muted-foreground">
+            កំពុងផ្ទុកព័ត៌មានគណនី...
+          </p>
         </div>
       </div>
     );
   }
+
+  // Auth settled but no user (redirect already fired above)
   if (!user) return null;
 
-  // ── Render ─────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────
   return (
     <div className="space-y-8 py-8 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
       <ProfileHero
@@ -208,7 +238,6 @@ export default function AccountPage() {
         onImageChange={handleImageChange}
       />
 
-      {/* ── Tabs ───────────────────────────────────────────── */}
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
           <TabsTrigger value="profile" className="gap-2">
@@ -225,7 +254,6 @@ export default function AccountPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ── Profile Tab ──────────────────────────────────── */}
         <TabsContent value="profile" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">
             <ProfileForm
@@ -246,6 +274,7 @@ export default function AccountPage() {
             </div>
           </div>
         </TabsContent>
+
         <TabsContent value="activity" className="space-y-6">
           <ActivityTab
             progressLoading={progressLoading}
@@ -258,7 +287,6 @@ export default function AccountPage() {
           />
         </TabsContent>
 
-        {/* ── Settings Tab ─────────────────────────────────── */}
         <TabsContent value="settings" className="space-y-6">
           <SettingsTab onLogout={handleLogout} />
         </TabsContent>

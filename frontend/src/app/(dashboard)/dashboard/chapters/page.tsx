@@ -1,33 +1,35 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   BookOpen,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Layers,
-  GripVertical,
   Calendar,
-  MoreHorizontal,
-  Loader2,
-  FileText,
-  X,
-  ChevronDown,
-  ChevronRight,
-  Code,
-  Eye,
   ExternalLink,
+  Eye,
+  FileText,
+  Layers,
+  Loader2,
+  Plus,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/dataTable/DataTable";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatCard } from "@/components/StatCard";
 import {
   Table,
   TableBody,
@@ -36,96 +38,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { useChapterAdmin, useChaptersByCourse } from "@/hooks/useChapter";
 import { useCourses } from "@/hooks/useCourses";
-import { useChaptersByCourse, useChapterAdmin } from "@/hooks/useChapter";
 import { useLessonsByChapter } from "@/hooks/useLesson";
-import type { ChapterResponse, ChapterRequest } from "@/types/chapterType";
+import type { ApiResponse, PageResponse } from "@/types/apiType";
+import type { ChapterRequest, ChapterResponse } from "@/types/chapterType";
 import type { LessonResponse } from "@/types/lessonType";
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-  loading,
-}: {
-  icon: typeof Layers;
-  label: string;
-  value: number;
-  color: string;
-  loading?: boolean;
-}) {
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-10 rounded-xl" />
-            <div className="space-y-1.5">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-6 w-10" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}>
-            <Icon className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-xl font-bold">{value}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Inline Lessons List for a chapter ────────────────────────────────────────
 
 function ChapterLessons({ chapterId }: { chapterId: number }) {
   const { data, loading, error } = useLessonsByChapter(chapterId);
@@ -133,9 +51,9 @@ function ChapterLessons({ chapterId }: { chapterId: number }) {
 
   if (loading) {
     return (
-      <div className="p-4 space-y-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="h-8 w-full rounded-lg" />
+      <div className="space-y-2 p-4">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <Skeleton key={index} className="h-8 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -148,11 +66,11 @@ function ChapterLessons({ chapterId }: { chapterId: number }) {
   if (lessons.length === 0) {
     return (
       <div className="px-4 py-6 text-center">
-        <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+        <FileText className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
         <p className="text-sm text-muted-foreground">No lessons in this chapter yet</p>
         <Button variant="outline" size="sm" className="mt-2" asChild>
           <Link href="/dashboard/lessons">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add Lesson
           </Link>
         </Button>
@@ -161,78 +79,61 @@ function ChapterLessons({ chapterId }: { chapterId: number }) {
   }
 
   return (
-    <div className="px-4 pb-4">
-      <div className="rounded-lg border bg-muted/20 overflow-hidden">
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-lg border bg-muted/20">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-[11px] font-semibold h-8">#</TableHead>
-              <TableHead className="text-[11px] font-semibold h-8">Lesson</TableHead>
-              <TableHead className="text-[11px] font-semibold h-8 text-center">Content</TableHead>
-              <TableHead className="text-[11px] font-semibold h-8">Created</TableHead>
+              <TableHead className="h-8 text-[11px] font-semibold">#</TableHead>
+              <TableHead className="h-8 text-[11px] font-semibold">Lesson</TableHead>
+              <TableHead className="h-8 text-[11px] font-semibold text-center">Content</TableHead>
+              <TableHead className="h-8 text-[11px] font-semibold">Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {lessons
-              .sort((a, b) => a.orderIndex - b.orderIndex)
+              .sort((left, right) => left.orderIndex - right.orderIndex)
               .map((lesson) => (
                 <TableRow key={lesson.id} className="hover:bg-muted/30">
                   <TableCell className="py-2">
-                    <Badge variant="secondary" className="font-mono text-[10px] h-5">
+                    <Badge variant="secondary" className="h-5 font-mono text-[10px]">
                       {lesson.orderIndex}
                     </Badge>
                   </TableCell>
                   <TableCell className="py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-[10px]">
-                        {lesson.title.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate max-w-[200px]">{lesson.title}</p>
-                        {lesson.description && (
-                          <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">
-                            {lesson.description}
-                          </p>
-                        )}
-                      </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{lesson.title}</p>
+                      {lesson.description && (
+                        <p className="truncate text-[11px] text-muted-foreground">{lesson.description}</p>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="py-2 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {lesson.content ? (
-                        <Badge variant="outline" className="text-[10px] gap-1 h-5">
-                          <Eye className="h-2.5 w-2.5" />
-                          {lesson.content.length} chars
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                      {((lesson as any).codeSnippets?.length ?? 0) > 0 && (
-                        <Badge variant="outline" className="text-[10px] gap-1 h-5">
-                          <Code className="h-2.5 w-2.5" />
-                          {(lesson as any).codeSnippets.length}
-                        </Badge>
-                      )}
-                    </div>
+                    {lesson.content ? (
+                      <Badge variant="outline" className="h-5 gap-1 text-[10px]">
+                        <Eye className="h-2.5 w-2.5" />
+                        {lesson.content.length} chars
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
                   </TableCell>
-                  <TableCell className="py-2">
-                    <span className="text-[11px] text-muted-foreground">
-                      {new Date(lesson.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
+                  <TableCell className="py-2 text-[11px] text-muted-foreground">
+                    {new Date(lesson.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </TableCell>
                 </TableRow>
               ))}
           </TableBody>
         </Table>
       </div>
-      <div className="mt-2 flex justify-end">
-        <Button variant="ghost" size="sm" className="text-xs h-7" asChild>
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
           <Link href="/dashboard/lessons">
             Manage All Lessons
-            <ExternalLink className="h-3 w-3 ml-1" />
+            <ExternalLink className="ml-1 h-3 w-3" />
           </Link>
         </Button>
       </div>
@@ -240,50 +141,272 @@ function ChapterLessons({ chapterId }: { chapterId: number }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+function ChapterViewDialog({
+  chapter,
+  open,
+  onClose,
+}: {
+  chapter: ChapterResponse | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!chapter) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-left">{chapter.title}</div>
+              <div className="mt-1 flex items-center gap-2">
+                <Badge variant="secondary">Order {chapter.orderIndex}</Badge>
+                <Badge variant="outline">{chapter.lessonCount ?? chapter.lessons?.length ?? 0} lessons</Badge>
+              </div>
+            </div>
+          </DialogTitle>
+          <DialogDescription>
+            Created on {new Date(chapter.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </DialogDescription>
+        </DialogHeader>
+        <ChapterLessons chapterId={chapter.id} />
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function useChaptersTableData(
+  courseId: number,
+  params: {
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+    search?: string;
+  }
+) {
+  const { data, loading, error, refetch } = useChaptersByCourse(courseId);
+  const { page = 0, size = 10, sortBy = "orderIndex", sortDir = "asc", search } = params;
+
+  const adapted = useMemo<ApiResponse<PageResponse<ChapterResponse>>>(() => {
+    const chapters = [...(data ?? [])];
+    const normalizedSearch = search?.trim().toLowerCase() ?? "";
+    const filtered = normalizedSearch
+      ? chapters.filter(
+          (chapter) =>
+            chapter.title.toLowerCase().includes(normalizedSearch) ||
+            (chapter.description ?? "").toLowerCase().includes(normalizedSearch)
+        )
+      : chapters;
+
+    filtered.sort((left, right) => {
+      const multiplier = sortDir === "desc" ? -1 : 1;
+      if (sortBy === "title") return left.title.localeCompare(right.title) * multiplier;
+      if (sortBy === "createdAt") {
+        return (new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()) * multiplier;
+      }
+      return ((left.orderIndex ?? 0) - (right.orderIndex ?? 0)) * multiplier;
+    });
+
+    const totalElements = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+    const startIndex = page * size;
+
+    return {
+      success: true,
+      message: "",
+      data: {
+        content: filtered.slice(startIndex, startIndex + size),
+        totalElements,
+        totalPages,
+        pageNumber: page,
+        pageSize: size,
+      },
+    };
+  }, [data, page, search, size, sortBy, sortDir]);
+
+  return {
+    data: courseId
+      ? adapted
+      : {
+          success: true,
+          message: "",
+          data: {
+            content: [],
+            totalElements: 0,
+            totalPages: 1,
+            pageNumber: 0,
+            pageSize: size,
+          },
+        },
+    isLoading: courseId ? loading : false,
+    isError: Boolean(error),
+    error,
+    refetch,
+  };
+}
 
 export default function ChaptersPage() {
+  const storageKey = "dashboard.chapters.selectedCourseId";
   const [selectedCourseId, setSelectedCourseId] = useState<number>(0);
-  const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<ChapterResponse | null>(null);
+  const [viewingChapter, setViewingChapter] = useState<ChapterResponse | null>(null);
   const [deleteChapterId, setDeleteChapterId] = useState<number | null>(null);
-  const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
-
-  // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formOrder, setFormOrder] = useState(0);
 
-  // Hooks
   const { data: coursesData, loading: coursesLoading } = useCourses({ size: 100 });
   const { data: chaptersData, loading: chaptersLoading, refetch } = useChaptersByCourse(selectedCourseId);
   const { creating, updating, removing, create, update, remove } = useChapterAdmin();
 
   const courses = coursesData?.content ?? [];
   const chapters = chaptersData ?? [];
+  const firstCreatedCourseId = useMemo(() => {
+    if (courses.length === 0) return 0;
 
-  // Filtered chapters
-  const filteredChapters = useMemo(() => {
-    if (!searchQuery.trim()) return chapters;
-    const q = searchQuery.toLowerCase();
-    return chapters.filter(ch => ch.title.toLowerCase().includes(q));
-  }, [chapters, searchQuery]);
-
-  // Stats
+    return [...courses]
+      .sort((left, right) => {
+        const createdAtDiff = new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+        if (createdAtDiff !== 0) return createdAtDiff;
+        return left.id - right.id;
+      })[0]?.id ?? 0;
+  }, [courses]);
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId);
   const totalChapters = chapters.length;
-  const totalLessons = chapters.reduce((sum, ch) => sum + (ch.lessonCount ?? ch.lessons?.length ?? 0), 0);
+  const totalLessons = chapters.reduce(
+    (sum, chapter) => sum + (chapter.lessonCount ?? chapter.lessons?.length ?? 0),
+    0
+  );
 
-  // Toggle expand
-  const toggleExpand = (chapterId: number) => {
-    setExpandedChapters(prev => {
-      const next = new Set(prev);
-      if (next.has(chapterId)) next.delete(chapterId);
-      else next.add(chapterId);
-      return next;
-    });
-  };
+  const useChaptersTable = (params: {
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+    search?: string;
+  }) => useChaptersTableData(selectedCourseId, params);
 
-  // ── Dialog handlers ─────────────────────────────────────────
+  const chapterColumns = useMemo(
+    () => [
+      {
+        key: "title",
+        label: "Chapter",
+        sortable: true,
+        render: (value: string, chapter: ChapterResponse) => (
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 font-semibold text-violet-600">
+              {value.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-medium">{value}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {chapter.description || "No description"}
+              </p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: "orderIndex",
+        label: "Order",
+        sortable: true,
+        render: (value: number) => <Badge variant="secondary">{value}</Badge>,
+      },
+      {
+        key: "lessonCount",
+        label: "Lessons",
+        render: (_value: number, chapter: ChapterResponse) => {
+          const lessonCount = chapter.lessonCount ?? chapter.lessons?.length ?? 0;
+          return <Badge variant="outline">{lessonCount} lesson{lessonCount === 1 ? "" : "s"}</Badge>;
+        },
+      },
+      {
+        key: "createdAt",
+        label: "Created",
+        sortable: true,
+        render: (value: string) => (
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            {new Date(value).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const chapterFilters = useMemo(
+    () => [
+      {
+        key: "courseId",
+        label: "Course",
+        type: "select" as const,
+        value: selectedCourseId > 0 ? String(selectedCourseId) : undefined,
+        onChange: (value: string | undefined) => setSelectedCourseId(value ? Number(value) : 0),
+        placeholder: "Select a course",
+        allLabel: "All courses",
+        options: courses.map((course) => ({
+          label: course.title,
+          value: String(course.id),
+        })),
+      },
+    ],
+    [courses, selectedCourseId]
+  );
+
+  useEffect(() => {
+    const storedCourseId = window.localStorage.getItem(storageKey);
+    if (!storedCourseId) return;
+
+    const parsedCourseId = Number(storedCourseId);
+    if (Number.isFinite(parsedCourseId) && parsedCourseId > 0) {
+      setSelectedCourseId(parsedCourseId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (coursesLoading || selectedCourseId > 0 || firstCreatedCourseId === 0) return;
+
+    setSelectedCourseId(firstCreatedCourseId);
+  }, [coursesLoading, firstCreatedCourseId, selectedCourseId]);
+
+  useEffect(() => {
+    if (selectedCourseId > 0) {
+      window.localStorage.setItem(storageKey, String(selectedCourseId));
+      return;
+    }
+
+    window.localStorage.removeItem(storageKey);
+  }, [selectedCourseId]);
+
+  useEffect(() => {
+    if (coursesLoading || selectedCourseId === 0) return;
+
+    const courseExists = courses.some((course) => course.id === selectedCourseId);
+    if (!courseExists) {
+      if (firstCreatedCourseId > 0) {
+        setSelectedCourseId(firstCreatedCourseId);
+      } else {
+        setSelectedCourseId(0);
+        window.localStorage.removeItem(storageKey);
+      }
+    }
+  }, [courses, coursesLoading, firstCreatedCourseId, selectedCourseId]);
 
   const openCreateDialog = () => {
     setEditingChapter(null);
@@ -304,11 +427,13 @@ export default function ChaptersPage() {
       toast.error("Chapter title is required");
       return;
     }
+
     const payload: ChapterRequest = {
       title: formTitle.trim(),
       orderIndex: formOrder,
       courseId: selectedCourseId,
     };
+
     try {
       if (editingChapter) {
         await update(editingChapter.id, payload);
@@ -326,6 +451,7 @@ export default function ChaptersPage() {
 
   const handleDelete = async () => {
     if (!deleteChapterId) return;
+
     const ok = await remove(deleteChapterId);
     if (ok) {
       toast.success("Chapter deleted successfully");
@@ -336,223 +462,55 @@ export default function ChaptersPage() {
     setDeleteChapterId(null);
   };
 
-  const selectedCourse = courses.find(c => c.id === selectedCourseId);
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Chapters</h2>
           <p className="text-muted-foreground">
-            Manage course chapters and view lessons within each chapter.
+            Manage course chapters with reusable dashboard components.
           </p>
         </div>
-        <Button onClick={openCreateDialog} disabled={!selectedCourseId}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Chapter
-        </Button>
       </div>
 
-      {/* Course Selector */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex-1 min-w-[250px]">
-              <Label className="text-sm text-muted-foreground mb-1.5 block">Select a Course</Label>
-              <Select
-                value={selectedCourseId ? String(selectedCourseId) : ""}
-                onValueChange={(val) => {
-                  setSelectedCourseId(Number(val));
-                  setExpandedChapters(new Set());
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a course to manage chapters..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {coursesLoading ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">Loading courses...</div>
-                  ) : courses.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">No courses found</div>
-                  ) : (
-                    courses.map((course) => (
-                      <SelectItem key={course.id} value={String(course.id)}>
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{course.title}</span>
-                          <Badge variant="outline" className="ml-2 text-[10px]">
-                            {course.totalChapters ?? 0} ch
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard icon={Layers} label="Total Chapters" value={totalChapters} color="#8b5cf6" loading={selectedCourseId > 0 && chaptersLoading} />
+        <StatCard icon={FileText} label="Total Lessons" value={totalLessons} color="#3b82f6" loading={selectedCourseId > 0 && chaptersLoading} />
+        <StatCard icon={BookOpen} label="Course Lessons" value={selectedCourse?.totalLessons ?? 0} color="#10b981" loading={selectedCourseId > 0 && chaptersLoading} />
+      </div>
 
-            {selectedCourseId > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search chapters..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-[220px]"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <DataTable<ChapterResponse>
+        title="Chapter Management"
+        description={
+          selectedCourse
+            ? `Browse, view, edit, and delete chapters for "${selectedCourse.title}".`
+            : "Select a course from the filters to manage chapters."
+        }
+        columns={chapterColumns}
+        useDataHook={useChaptersTable}
+        filters={chapterFilters}
+        defaultShowFilters
+        onView={(chapter) => setViewingChapter(chapter)}
+        onEdit={openEditDialog}
+        onDelete={(chapter) => setDeleteChapterId(chapter.id)}
+        headerActions={
+          <Button onClick={openCreateDialog} disabled={!selectedCourseId || coursesLoading}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Chapter
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      {selectedCourseId > 0 && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard icon={Layers} label="Total Chapters" value={totalChapters} color="from-violet-500 to-purple-600" loading={chaptersLoading} />
-          <StatCard icon={FileText} label="Total Lessons" value={totalLessons} color="from-blue-500 to-cyan-500" loading={chaptersLoading} />
-          <StatCard icon={BookOpen} label="Course Lessons" value={selectedCourse?.totalLessons ?? 0} color="from-emerald-500 to-teal-500" loading={chaptersLoading} />
-        </div>
-      )}
+      <ChapterViewDialog
+        chapter={viewingChapter}
+        open={viewingChapter !== null}
+        onClose={() => setViewingChapter(null)}
+      />
 
-      {/* Chapters List */}
-      {!selectedCourseId ? (
-        <Card>
-          <CardContent className="py-16">
-            <div className="text-center space-y-3">
-              <Layers className="h-16 w-16 mx-auto text-muted-foreground/30" />
-              <h3 className="text-lg font-medium">Select a Course</h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Choose a course from the dropdown above to view and manage its chapters.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : chaptersLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-5 w-8" />
-                  <Skeleton className="h-5 w-48 flex-1" />
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-8 w-8" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : filteredChapters.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Layers className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? "No chapters match your search" : "No chapters yet. Click \"Add Chapter\" to create one."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredChapters
-            .sort((a, b) => a.orderIndex - b.orderIndex)
-            .map((chapter) => {
-              const isExpanded = expandedChapters.has(chapter.id);
-              return (
-                <Collapsible key={chapter.id} open={isExpanded} onOpenChange={() => toggleExpand(chapter.id)}>
-                  <Card className={`transition-all ${isExpanded ? "ring-1 ring-primary/20 shadow-md" : ""}`}>
-                    {/* Chapter Header Row */}
-                    <div className="flex items-center justify-between p-4">
-                      <CollapsibleTrigger asChild>
-                        <button className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity">
-                          <div className="flex items-center gap-1.5">
-                            <GripVertical className="h-4 w-4 text-muted-foreground/40" />
-                            <Badge variant="secondary" className="font-mono text-xs">
-                              {chapter.orderIndex}
-                            </Badge>
-                          </div>
-                          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                            {chapter.title.charAt(0)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-sm">{chapter.title}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {chapter.description && (
-                                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                  {chapter.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs gap-1.5 mr-2">
-                            <FileText className="h-3 w-3" />
-                            {chapter.lessonCount || chapter.lessons?.length || 0} lesson{(chapter.lessonCount || chapter.lessons?.length || 0) !== 1 ? "s" : ""}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
-                            {new Date(chapter.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          </span>
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform" />
-                          )}
-                        </button>
-                      </CollapsibleTrigger>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 ml-2 flex-shrink-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(chapter)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteChapterId(chapter.id)}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {/* Expandable Lessons List */}
-                    <CollapsibleContent>
-                      <div className="border-t">
-                        <ChapterLessons chapterId={chapter.id} />
-                      </div>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-              );
-            })}
-        </div>
-      )}
-
-      {/* ─── Create / Edit Dialog ──────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {editingChapter ? "Edit Chapter" : "Add New Chapter"}
-            </DialogTitle>
+            <DialogTitle>{editingChapter ? "Edit Chapter" : "Add New Chapter"}</DialogTitle>
             <DialogDescription>
               {editingChapter
                 ? "Update the chapter details below."
@@ -565,7 +523,7 @@ export default function ChaptersPage() {
               <Input
                 placeholder="e.g., Getting Started"
                 value={formTitle}
-                onChange={(e) => setFormTitle(e.target.value)}
+                onChange={(event) => setFormTitle(event.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -574,11 +532,9 @@ export default function ChaptersPage() {
                 type="number"
                 min={0}
                 value={formOrder}
-                onChange={(e) => setFormOrder(parseInt(e.target.value) || 0)}
+                onChange={(event) => setFormOrder(parseInt(event.target.value, 10) || 0)}
               />
-              <p className="text-xs text-muted-foreground">
-                Lower numbers appear first in the course.
-              </p>
+              <p className="text-xs text-muted-foreground">Lower numbers appear first in the course.</p>
             </div>
           </div>
           <DialogFooter>
@@ -593,20 +549,20 @@ export default function ChaptersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── Delete Confirmation ───────────────────────────────── */}
-      <AlertDialog open={!!deleteChapterId} onOpenChange={(o) => !o && setDeleteChapterId(null)}>
+      <AlertDialog open={deleteChapterId !== null} onOpenChange={(open) => !open && setDeleteChapterId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Chapter</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this chapter? This will also remove all lessons within it. This action cannot be undone.
+              Are you sure you want to delete this chapter? This will also remove all lessons within it.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 text-white hover:bg-red-700"
               disabled={removing}
             >
               {removing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

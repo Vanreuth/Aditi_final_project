@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   CheckCircle2,
@@ -74,18 +74,19 @@ export function LessonContent({
 }: LessonContentProps) {
   return (
     <>
-      {/* ── Sticky topbar ── */}
+      {/* â”€â”€ Sticky topbar â”€â”€ */}
       <div
-        className="sticky top-0 z-20 px-6 py-3 flex items-center gap-3"
+        className="sticky top-0 z-20 px-5 py-2.5 flex items-center gap-3"
         style={{
           background: "var(--cl-bg)",
           backdropFilter: "blur(16px)",
           borderBottom: "1px solid var(--cl-border)",
         }}
       >
+        {/* GFG green accent bar */}
         <div
-          className="h-5 w-1 rounded-full shrink-0"
-          style={{ background: visual.accent, boxShadow: `0 0 8px ${visual.accent}80` }}
+          className="h-4 w-0.5 rounded-full shrink-0"
+          style={{ background: "#2f8d46" }}
         />
         <div className="flex items-center gap-2 text-xs min-w-0 flex-1">
           <span
@@ -94,21 +95,30 @@ export function LessonContent({
           >
             {selectedLesson.chapterTitle}
           </span>
-          <ChevronRight className="h-3 w-3 shrink-0 hidden sm:block" style={{ color: "var(--cl-border-hi)" }} />
-          <span className="truncate font-semibold" style={{ color: "var(--cl-text-hi)", fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif" }}>
+          <ChevronRight
+            className="h-3 w-3 shrink-0 hidden sm:block"
+            style={{ color: "var(--cl-border-hi)" }}
+          />
+          <span
+            className="truncate font-semibold"
+            style={{
+              color: "var(--cl-text-hi)",
+              fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif",
+            }}
+          >
             {selectedLesson.title}
           </span>
         </div>
 
         {loadingLesson && (
           <div className="flex items-center gap-1.5 shrink-0">
-            <Loader2 className="h-3 w-3 animate-spin" style={{ color: visual.accent }} />
-            <span className="text-[10px]" style={{ color: "var(--cl-text)" }}>Loading…</span>
+            <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#2f8d46" }} />
+            <span className="text-[10px]" style={{ color: "var(--cl-text)" }}>Loadingâ€¦</span>
           </div>
         )}
 
         <div
-          className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold"
+          className="shrink-0 px-2.5 py-1 rounded text-[10px] font-semibold"
           style={{
             background: "var(--cl-bg-raised)",
             color: "var(--cl-text)",
@@ -120,61 +130,59 @@ export function LessonContent({
         </div>
       </div>
 
-      {/* ── Lesson body ── */}
+      {/* â”€â”€ Lesson body â”€â”€ */}
       {loadingLesson ? (
         <LessonSkeleton />
       ) : (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-5 py-8 pb-16">
-          {/* Lesson header */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-8 pb-16">
+
+          {/* Lesson header â€” GFG-style clean card with top green border */}
           <div
-            className="rounded-2xl p-6 mb-8 relative overflow-hidden"
+            className="rounded-xl p-6 mb-8"
             style={{
-              background: `linear-gradient(135deg, ${visual.accentMuted}, rgba(255,255,255,0.02))`,
-              border: `1px solid ${visual.accentRing}`,
+              background: "var(--cl-bg-card)",
+              border: "1px solid var(--cl-border)",
+              borderTop: "3px solid #2f8d46",
             }}
           >
-            <div
-              className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl"
-              style={{ background: visual.accent, transform: "translate(30%, -30%)" }}
-            />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <span
-                  className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
-                  style={{
-                    background: visual.accentMuted,
-                    color: visual.accent,
-                    border: `1px solid ${visual.accentRing}`,
-                  }}
-                >
-                  {selectedLesson.chapterTitle}
-                </span>
-                <span
-                  className="text-[10px]"
-                  style={{ color: "var(--cl-text-ghost)", fontFamily: "'DM Mono', monospace" }}
-                >
-                  Lesson {selectedLesson.orderIndex}
-                </span>
-              </div>
-              <h1
-                className="text-xl lg:text-2xl leading-tight mb-1"
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider"
                 style={{
-                  color: "var(--cl-text-hi)",
-                  letterSpacing: "-0.025em",
-                  fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif",
+                  background: "rgba(47,141,70,0.10)",
+                  color: "#2f8d46",
+                  border: "1px solid rgba(47,141,70,0.20)",
                 }}
               >
-                {selectedLesson.title}
-              </h1>
-              {selectedLesson.description && (
-                <p
-                  className="text-sm leading-relaxed mt-2 line-clamp-2"
-                  style={{ color: "var(--cl-text)" }}
-                >
-                  {selectedLesson.description}
-                </p>
-              )}
+                {selectedLesson.chapterTitle}
+              </span>
+              <span
+                className="text-[10px]"
+                style={{ color: "var(--cl-text-ghost)", fontFamily: "'DM Mono', monospace" }}
+              >
+                Lesson {selectedLesson.orderIndex}
+              </span>
             </div>
+
+            <h1
+              className="text-xl lg:text-2xl font-bold leading-tight"
+              style={{
+                color: "var(--cl-text-hi)",
+                letterSpacing: "-0.02em",
+                fontFamily: "'Outfit', var(--font-khmer), 'Noto Sans Khmer', sans-serif",
+              }}
+            >
+              {selectedLesson.title}
+            </h1>
+
+            {selectedLesson.description && (
+              <p
+                className="text-sm leading-relaxed mt-3"
+                style={{ color: "var(--cl-text)" }}
+              >
+                {selectedLesson.description}
+              </p>
+            )}
           </div>
 
           {/* Lesson content */}
@@ -199,13 +207,13 @@ export function LessonContent({
           {/* Code snippets */}
           {selectedLesson.codeSnippets && selectedLesson.codeSnippets.length > 0 && (
             <div className="mb-10">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-4">
                 <div
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-semibold"
                   style={{
-                    background: visual.accentMuted,
-                    border: `1px solid ${visual.accentRing}`,
-                    color: visual.accent,
+                    background: "rgba(47,141,70,0.10)",
+                    border: "1px solid rgba(47,141,70,0.22)",
+                    color: "#2f8d46",
                   }}
                 >
                   <Code2 className="h-3.5 w-3.5" />
@@ -225,12 +233,12 @@ export function LessonContent({
             </div>
           )}
 
-          {/* ── Bottom action bar ── */}
+          {/* â”€â”€ Bottom action bar â”€â”€ */}
           <div
-            className="rounded-2xl overflow-hidden"
+            className="rounded-xl overflow-hidden"
             style={{ background: "var(--cl-bg-card)", border: "1px solid var(--cl-border)" }}
           >
-            {/* Mark complete */}
+            {/* Mark complete row */}
             <div
               className="px-5 py-4 flex items-center justify-between gap-4"
               style={{ borderBottom: "1px solid var(--cl-border)" }}
@@ -238,13 +246,13 @@ export function LessonContent({
               {completedLessons.has(selectedLesson.id) ? (
                 <div className="flex items-center gap-3">
                   <div
-                    className="h-9 w-9 rounded-xl flex items-center justify-center"
-                    style={{ background: "#16a34a20", border: "1px solid #16a34a40" }}
+                    className="h-9 w-9 rounded-lg flex items-center justify-center"
+                    style={{ background: "rgba(22,163,74,0.10)", border: "1px solid rgba(22,163,74,0.30)" }}
                   >
-                    <CheckCircle2 className="h-4 w-4" style={{ color: "#4ade80" }} />
+                    <CheckCircle2 className="h-4 w-4" style={{ color: "#16a34a" }} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: "#4ade80" }}>
+                    <p className="text-sm font-semibold" style={{ color: "#16a34a" }}>
                       Lesson completed
                     </p>
                     <p className="text-[10px]" style={{ color: "var(--cl-text-ghost)" }}>
@@ -255,7 +263,7 @@ export function LessonContent({
               ) : (
                 <div>
                   <p className="text-sm font-medium" style={{ color: "var(--cl-text)" }}>
-                    Understood this lesson?
+                    Finished this lesson?
                   </p>
                   <p className="text-[10px]" style={{ color: "var(--cl-text-ghost)" }}>
                     Mark it complete and continue
@@ -266,14 +274,14 @@ export function LessonContent({
                 <button
                   onClick={onMarkComplete}
                   disabled={markingComplete}
-                  className="complete-btn flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shrink-0"
+                  className="complete-btn flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold shrink-0"
                   style={{
-                    background: "#16a34a",
+                    background: "#2f8d46",
                     color: "#fff",
                     border: "none",
                     cursor: markingComplete ? "not-allowed" : "pointer",
                     opacity: markingComplete ? 0.7 : 1,
-                    boxShadow: "0 4px 14px rgba(22,163,74,0.3)",
+                    boxShadow: "0 4px 14px rgba(47,141,70,0.30)",
                   }}
                 >
                   {markingComplete ? (
@@ -300,10 +308,16 @@ export function LessonContent({
                 }}
               >
                 <div
-                  className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: "var(--cl-bg-raised)", border: "1px solid var(--cl-border-hi)" }}
+                  className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: canGoPrev ? "rgba(47,141,70,0.10)" : "var(--cl-bg-raised)",
+                    border: `1px solid ${canGoPrev ? "rgba(47,141,70,0.25)" : "var(--cl-border-hi)"}`,
+                  }}
                 >
-                  <ChevronLeft className="h-4 w-4" style={{ color: "var(--cl-text)" }} />
+                  <ChevronLeft
+                    className="h-4 w-4"
+                    style={{ color: canGoPrev ? "#2f8d46" : "var(--cl-text-ghost)" }}
+                  />
                 </div>
                 <div className="min-w-0">
                   <p
@@ -313,7 +327,7 @@ export function LessonContent({
                     Previous
                   </p>
                   <p className="text-xs font-medium line-clamp-1" style={{ color: "var(--cl-text)" }}>
-                    {prevLesson?.title ?? "—"}
+                    {prevLesson?.title ?? "â€”"}
                   </p>
                 </div>
               </button>
@@ -337,26 +351,28 @@ export function LessonContent({
                   </p>
                   <p
                     className="text-xs font-medium line-clamp-1"
-                    style={{ color: canGoNext ? "var(--cl-text-lo)" : "var(--cl-text-ghost)" }}
+                    style={{ color: canGoNext ? "var(--cl-text)" : "var(--cl-text-ghost)" }}
                   >
-                    {nextLesson?.title ?? "—"}
+                    {nextLesson?.title ?? "â€”"}
                   </p>
                 </div>
                 <div
-                  className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
+                  className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{
-                    background: canGoNext ? visual.accent : "var(--cl-bg-raised)",
-                    boxShadow: canGoNext ? `0 0 12px ${visual.accent}50` : "none",
+                    background: canGoNext ? "#2f8d46" : "var(--cl-bg-raised)",
+                    border: canGoNext ? "none" : "1px solid var(--cl-border-hi)",
+                    boxShadow: canGoNext ? "0 2px 10px rgba(47,141,70,0.30)" : "none",
                   }}
                 >
                   <ChevronRight
                     className="h-4 w-4"
-                    style={{ color: canGoNext ? "var(--cl-bg)" : "var(--cl-text-ghost)" }}
+                    style={{ color: canGoNext ? "white" : "var(--cl-text-ghost)" }}
                   />
                 </div>
               </button>
             </div>
           </div>
+
         </div>
       )}
     </>

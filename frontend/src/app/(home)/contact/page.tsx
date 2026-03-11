@@ -62,10 +62,10 @@ export default function ContactPage() {
             </span>{" "}
             ត្រឹមត្រូវ
             <br />
-            ជាមួយ Mentor ណែនាំ
+            ជាមួយ ការសិក្សា​ដោយឥតគិតថ្លៃជាភាសាខ្មែរ
           </h1>
           <p className="mt-4 text-base leading-relaxed text-slate-600 md:text-lg dark:text-slate-300">
-            ប្រាប់ goal និង skill level — Mentor នឹង propose course sequence
+            ប្រាប់ goal និង skill level នឹង propose course sequence
             និង roadmap ដែលត្រូវជាមួយ timeline របស់អ្នក ក្នុង{" "}
             <strong className="text-slate-800 dark:text-slate-200">24 ម៉ោង</strong>។
           </p>
@@ -74,8 +74,8 @@ export default function ContactPage() {
           <div className="mt-5 flex flex-wrap gap-3">
             {[
               "ឥតគិតថ្លៃ",
-              "ឆ្លើយក្នុង 24h",
-              "Mentor ពិតប្រាកដ",
+              "ទាញយកសៀវភៅឥតគិតថ្លៃ",
+              // "",
               "ជាភាសាខ្មែរ",
             ].map((t) => (
               <span

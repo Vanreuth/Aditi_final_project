@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useFeaturedCourses } from "@/hooks/useCourses";
 import { CourseCard } from "@/components/course/courseCard";
 import type { CourseResponse } from "@/types/courseType";
+import SectionHeader from "../section/SectionHeader";
 
 export function FeaturedCoursesSection() {
   const { data, loading, error, refetch } = useFeaturedCourses({ page: 0, size: 60 });
@@ -42,15 +43,11 @@ export function FeaturedCoursesSection() {
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-      <div className="mx-auto max-w-4xl text-center">
-        <div className="mx-auto mb-4 h-1 w-28 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500" />
-        <h2 className="text-3xl font-black text-foreground md:text-5xl">
-          វគ្គសិក្សាពេញនិយម
-        </h2>
-        <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground md:text-base">
-          បង្ហាញតែវគ្គសិក្សា Featured ប៉ុណ្ណោះ
-        </p>
-      </div>
+       <SectionHeader
+              title="វគ្គសិក្សា"
+              highlight="ពេញនិយមរបស់យើង"
+              description="បង្ហាញតែវគ្គសិក្សាពេញនិយមរបស់យើងប៉ុណ្ណោះ"
+            />
 
       <div className="mx-auto mt-8 max-w-7xl rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm backdrop-blur">
         <div className="relative">

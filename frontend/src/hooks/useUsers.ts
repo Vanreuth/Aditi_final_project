@@ -71,8 +71,8 @@ export function useUserAdmin() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload, photo }: { id: number; payload: UpdateUserRequest; photo?: File }) =>
-      userService.update(id, payload, photo),
+    mutationFn: ({ id, payload }: { id: number; payload: UpdateUserRequest }) =>
+      userService.update(id, payload),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: userKeys.detail(id) })
       invalidate()
@@ -91,8 +91,8 @@ export function useUserAdmin() {
     error   : (createMutation.error ?? updateMutation.error ?? removeMutation.error)?.message ?? null,
     create  : (payload: UserRequest, profilePicture?: File) =>
       createMutation.mutateAsync({ payload, profilePicture }),
-    update  : (id: number, payload: UpdateUserRequest, photo?: File) =>
-      updateMutation.mutateAsync({ id, payload, photo }),
+    update  : (id: number, payload: UpdateUserRequest) =>
+      updateMutation.mutateAsync({ id, payload }),
     remove  : (id: number) =>
       removeMutation.mutateAsync(id).then(() => true as const).catch(() => false as const),
   }

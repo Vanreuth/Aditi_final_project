@@ -42,7 +42,12 @@ httpClient.interceptors.response.use(
     if (isRefreshing) {
       return new Promise<void>((resolve, reject) =>
         failedQueue.push({ resolve, reject })
-      ).then(() => httpClient(original))
+      ).then(() => {
+        // Mark as retried so a second 401 on this request doesn't trigger
+        // another refresh cycle
+        original._retry = true
+        return httpClient(original)
+      })
     }
 
     original._retry = true
@@ -55,11 +60,9 @@ httpClient.interceptors.response.use(
       return httpClient(original)
     } catch (refreshError) {
       processQueue(refreshError)
-      // Do not redirect to login if the original request was just checking auth status (e.g., initial load)
-      const isAuthCheck = original.url?.includes('/api/v1/auth/me');
-      if (!isOnAuthPage() && !isAuthCheck) {
-        window.location.href = '/login'
-      }
+      // Do NOT do window.location.href here — it causes hard-reload races with
+      // the AuthContext redirect logic and triggers the middleware canRefresh loop.
+      // AuthContext / page-level guards handle navigation after auth failure.
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

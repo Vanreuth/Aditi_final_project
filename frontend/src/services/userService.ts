@@ -30,10 +30,9 @@ export const userService = {
     return post<UserResponse>(USER_PATH, form, { multipart: true })
   },
 
-  /** PUT /:id — [ADMIN] multipart/form-data */
-  update: (id: number, payload: UpdateUserRequest, photo?: File): Promise<UserResponse> => {
-    const form = buildFormData(payload as unknown as Record<string, unknown>, { profilePicture: photo })
-    return put<UserResponse>(`${USER_PATH}/${id}`, form, { multipart: true })
+  /** PUT /:id — [ADMIN] JSON body */
+  update: (id: number, payload: UpdateUserRequest): Promise<UserResponse> => {
+    return put<UserResponse>(`${USER_PATH}/${id}`, payload)
   },
 
   /** DELETE /:id — [ADMIN] */

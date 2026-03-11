@@ -46,7 +46,6 @@ export function CourseFilterBar({
   totalCount,
   hasActiveFilters,
   onClearFilters,
-  isLiveApi,
   isApiError,
 }: CourseFilterBarProps) {
   return (
@@ -59,7 +58,7 @@ export function CourseFilterBar({
             placeholder="ស្វែងរកវគ្គសិក្សា…"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            className="pl-9 bg-background border-border focus-visible:ring-violet-400"
+            className="pl-9 bg-background border-border focus-visible:ring-[#2f8d46]"
           />
         </div>
         {hasActiveFilters && (
@@ -83,9 +82,10 @@ export function CourseFilterBar({
             onClick={() => onLevelChange(lvl)}
             className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
               selectedLevel === lvl
-                ? "border-violet-500 bg-violet-600 text-white shadow-sm shadow-violet-400/30"
-                : "border-border bg-background text-muted-foreground hover:border-violet-400/60 hover:bg-violet-500/10 hover:text-violet-600"
+                ? "border-[#2f8d46] text-white shadow-sm"
+                : "border-border bg-background text-muted-foreground hover:border-[#2f8d46]/60 hover:text-[#2f8d46]"
             }`}
+            style={selectedLevel === lvl ? { background: '#2f8d46' } : undefined}
           >
             {levelLabel[lvl] ?? lvl}
           </button>
@@ -101,9 +101,10 @@ export function CourseFilterBar({
             onClick={() => onCategoryChange(opt.name, opt.id)}
             className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 ${
               selectedCategory === opt.name
-                ? "border-indigo-500 bg-indigo-600 text-white shadow-sm shadow-indigo-400/30"
-                : "border-border bg-background text-muted-foreground hover:border-indigo-400/60 hover:bg-indigo-500/10 hover:text-indigo-600"
+                ? "border-[#2f8d46] text-white shadow-sm"
+                : "border-border bg-background text-muted-foreground hover:border-[#2f8d46]/60 hover:text-[#2f8d46]"
             }`}
+            style={selectedCategory === opt.name ? { background: '#2f8d46' } : undefined}
           >
             {opt.name === "All" ? "ប្រភេទទាំងអស់" : opt.name}
           </button>
@@ -114,7 +115,7 @@ export function CourseFilterBar({
       <div className="mt-3 flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           បង្ហាញ{" "}
-          <span className="font-semibold text-violet-600 dark:text-violet-400">{totalCount}</span>{" "}
+          <span className="font-semibold" style={{ color: '#2f8d46' }}>{totalCount}</span>{" "}
           វគ្គ
         </p>
         {isApiError && (

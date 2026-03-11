@@ -92,6 +92,7 @@ export function DemoCodeSection() {
         <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
           សាកល្បងមើល code និង output ជាក់ស្តែង លើភាសាផ្សេងៗ
         </p>
+        ពេញនិយមរបស់យើង
 
         <div className="mt-7 flex items-center justify-center gap-3">
           <ControlButton onClick={prev} label="មុន">

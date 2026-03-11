@@ -8,14 +8,15 @@ export interface UserResponse {
   id: number
   username: string
   email: string
-  /** Widened to string so comparisons with 'ADMIN', 'INSTRUCTOR', 'USER' don't error */
-  role: string
-  profilePicture?: string
-  avatar?: string | null
+  /** Array of roles returned by the backend, e.g. ["USER", "ADMIN"] */
+  roles: string[]
+  profile_picture?: string | null
   phoneNumber?: string | null
   address?: string | null
   bio?: string | null
-  isActive: boolean
+  /** "ACTIVE" | "INACTIVE" | "BANNED" */
+  status: string
+  login_attempt?: number
   createdAt: string
   updatedAt?: string | null
 }
@@ -25,11 +26,18 @@ export interface UserRequest {
   email: string
   password: string
   role?: string
+  phoneNumber?: string
+  address?: string
+  bio?: string
 }
 
 export interface UpdateUserRequest {
   username?: string
   email?: string
   password?: string
-  role?: string
+  roles?: string[]
+  phoneNumber?: string
+  address?: string
+  bio?: string
+  status?: string
 }

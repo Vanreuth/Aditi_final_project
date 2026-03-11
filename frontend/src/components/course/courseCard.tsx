@@ -11,9 +11,9 @@ const levelColors: Record<string, string> = {
 };
 
 const levelLabel: Record<string, string> = {
-    BEGINNER: "ចាប់ផ្តើម",
-    INTERMEDIATE: "មធ្យម",
-    ADVANCED: "ខ្ពស់",
+    BEGINNER: "កម្រិតចាប់ផ្តើម",
+    INTERMEDIATE: "កម្រិតមធ្យម",
+    ADVANCED: "កម្រិតខ្ពស់",
 };
 
 export function CourseCard({
@@ -26,7 +26,7 @@ export function CourseCard({
     const isFree = !course.price || course.price === 0;
 
     return (
-        <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10">
+        <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" style={{ '--tw-shadow-color': 'rgba(47,141,70,0.12)' } as React.CSSProperties}>
 
             {/* Thumbnail */}
             <div className="relative h-44 overflow-hidden">
@@ -79,14 +79,14 @@ export function CourseCard({
             {levelLabel[course.level ?? ""] ?? course.level ?? ""}
           </span>
 
-                    <span className="text-sm font-bold text-violet-600 dark:text-violet-400">
+                    <span className="text-sm font-bold" style={{ color: '#2f8d46' }}>
             {isFree ? "ឥតគិតថ្លៃ" : `$${course.price}`}
           </span>
 
                 </div>
 
                 {/* Title */}
-                <h3 className="line-clamp-2 font-semibold text-foreground transition-colors group-hover:text-violet-600">
+                <h3 className="line-clamp-2 font-semibold text-foreground transition-colors" style={{ color: 'inherit' }}>
                     {course.title}
                 </h3>
 
@@ -128,7 +128,8 @@ export function CourseCard({
                 <Button
                     asChild
                     size="sm"
-                    className="mt-4 w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm hover:from-violet-500 hover:to-indigo-500"
+                    className="mt-4 w-full text-white shadow-sm"
+                    style={{ background: '#2f8d46' }}
                 >
                     <Link href={`/${course.slug}`}>
                         {isFree ? "ចូលរៀនឥតគិតថ្លៃ" : "មើលវគ្គសិក្សា"}

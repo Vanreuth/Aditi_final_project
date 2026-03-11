@@ -1,6 +1,7 @@
+// hooks/useLessonProgress.ts
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   useQuery,
   useMutation,
@@ -39,8 +40,6 @@ function toState<T>(q: { data?: T; isPending: boolean; error: Error | null }) {
 
 // ═════════════════════════════════════════════════════════════
 //  1. useLessonProgress — single lesson progress + mutations
-//     Use this when you need to READ a single lesson's progress
-//     (e.g. lesson detail page). It fires GET /lesson-progress?lessonId=
 // ═════════════════════════════════════════════════════════════
 
 export function useLessonProgress(lessonId: number) {
@@ -73,7 +72,6 @@ export function useLessonProgress(lessonId: number) {
     onSuccess : () => {
       qc.removeQueries({ queryKey: progressKeys.detail(lessonId) })
       qc.invalidateQueries({ queryKey: progressKeys.mine })
-      // ✅ deleted completed lesson must also decrement the count cache
       qc.invalidateQueries({ queryKey: progressKeys.count })
     },
   })
@@ -89,10 +87,6 @@ export function useLessonProgress(lessonId: number) {
 
 // ═════════════════════════════════════════════════════════════
 //  2. useLessonProgressActions — mutations ONLY, no GET query
-//
-//     Use this in list rows (e.g. ActivityTab's LessonRow) where
-//     you already have the data from /me and do NOT want an extra
-//     GET /lesson-progress?lessonId= firing for every row.
 // ═════════════════════════════════════════════════════════════
 
 export function useLessonProgressActions(lessonId: number) {
@@ -101,7 +95,6 @@ export function useLessonProgressActions(lessonId: number) {
   const completeMutation = useMutation({
     mutationFn: () => lessonProgressService.markCompleted(lessonId),
     onSuccess : (data) => {
-      // Update detail cache if it exists (no-op if not cached)
       qc.setQueryData(progressKeys.detail(lessonId), data)
       qc.invalidateQueries({ queryKey: progressKeys.mine })
       qc.invalidateQueries({ queryKey: progressKeys.count })
@@ -144,14 +137,23 @@ export function useMyProgress() {
     queryFn : () => lessonProgressService.getMine(),
   })
 
-  const completedIds = (query.data ?? [])
-    .filter((p) => p.completed)
-    .map((p) => p.lessonId)
+  // ✅ FIX 1 — stable completedIds with useMemo instead of inline array creation.
+  //
+  // ❌ BEFORE:
+  //   const completedIds = query.data?.filter(...).map(...)
+  //   → new array reference on EVERY render, even when data hasn't changed
+  //   → anything that depended on completedIds (useCallback, useEffect) would
+  //     re-run on every render, causing cascading re-renders across the whole page.
+  //
+  // ✅ AFTER: useMemo with query.data as the dep — only recomputes when data changes.
+  const completedIds = useMemo(
+    () => (query.data ?? []).filter((p) => p.completed).map((p) => p.lessonId),
+    [query.data],
+  )
 
   const isCompleted = useCallback(
     (lessonId: number) => completedIds.includes(lessonId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(completedIds)],
+    [completedIds],   // ✅ stable — only changes when completedIds actually changes
   )
 
   return {
@@ -173,9 +175,11 @@ export function useCourseProgress(courseId: number, totalLessons: number = 0) {
     enabled : !!courseId,
   })
 
-  const completedIds = (query.data ?? [])
-    .filter((p) => p.completed)
-    .map((p) => p.lessonId)
+  // ✅ Same fix — stable completedIds
+  const completedIds = useMemo(
+    () => (query.data ?? []).filter((p) => p.completed).map((p) => p.lessonId),
+    [query.data],
+  )
 
   const completedCount  = completedIds.length
   const totalCount      = totalLessons || (query.data?.length ?? 0)
@@ -185,8 +189,7 @@ export function useCourseProgress(courseId: number, totalLessons: number = 0) {
 
   const isCompleted = useCallback(
     (lessonId: number) => completedIds.includes(lessonId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(completedIds)],
+    [completedIds],
   )
 
   return {
@@ -201,8 +204,7 @@ export function useCourseProgress(courseId: number, totalLessons: number = 0) {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  5. useCompletedCount — global completed lesson count
-//     Hits GET /me/completed-count — fast, cheap, always accurate
+//  5. useCompletedCount
 // ═════════════════════════════════════════════════════════════
 
 export function useCompletedCount() {
@@ -215,7 +217,6 @@ export function useCompletedCount() {
 
 // ═════════════════════════════════════════════════════════════
 //  6. useCompletedCountByCourse
-//     Hits GET /course/{courseId}/completed-count
 // ═════════════════════════════════════════════════════════════
 
 export function useCompletedCountByCourse(courseId: number) {
@@ -232,25 +233,38 @@ export function useCompletedCountByCourse(courseId: number) {
 // ═════════════════════════════════════════════════════════════
 
 export function useScrollTracker(lessonId: number) {
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  // ✅ FIX 2 — use a ref for the timer instead of useState.
+  //
+  // ❌ BEFORE:
+  //   const [timer, setTimer] = useState(null)
+  //   saveScroll called setTimer(t) → state update → re-render
+  //   → new timer ref → saveScroll recreated → anything using saveScroll re-ran
+  //   → if saveScroll was in a useEffect dep, it fired again → infinite loop.
+  //
+  // ✅ AFTER: useRef never triggers a re-render when mutated.
+  //   The timer value is stored in ref.current — stable, no re-render side effects.
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, []) // ✅ empty deps — runs cleanup exactly once on unmount
 
   const saveScroll = useCallback(
     (scrollPosition: number, readTimeSeconds?: number) => {
       if (!lessonId) return
-      if (timer) clearTimeout(timer)
-      const t = setTimeout(() => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
         lessonProgressService
           .upsert({ lessonId, scrollPosition, readTimeSeconds })
           .catch(() => {})
       }, 1500)
-      setTimer(t)
+      // ✅ No setTimer call — ref mutation is silent, no re-render triggered
     },
-    [lessonId, timer],
+    [lessonId], // ✅ only lessonId — timer is a ref now, not a dep
   )
-
-  useEffect(() => {
-    return () => { if (timer) clearTimeout(timer) }
-  }, [timer])
 
   return { saveScroll }
 }

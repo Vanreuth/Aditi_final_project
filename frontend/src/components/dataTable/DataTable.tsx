@@ -47,11 +47,26 @@ interface DataTableProps<T extends DataRow> {
     error: any;
     refetch?: () => void;
   };
-  filters?: { key: string; label: string; type: 'select' | 'text'; options?: { label: string; value: any }[] }[];
+  filters?: {
+    key: string;
+    label: string;
+    type: 'select' | 'text';
+    options?: { label: string; value: any }[];
+    placeholder?: string;
+    allLabel?: string;
+    value?: any;
+    onChange?: (value: any) => void;
+  }[];
   onView?: (item: T) => void;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   headerActions?: React.ReactNode;
+  defaultShowFilters?: boolean;
+  actionLabels?: {
+    view?: string;
+    edit?: string;
+    delete?: string;
+  };
 }
 
 export function DataTable<T extends DataRow>({
@@ -64,6 +79,8 @@ export function DataTable<T extends DataRow>({
   onEdit,
   onDelete,
   headerActions,
+  defaultShowFilters = false,
+  actionLabels,
 }: DataTableProps<T>) {
   // --- States ---
   const [search, setSearch] = useState("");
@@ -72,12 +89,31 @@ export function DataTable<T extends DataRow>({
   const [sortBy, setSortBy] = useState("id");
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>("asc");
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(defaultShowFilters);
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     columns.forEach((col) => { initial[col.key] = true; });
     return initial;
   });
+
+  const resolvedFilters = useMemo(() => {
+    if (!filterConfig) return activeFilters;
+
+    return filterConfig.reduce<Record<string, any>>((accumulator, filter) => {
+      const rawValue = filter.value !== undefined ? filter.value : activeFilters[filter.key];
+
+      if (
+        rawValue !== undefined &&
+        rawValue !== null &&
+        rawValue !== "" &&
+        rawValue !== "ALL"
+      ) {
+        accumulator[filter.key] = rawValue;
+      }
+
+      return accumulator;
+    }, {});
+  }, [activeFilters, filterConfig]);
 
   // --- API Sync ---
   const queryParams = useMemo(() => ({
@@ -86,8 +122,8 @@ export function DataTable<T extends DataRow>({
     sortBy,
     sortDir,
     search: search || undefined,
-    ...activeFilters
-  }), [page, size, sortBy, sortDir, search, activeFilters]);
+    ...resolvedFilters
+  }), [page, resolvedFilters, search, size, sortBy, sortDir]);
 
   const { data, isLoading, isError, error, refetch } = useDataHook(queryParams);
 
@@ -138,9 +174,9 @@ export function DataTable<T extends DataRow>({
             >
               <Filter className="mr-2 h-4 w-4" />
               Filters
-              {Object.keys(activeFilters).length > 0 && (
+              {Object.keys(resolvedFilters).length > 0 && (
                 <Badge variant="default" className="ml-2 px-1.5 py-0.5 text-[10px] rounded-full">
-                  {Object.keys(activeFilters).length}
+                  {Object.keys(resolvedFilters).length}
                 </Badge>
               )}
             </Button>
@@ -172,15 +208,23 @@ export function DataTable<T extends DataRow>({
             {filterConfig.map(f => (
               <div key={f.key} className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{f.label}</label>
-                <Select onValueChange={(v) => {
-                  setActiveFilters(p => ({ ...p, [f.key]: v === "ALL" ? undefined : v }));
-                  setPage(0);
-                }}>
+                <Select
+                  value={String(f.value ?? activeFilters[f.key] ?? "ALL")}
+                  onValueChange={(v) => {
+                    const nextValue = v === "ALL" ? undefined : v;
+                    if (f.onChange) {
+                      f.onChange(nextValue);
+                    } else {
+                      setActiveFilters(p => ({ ...p, [f.key]: nextValue }));
+                    }
+                    setPage(0);
+                  }}
+                >
                   <SelectTrigger className="h-9">
-                    <SelectValue placeholder="All" />
+                    <SelectValue placeholder={f.placeholder ?? "All"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All {f.label}</SelectItem>
+                    <SelectItem value="ALL">{f.allLabel ?? `All ${f.label}`}</SelectItem>
                     {f.options?.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -259,10 +303,22 @@ export function DataTable<T extends DataRow>({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem onClick={() => onView?.(item)}>View</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit?.(item)}>Edit</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => onDelete?.(item)}>Delete</DropdownMenuItem>
+                          {onView && (
+                            <DropdownMenuItem onClick={() => onView(item)}>
+                              {actionLabels?.view ?? "View"}
+                            </DropdownMenuItem>
+                          )}
+                          {onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(item)}>
+                              {actionLabels?.edit ?? "Edit"}
+                            </DropdownMenuItem>
+                          )}
+                          {onDelete && (onView || onEdit) && <DropdownMenuSeparator />}
+                          {onDelete && (
+                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => onDelete(item)}>
+                              {actionLabels?.delete ?? "Delete"}
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

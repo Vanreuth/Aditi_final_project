@@ -27,6 +27,11 @@ import { useReadingTimer } from "@/hooks/usereadingtimer";
 
 // ─── Visual helper ────────────────────────────────────────────────────────────
 
+// ─── Single GFG-inspired green theme ─────────────────────────────────────────
+const GFG_ACCENT      = "#2f8d46";
+const GFG_MUTED       = "rgba(47,141,70,0.10)";
+const GFG_RING        = "rgba(47,141,70,0.22)";
+
 function getCourseVisual(title: string): {
   accent: string;
   accentMuted: string;
@@ -35,23 +40,20 @@ function getCourseVisual(title: string): {
   tag: string;
 } {
   const t = title.toLowerCase();
-  if (t.includes("html"))
-    return { accent: "#f97316", accentMuted: "rgba(249,115,22,0.12)", accentRing: "rgba(249,115,22,0.35)", icon: "🌐", tag: "HTML" };
-  if (t.includes("css"))
-    return { accent: "#06b6d4", accentMuted: "rgba(6,182,212,0.12)", accentRing: "rgba(6,182,212,0.35)", icon: "🎨", tag: "CSS" };
-  if (t.includes("javascript") || t.includes("js"))
-    return { accent: "#eab308", accentMuted: "rgba(234,179,8,0.12)", accentRing: "rgba(234,179,8,0.35)", icon: "⚡", tag: "JS" };
-  if (t.includes("next"))
-    return { accent: "#e2e8f0", accentMuted: "rgba(226,232,240,0.08)", accentRing: "rgba(226,232,240,0.25)", icon: "▲", tag: "Next.js" };
-  if (t.includes("react"))
-    return { accent: "#38bdf8", accentMuted: "rgba(56,189,248,0.12)", accentRing: "rgba(56,189,248,0.35)", icon: "⚛️", tag: "React" };
-  if (t.includes("spring") || t.includes("java"))
-    return { accent: "#4ade80", accentMuted: "rgba(74,222,128,0.12)", accentRing: "rgba(74,222,128,0.35)", icon: "🍃", tag: "Java" };
-  if (t.includes("docker") || t.includes("devops"))
-    return { accent: "#60a5fa", accentMuted: "rgba(96,165,250,0.12)", accentRing: "rgba(96,165,250,0.35)", icon: "🐳", tag: "DevOps" };
-  if (t.includes("python"))
-    return { accent: "#a78bfa", accentMuted: "rgba(167,139,250,0.12)", accentRing: "rgba(167,139,250,0.35)", icon: "🐍", tag: "Python" };
-  return { accent: "#c084fc", accentMuted: "rgba(192,132,252,0.12)", accentRing: "rgba(192,132,252,0.35)", icon: "📚", tag: "Course" };
+  let icon = "📚";
+  let tag  = "Course";
+
+  if      (t.includes("html"))                              { icon = "🌐"; tag = "HTML";    }
+  else if (t.includes("css"))                               { icon = "🎨"; tag = "CSS";     }
+  else if (t.includes("javascript") || t.includes("js"))   { icon = "⚡"; tag = "JS";      }
+  else if (t.includes("next"))                              { icon = "▲";  tag = "Next.js"; }
+  else if (t.includes("react"))                             { icon = "⚛️"; tag = "React";   }
+  else if (t.includes("spring") || t.includes("java"))     { icon = "☕"; tag = "Java";    }
+  else if (t.includes("docker") || t.includes("devops"))   { icon = "🐳"; tag = "DevOps";  }
+  else if (t.includes("python"))                            { icon = "🐍"; tag = "Python";  }
+
+  // One consistent green accent for every course — GFG-inspired
+  return { accent: GFG_ACCENT, accentMuted: GFG_MUTED, accentRing: GFG_RING, icon, tag };
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -205,11 +207,6 @@ export function CourseLearningContent({ courseSlug, initialLessonSlug }: Props) 
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
 
-  // ── ADD 2: start/restart timer whenever selectedLesson changes ────────────
-  // - lessonId=0 while no lesson is selected → hook does nothing (guarded by `if (!lessonId) return`)
-  // - When user switches lesson (42 → 67): effect cleanup saves lesson 42's
-  //   time first, then the new effect starts fresh for lesson 67
-  // - Saves automatically every 30s, on tab hide, and on navigate away
   useReadingTimer(selectedLesson?.id ?? 0);
 
   const requestRef = useRef(0);
