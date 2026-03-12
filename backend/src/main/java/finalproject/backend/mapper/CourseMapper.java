@@ -35,6 +35,7 @@ public class CourseMapper {
                 .status(course.getStatus() != null ? course.getStatus().name() : null)
                 .isFeatured(course.getIsFeatured())
                 .isFree(course.getIsFree())
+                .price(course.getPrice())
                 .totalLessons(course.getTotalLessons())
                 .avgRating(course.getAvgRating())
                 .viewCount(views)
@@ -63,7 +64,8 @@ public class CourseMapper {
                 .language(request.getLanguage())
                 .status(request.getStatus())
                 .isFeatured(request.getFeatured())
-                .isFree(request.getFree())
+                .isFree(request.getIsFree())
+                .price(request.getPrice())
                 .instructor(instructor)
                 .category(category)
                 .build();
@@ -92,7 +94,10 @@ public class CourseMapper {
             course.setStatus(request.getStatus());
 
         course.setIsFeatured(request.getFeatured());
-        course.setIsFree(request.getFree());
+        course.setIsFree(request.getIsFree());
+
+        if (request.getPrice() != null)
+            course.setPrice(request.getPrice());
 
 
         if (instructor != null)

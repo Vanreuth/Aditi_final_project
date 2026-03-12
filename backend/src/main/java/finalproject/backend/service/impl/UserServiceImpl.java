@@ -6,6 +6,7 @@ import finalproject.backend.modal.Role;
 import finalproject.backend.modal.User;
 import finalproject.backend.repository.RoleRepository;
 import finalproject.backend.repository.UserRepository;
+import finalproject.backend.request.UpdateUserRoleRequest;
 import finalproject.backend.request.UpdateUserRequest;
 import finalproject.backend.request.UserRequest;
 import finalproject.backend.response.ApiResponse;
@@ -13,6 +14,7 @@ import finalproject.backend.response.PageResponse;
 import finalproject.backend.response.UserResponse;
 import finalproject.backend.service.R2StorageService;
 import finalproject.backend.service.UserService;
+import finalproject.backend.util.RoleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -121,6 +123,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public ApiResponse<UserResponse> updateUserRole(Long id, UpdateUserRoleRequest request) {
+        User user = findUserOrThrow(id);
+        user.setRoles(Set.of(findOrCreateRole(request.getRole())));
+
+        User saved = userRepository.save(user);
+        log.info("Updated user role id={} role={}", id, request.getRole());
+        return ApiResponse.success(userMapper.toResponse(saved), "User role updated successfully");
+    }
+
+    @Override
+    @Transactional
     public ApiResponse<Void> deleteUser(Long id) {
         User user = findUserOrThrow(id);
         String pic = user.getProfilePicture();
@@ -157,14 +170,23 @@ public class UserServiceImpl implements UserService {
 
     private Set<Role> resolveRoles(Set<String> requestedRoles) {
         if (ObjectUtils.isEmpty(requestedRoles))
-            return Set.of(findOrCreateRole("USER"));
+            return Set.of(findOrCreateRole(RoleUtil.ROLE_USER));
         return requestedRoles.stream()
                 .map(this::findOrCreateRole)
                 .collect(Collectors.toCollection(HashSet::new));
     }
 
     private Role findOrCreateRole(String name) {
-        return roleRepository.findByName(name)
-                .orElseGet(() -> roleRepository.save(Role.builder().name(name).build()));
+        String normalized;
+        try {
+            normalized = RoleUtil.normalize(name);
+        } catch (IllegalArgumentException ex) {
+            throw new CustomMessageException(
+                    "Unsupported role: " + name,
+                    String.valueOf(HttpStatus.BAD_REQUEST.value()));
+        }
+
+        return roleRepository.findByName(normalized)
+                .orElseGet(() -> roleRepository.save(Role.builder().name(normalized).build()));
     }
 }

@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}           # ← Render injects PORT automatically
   tomcat:
     max-parameter-count: 500
     max-part-count: 500
@@ -9,18 +9,25 @@ spring:
     name: backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/backend}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:260403}
+    url: ${DB_URL:jdbc:postgresql://ep-noisy-leaf-a1ssyg1b-pooler.ap-southeast-1.aws.neon.tech/backend?sslmode=require&channel_binding=require}
+    username: ${DB_USERNAME:neondb_owner}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:3}
+      minimum-idle: 1
+      idle-timeout: 600000        # ← increased for Neon
+      connection-timeout: 20000
+      max-lifetime: 1800000       # ← added for Neon
+      keepalive-time: 30000       # ← prevents Neon dropping idle connections
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:vilidate}  # ← validate in prod
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   servlet:
@@ -40,16 +47,13 @@ spring:
             scope: openid, profile, email
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             authorization-grant-type: authorization_code
-
           github:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope: read:user, user:email
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             authorization-grant-type: authorization_code
-            # ✅ KEY — tells Spring this client uses a secret, not PKCE
             client-authentication-method: client_secret_basic
-
         provider:
           github:
             authorization-uri: https://github.com/login/oauth/authorize
@@ -75,9 +79,23 @@ cloudflare:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:30000}
-    refreshExpiration: ${JWT_REFRESH_EXPIRATION:86400000}
-
-  # ✅ correct location (NOT under jwt)
+    expiration: ${JWT_EXPIRATION:900000}             # ← 15 min (was 30s!)
+    refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}  # ← 7 days
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:WARN}
+    finalproject.backend: ${LOG_LEVEL_APP:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: OFF
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

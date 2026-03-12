@@ -5,6 +5,7 @@ import finalproject.backend.modal.User;
 import finalproject.backend.request.UpdateUserRequest;
 import finalproject.backend.request.UserRequest;
 import finalproject.backend.response.UserResponse;
+import finalproject.backend.util.RoleUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -78,6 +79,13 @@ public class UserMapper {
         if (user.getRoles() == null) return List.of();
         return user.getRoles().stream()
                 .map(Role::getName)
+                .map(name -> {
+                    try {
+                        return RoleUtil.normalize(name);
+                    } catch (IllegalArgumentException ignored) {
+                        return name;
+                    }
+                })
                 .collect(Collectors.toList());
     }
 }

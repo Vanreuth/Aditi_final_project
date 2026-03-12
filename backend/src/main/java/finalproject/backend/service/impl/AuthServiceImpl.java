@@ -18,6 +18,7 @@ import finalproject.backend.service.JwtService;
 import finalproject.backend.service.R2StorageService;
 import finalproject.backend.service.RefreshTokenService;
 import finalproject.backend.util.CookieUtil;
+import finalproject.backend.util.RoleUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -240,7 +241,6 @@ public class AuthServiceImpl implements AuthService {
 private AuthResponse buildAuthResponse(User user) {
     List<String> roles = user.getAuthorities().stream()
             .map(GrantedAuthority::getAuthority)
-            .map(r -> r.replace("ROLE_", ""))   // ← strip prefix for display only
             .collect(Collectors.toList());
 
     return AuthResponse.builder()
@@ -258,15 +258,24 @@ private AuthResponse buildAuthResponse(User user) {
 
 private Set<Role> resolveRoles(Set<String> requested) {
     if (ObjectUtils.isEmpty(requested))
-        return Set.of(findOrCreateRole("USER"));  // ← "USER" not "ROLE_USER"
+        return Set.of(findOrCreateRole(RoleUtil.ROLE_USER));
     return requested.stream()
             .map(this::findOrCreateRole)
             .collect(Collectors.toCollection(HashSet::new));
 }
 
 private Role findOrCreateRole(String name) {
-    return roleRepository.findByName(name)
+    String normalized;
+    try {
+        normalized = RoleUtil.normalize(name);
+    } catch (IllegalArgumentException ex) {
+        throw new CustomMessageException(
+                "Unsupported role: " + name,
+                String.valueOf(HttpStatus.BAD_REQUEST.value()));
+    }
+
+    return roleRepository.findByName(normalized)
             .orElseGet(() -> roleRepository.save(
-                    Role.builder().name(name).build()));
+                    Role.builder().name(normalized).build()));
 }
 }

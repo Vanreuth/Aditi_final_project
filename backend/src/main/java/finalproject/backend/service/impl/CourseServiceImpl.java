@@ -18,24 +18,29 @@ import finalproject.backend.repository.LessonRepository;
 import finalproject.backend.repository.UserRepository;
 import finalproject.backend.request.CourseRequest;
 import finalproject.backend.response.ApiResponse;
-import finalproject.backend.response.ChapterResponse;
 import finalproject.backend.response.CourseResponse;
+import finalproject.backend.response.InstructorStatsResponse;
 import finalproject.backend.response.LessonResponse;
 import finalproject.backend.response.PageResponse;
 import finalproject.backend.service.CourseService;
 import finalproject.backend.service.R2StorageService;
+import finalproject.backend.util.RoleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -64,10 +69,8 @@ public class CourseServiceImpl implements CourseService {
         if (request.getCategoryId() == null)
             throw new CustomMessageException("Category ID is required", "400");
 
-        // Auto-set instructor from the logged-in user if not provided
-        if (request.getInstructorId() == null) {
-            request.setInstructorId(getCurrentUserId());
-        }
+        User currentUser = getCurrentUser();
+        request.setInstructorId(currentUser.getId());
 
         // Auto-generate slug from title if not provided
         if (request.getSlug() == null || request.getSlug().isBlank()) {
@@ -82,7 +85,7 @@ public class CourseServiceImpl implements CourseService {
             throw new CustomMessageException("Course slug already exists",
                     String.valueOf(HttpStatus.CONFLICT.value()));
 
-        User instructor = findInstructorOrThrow(request.getInstructorId());
+        User instructor = currentUser;
         Category category = findCategoryOrThrow(request.getCategoryId());
 
         // createdAt, status, level set by @PrePersist
@@ -120,8 +123,25 @@ public class CourseServiceImpl implements CourseService {
                 .and(isFeatured(isFeatured))
                 .and(isFree(isFree));
 
+        if (isAuthenticatedInstructor() && !isCurrentUserAdmin()) {
+            spec = spec.and(hasInstructor(getCurrentUserId()));
+        }
+
         Page<Course> page = courseRepository.findAll(spec, pageable);
         return PageResponse.of(page.map(courseMapper::toResponse));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CourseResponse> getInstructorCourses(
+            Pageable pageable,
+            String search,
+            String status,
+            String level,
+            Long categoryId,
+            Boolean isFeatured,
+            Boolean isFree) {
+        return getAllCourses(pageable, search, status, level, categoryId, isFeatured, isFree);
     }
 
     // ─── Specifications ───────────────────────────────────────────────────────
@@ -177,6 +197,13 @@ public class CourseServiceImpl implements CourseService {
         return (root, query, cb) -> {
             if (isFree == null) return null;
             return cb.equal(root.get("isFree"), isFree);
+        };
+    }
+
+    private Specification<Course> hasInstructor(Long instructorId) {
+        return (root, query, cb) -> {
+            if (instructorId == null) return null;
+            return cb.equal(root.get("instructor").get("id"), instructorId);
         };
     }
 
@@ -260,6 +287,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public ApiResponse<CourseResponse> updateCourse(Long id, CourseRequest request, MultipartFile thumbnail) {
         Course course = findCourseOrThrow(id);
+        validateCourseOwnership(course);
 
         // Auto-generate slug from title if slug is not provided but title changed
         if ((request.getSlug() == null || request.getSlug().isBlank())
@@ -277,8 +305,9 @@ public class CourseServiceImpl implements CourseService {
             throw new CustomMessageException("Course slug already exists",
                     String.valueOf(HttpStatus.CONFLICT.value()));
 
-        User instructor = request.getInstructorId() != null
-                ? findInstructorOrThrow(request.getInstructorId()) : null;
+        User instructor = isCurrentUserAdmin() && request.getInstructorId() != null
+            ? findInstructorOrThrow(request.getInstructorId())
+            : null;
 
         Category category = request.getCategoryId() != null
                 ? findCategoryOrThrow(request.getCategoryId()) : null;
@@ -305,6 +334,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public ApiResponse<Void> deleteCourse(Long id) {
         Course course = findCourseOrThrow(id);
+        validateCourseOwnership(course);
 
         // 1) Delete all lesson-progress records that reference this course's lessons
         lessonProgressRepository.deleteByCourseId(id);
@@ -327,19 +357,67 @@ public class CourseServiceImpl implements CourseService {
         return ApiResponse.success("Course deleted successfully");
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<CourseResponse> getInstructorCourseById(Long id) {
+        Course course = findCourseOrThrow(id);
+        validateCourseOwnership(course);
+        return ApiResponse.success(courseMapper.toResponse(course), "Instructor course retrieved successfully");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<InstructorStatsResponse> getInstructorStats() {
+        List<Course> courses = isCurrentUserAdmin()
+                ? courseRepository.findAll()
+                : courseRepository.findAllByInstructorId(getCurrentUserId());
+
+        long totalStudents = 0L;
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+
+        for (Course course : courses) {
+            long enrolledCount = lessonProgressRepository.countDistinctUsersByCourseId(course.getId());
+            totalStudents += enrolledCount;
+
+            BigDecimal price = Boolean.TRUE.equals(course.getIsFree())
+                    ? BigDecimal.ZERO
+                    : (course.getPrice() != null ? course.getPrice() : BigDecimal.ZERO);
+
+            totalRevenue = totalRevenue.add(price.multiply(BigDecimal.valueOf(enrolledCount)));
+        }
+
+        InstructorStatsResponse stats = InstructorStatsResponse.builder()
+                .totalCourses(courses.size())
+                .totalStudents(totalStudents)
+                .totalRevenue(totalRevenue)
+                .build();
+
+        return ApiResponse.success(stats, "Instructor stats retrieved successfully");
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     /**
      * Resolve the current authenticated user's ID from the security context.
      */
     private Long getCurrentUserId() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
-                .or(() -> userRepository.findByEmail(username))
-                .orElseThrow(() -> new CustomMessageException(
-                        "Authenticated user not found",
-                        String.valueOf(HttpStatus.UNAUTHORIZED.value())));
-        return user.getId();
+        return getCurrentUser().getId();
+        }
+
+        private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            throw new CustomMessageException(
+                "Authentication required",
+                String.valueOf(HttpStatus.UNAUTHORIZED.value()));
+        }
+
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+            .or(() -> userRepository.findByEmail(username))
+            .orElseThrow(() -> new CustomMessageException(
+                "Authenticated user not found",
+                String.valueOf(HttpStatus.UNAUTHORIZED.value())));
     }
 
     private Course findCourseOrThrow(Long id) {
@@ -387,5 +465,40 @@ public class CourseServiceImpl implements CourseService {
             slug = baseSlug + "-" + counter++;
         }
         return slug;
+    }
+
+    private void validateCourseOwnership(Course course) {
+        if (isCurrentUserAdmin()) {
+            return;
+        }
+
+        Long currentUserId = getCurrentUserId();
+        Long instructorId = course.getInstructor() != null ? course.getInstructor().getId() : null;
+
+        if (instructorId == null || !instructorId.equals(currentUserId)) {
+            throw new CustomMessageException(
+                    "You can only manage your own courses",
+                    String.valueOf(HttpStatus.FORBIDDEN.value()));
+        }
+    }
+
+    private boolean isAuthenticatedInstructor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals(RoleUtil.ROLE_INSTRUCTOR));
+    }
+
+    private boolean isCurrentUserAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals(RoleUtil.ROLE_ADMIN));
     }
 }

@@ -2,6 +2,7 @@ package finalproject.backend.config;
 
 import finalproject.backend.modal.*;
 import finalproject.backend.repository.*;
+import finalproject.backend.util.RoleUtil;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
         fixSchema();
         seedRoles();
         seedAdmin();
+        seedInstructor();
         try {
             seedAll();
         } catch (Exception e) {
@@ -65,9 +67,14 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
 
     private void seedRoles() {
-        for (String r : List.of("USER", "MODERATOR", "ADMIN"))
-            if (roleRepository.findByName(r).isEmpty())
-                roleRepository.save(Role.builder().name(r).build());
+        for (String role : List.of(
+                RoleUtil.ROLE_USER,
+                RoleUtil.ROLE_INSTRUCTOR,
+                RoleUtil.ROLE_MODERATOR,
+                RoleUtil.ROLE_ADMIN
+        ))
+            if (roleRepository.findByName(role).isEmpty())
+                roleRepository.save(Role.builder().name(role).build());
     }
 
     private void seedAdmin() {
@@ -75,8 +82,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // ✅ Mutable HashSet — Hibernate can modify it
         Set<Role> adminRoles = new HashSet<>();
-        adminRoles.add(roleRepository.findByName("ADMIN").orElseThrow());
-        adminRoles.add(roleRepository.findByName("USER").orElseThrow());
+        adminRoles.add(roleRepository.findByName(RoleUtil.ROLE_ADMIN).orElseThrow());
 
         userRepository.findByUsername("admin").ifPresentOrElse(
                 admin -> {
@@ -99,12 +105,42 @@ public class DataInitializer implements CommandLineRunner {
         );
     }
 
+    private void seedInstructor() {
+        String encodedPassword = passwordEncoder.encode("Instructor@1234");
+
+        Set<Role> instructorRoles = new HashSet<>();
+        instructorRoles.add(roleRepository.findByName(RoleUtil.ROLE_INSTRUCTOR).orElseThrow());
+
+        userRepository.findByUsername("instructor").ifPresentOrElse(
+                instructor -> {
+                    instructor.setEmail("instructor@growcodekh.site");
+                    instructor.setPassword(encodedPassword);
+                    instructor.setStatus("ACTIVE");
+                    instructor.setRoles(instructorRoles);
+                    userRepository.save(instructor);
+                    log.info("✅ Instructor password updated → instructor / Instructor@1234");
+                },
+                () -> {
+                    userRepository.save(User.builder()
+                            .username("instructor")
+                            .email("instructor@growcodekh.site")
+                            .password(encodedPassword)
+                            .status("ACTIVE")
+                            .roles(instructorRoles)
+                            .build());
+                    log.info("✅ Instructor seeded → instructor / Instructor@1234");
+                }
+        );
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // MAIN SEED
     // ══════════════════════════════════════════════════════════════════════════
 
     private void seedAll() {
-        User ins = userRepository.findByUsername("admin").orElseThrow();
+        User ins = userRepository.findByUsername("instructor")
+            .or(() -> userRepository.findByUsername("admin"))
+            .orElseThrow();
 
         // ── Categories ────────────────────────────────────────────────────────
         Category webDev = cat(

@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
@@ -31,11 +31,21 @@ public class CourseRequest {
     private CourseStatus status = CourseStatus.DRAFT;
 
     private Boolean featured = false;
-    private Boolean free = false;
+    private Boolean isFree = false;
+
+    private BigDecimal price = BigDecimal.ZERO;
 
 
     @NotNull(message = "Category ID is required")
     private Integer categoryId;
 
     private Long instructorId;  // optional — auto-set from logged-in user if blank
+
+    public Boolean getFree() {
+        return isFree;
+    }
+
+    public void setFree(Boolean free) {
+        isFree = free;
+    }
 }

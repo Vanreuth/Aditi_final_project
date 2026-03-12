@@ -59,6 +59,10 @@ public class Course {
     @Builder.Default
     private Boolean isFree = false;
 
+    @Column(precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal price = BigDecimal.ZERO;
+
     @Column(name = "total_lessons", columnDefinition = "integer default 0")
     @Builder.Default
     private Integer totalLessons = 0;
@@ -114,6 +118,7 @@ public class Course {
         if (level        == null) level        = CourseLevel.BEGINNER;
         if (isFeatured   == null) isFeatured   = false;
         if (isFree       == null) isFree       = false;
+        if (price        == null) price        = BigDecimal.ZERO;
         if (totalLessons == null) totalLessons = 0;
         if (viewCount    == null) viewCount    = 0L;
     }

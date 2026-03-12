@@ -1,46 +1,26 @@
-# ---------------------------
-# 1️⃣ Build Stage (Maven)
-# ---------------------------
-FROM maven:3.9.9-amazoncorretto-21 AS builder
-
+FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
-
 COPY pom.xml .
-RUN mvn dependency:go-offline
-
+RUN mvn dependency:go-offline -q
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -q
 
-
-# ---------------------------
-# 2️⃣ Runtime Stage (Playwright + Chromium — official image)
-# Chromium + all system libs are pre-installed in this image.
-# ---------------------------
-FROM mcr.microsoft.com/playwright/java:v1.44.0-jammy
-
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Khmer fonts — renders correctly offline if Google Fonts CDN unreachable
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      fonts-noto \
-      fonts-noto-cjk \
-      fonts-noto-color-emoji && \
-    rm -rf /var/lib/apt/lists/*
+RUN addgroup -S app && adduser -S app -G app
+USER app
 
-# Copy jar
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 
-# Required in all containerised environments — read by CoursePdfGeneratorService
-ENV PLAYWRIGHT_CHROMIUM_LAUNCH_OPTIONS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
-
-ENV PORT=8080
 EXPOSE 8080
-
-# Non-root user (Playwright image ships 'pwuser')
-USER pwuser
 
 ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \
   "-XX:MaxRAMPercentage=75.0", \
+  "-Xss256k", \
+  "-XX:+UseSerialGC", \
+  "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]
+  # ↑ SerialGC uses less memory than default GC — good for free tier
+  # ↑ Xss256k reduces thread stack size

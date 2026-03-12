@@ -28,6 +28,7 @@ public class CourseResponse {
     private String status;
     private Boolean isFeatured;
     private Boolean isFree;
+    private BigDecimal price;
     private Integer totalLessons;
     private BigDecimal avgRating;
     private long viewCount;

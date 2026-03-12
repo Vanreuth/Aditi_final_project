@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -67,11 +68,12 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        for (Role role: roles) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
-        }
-        return authorities;
+        return roles.stream()
+                .map(Role::getName)
+                .filter(Objects::nonNull)
+                .map(name -> name.startsWith("ROLE_") ? name : "ROLE_" + name)
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
     @Override
     public String getPassword() {
