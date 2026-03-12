@@ -91,17 +91,84 @@ export function CourseDetailSkeleton() {
 function processLessonContent(raw?: string | null): string {
   if (!raw || !raw.trim()) return "";
   const trimmed = raw.trim();
-  if (/<(?:p|div|br|h[1-6]|ul|ol|li|table|blockquote|pre|section|article)[\/\s>]/i.test(trimmed)) {
+
+  // Already HTML — return as-is (backward compat with old HTML-stored content)
+  if (/<(?:p|div|br|h[1-6]|ul|ol|li|table|blockquote|pre|section|article)[/\s>]/i.test(trimmed)) {
     return trimmed;
   }
-  return trimmed
-    .split(/\n\s*\n/)
+
+  // ── Step 1: protect fenced code blocks ──────────────────────────────────
+  const codeBlocks: string[] = [];
+  let s = trimmed.replace(/```(\w*)\r?\n?([\s\S]*?)```/g, (_m, lang, code) => {
+    const safe = code
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    codeBlocks.push(
+      `<pre><code class="language-${lang || "text"}">${safe.trim()}</code></pre>`
+    );
+    return `\x00BLK${codeBlocks.length - 1}\x00`;
+  });
+
+  // ── Step 2: inline formatting ────────────────────────────────────────────
+  s = s
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/^(?:---|\*\*\*|___) *$/gm, "<hr/>")
+    .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
+    .replace(/_([^_\n]+)_/g, "<em>$1</em>")
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+
+  // ── Step 3: block-level elements ─────────────────────────────────────────
+  const html = s
+    .split(/\n{2,}/)
     .filter(Boolean)
-    .map((para) => {
-      const lines = para.split(/\n/).map((l) => l.trimEnd()).join("<br/>");
-      return `<p>${lines}</p>`;
+    .map((blk) => {
+      const t = blk.trim();
+      if (!t) return "";
+      if (/^\x00BLK\d+\x00$/.test(t)) return t; // placeholder
+      if (/^<(?:h[1-6]|hr|ul|ol|blockquote|pre)/i.test(t)) return t; // already html
+      // Blockquote
+      if (/^> /m.test(t)) {
+        const inner = t.replace(/^> /gm, "").replace(/\n/g, "<br/>");
+        return `<blockquote>${inner}</blockquote>`;
+      }
+      // Unordered list
+      if (/^[*\-+] /m.test(t)) {
+        const items = t
+          .split("\n")
+          .filter((l) => /^[*\-+] /.test(l))
+          .map((l) => `<li>${l.replace(/^[*\-+] /, "")}</li>`)
+          .join("");
+        return `<ul>${items}</ul>`;
+      }
+      // Ordered list
+      if (/^\d+\. /m.test(t)) {
+        const items = t
+          .split("\n")
+          .filter((l) => /^\d+\. /.test(l))
+          .map((l) => `<li>${l.replace(/^\d+\. /, "")}</li>`)
+          .join("");
+        return `<ol>${items}</ol>`;
+      }
+      // Paragraph
+      return `<p>${t.split("\n").map((l) => l.trimEnd()).join("<br/>")}</p>`;
     })
     .join("\n");
+
+  // ── Step 4: restore code blocks ──────────────────────────────────────────
+  return codeBlocks.reduce(
+    (acc, block, i) => acc.replace(`\x00BLK${i}\x00`, block),
+    html
+  );
 }
 
 // ─── Slug helpers ─────────────────────────────────────────────────────────────
