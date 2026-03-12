@@ -8,6 +8,7 @@ import finalproject.backend.repository.UserRepository;
 import finalproject.backend.service.JwtService;
 import finalproject.backend.service.RefreshTokenService;
 import finalproject.backend.util.CookieUtil;
+import finalproject.backend.util.RoleUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Set;
 import java.util.UUID;
 
@@ -66,10 +68,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             log.info("OAuth2SuccessHandler: Successfully authenticated user={}, redirecting to={}", email, redirectUri);
 
-            String targetUrl = UriComponentsBuilder
-                    .fromUriString(redirectUri)
-                    .build()
-                    .toUriString();
+            String targetUrl = buildSuccessRedirectUrl(request, accessToken, refresh.getToken());
 
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
         } catch (Exception ex) {
@@ -79,8 +78,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     }
 
     private User createOAuthUser(String email) {
-        Role roleUser = roleRepository.findByName("USER")
-                .orElseGet(() -> roleRepository.save(Role.builder().name("USER").build()));
+        Role roleUser = roleRepository.findByName(RoleUtil.ROLE_USER)
+                .orElseGet(() -> roleRepository.save(Role.builder().name(RoleUtil.ROLE_USER).build()));
 
         String baseUsername = email.split("@")[0];
         String username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
@@ -117,5 +116,39 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
+    }
+
+    private String buildSuccessRedirectUrl(HttpServletRequest request,
+                                           String accessToken,
+                                           String refreshToken) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(redirectUri);
+
+        if (isCrossDomainRedirect(request)) {
+            builder
+                    .queryParam("access_token", accessToken)
+                    .queryParam("refresh_token", refreshToken);
+        }
+
+        return builder.build().toUriString();
+    }
+
+    private boolean isCrossDomainRedirect(HttpServletRequest request) {
+        URI target = URI.create(redirectUri);
+        String targetHost = target.getHost();
+        String requestHost = request.getServerName();
+
+        if (targetHost == null || requestHost == null) {
+            return false;
+        }
+
+        if (isLocalHost(targetHost) && isLocalHost(requestHost)) {
+            return false;
+        }
+
+        return !targetHost.equalsIgnoreCase(requestHost);
+    }
+
+    private boolean isLocalHost(String host) {
+        return "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host);
     }
 }

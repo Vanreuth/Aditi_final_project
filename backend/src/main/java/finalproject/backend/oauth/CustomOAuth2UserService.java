@@ -4,6 +4,7 @@ import finalproject.backend.modal.Role;
 import finalproject.backend.modal.User;
 import finalproject.backend.repository.RoleRepository;
 import finalproject.backend.repository.UserRepository;
+import finalproject.backend.util.RoleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -78,9 +79,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private User createNewUser(String email) {
-        Role roleUser = roleRepository.findByName("USER")
+        Role roleUser = roleRepository.findByName(RoleUtil.ROLE_USER)
                 .orElseGet(() -> roleRepository.save(
-                        Role.builder().name("USER").build()));
+                Role.builder().name(RoleUtil.ROLE_USER).build()));
 
         String baseUsername = email.split("@")[0];
         String username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
