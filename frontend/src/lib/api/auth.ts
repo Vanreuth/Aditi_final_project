@@ -67,10 +67,9 @@ export async function updateProfile(
 }
 
 // Backend URL for browser-level redirects (OAuth initiation).
-// Falls back to the production URL so it always works even if the env var
-// is not injected at runtime.
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'https://growcodekh.onrender.com'
+// Configure this in frontend/.env for local development and in Vercel env vars
+// for production deployments.
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 export function redirectToOAuth(provider: 'google' | 'github'): void {
   // Redirect the browser DIRECTLY to Spring Boot's OAuth2 endpoint.

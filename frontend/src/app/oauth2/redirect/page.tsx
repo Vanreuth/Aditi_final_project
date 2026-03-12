@@ -71,7 +71,11 @@ function OAuthCallbackContent() {
         const roles = decodeJwtRoles(accessToken)
         setStatus("success")
         const destination = getDefaultAppRoute(roles)
-        setTimeout(() => router.replace(destination), 1200)
+        // Hard navigate so the page reloads AFTER cookies are set.
+        // router.replace() keeps the same React tree, meaning AuthProvider's
+        // bootstrap already ran with no cookies and left user=null — causing
+        // ProtectedRoute to redirect back to /login immediately.
+        setTimeout(() => { window.location.href = destination }, 1200)
         return
       }
 
@@ -80,7 +84,7 @@ function OAuthCallbackContent() {
         const user = await getMe()
         setStatus("success")
         const destination = getDefaultAppRoute(user.roles ?? [])
-        setTimeout(() => router.replace(destination), 1200)
+        setTimeout(() => { window.location.href = destination }, 1200)
       } catch {
         setStatus("error")
         setMessage("Authentication failed. Please try again.")
