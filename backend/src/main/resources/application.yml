@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8080}           # ← Render injects PORT automatically
+  port: ${PORT:8080}
   tomcat:
     max-parameter-count: 500
     max-part-count: 500
@@ -16,19 +16,19 @@ spring:
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:3}
       minimum-idle: 1
-      idle-timeout: 600000        # ← increased for Neon
+      idle-timeout: 600000
       connection-timeout: 20000
-      max-lifetime: 1800000       # ← added for Neon
-      keepalive-time: 30000       # ← prevents Neon dropping idle connections
+      max-lifetime: 1800000
+      keepalive-time: 30000
 
   jpa:
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:vilidate}  # ← validate in prod
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}   # ✅ fixed typo: vilidate → validate
     show-sql: false
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # dialect removed — Hibernate 6 auto-detects PostgreSQL ✅
 
   servlet:
     multipart:
@@ -79,8 +79,8 @@ cloudflare:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:900000}             # ← 15 min (was 30s!)
-    refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}  # ← 7 days
+    expiration: ${JWT_EXPIRATION:900000}
+    refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
   cors:
