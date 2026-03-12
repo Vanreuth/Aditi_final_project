@@ -81,6 +81,9 @@ app:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:900000}
     refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  cookie:
+    secure: ${COOKIE_SECURE:false}
+    same-site: ${COOKIE_SAME_SITE:Lax}
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
   cors:

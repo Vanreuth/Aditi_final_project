@@ -25,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final CookieUtil cookieUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -32,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         try {
             // ── 1. Try reading JWT from HttpOnly cookie first ─────────────────
-            String jwt = CookieUtil.getCookieValue(request, CookieUtil.ACCESS_TOKEN);
+            String jwt = cookieUtil.getCookieValue(request, CookieUtil.ACCESS_TOKEN);
 
             // ── 2. Fallback to Authorization header (Postman / mobile clients) ─
             if (jwt == null) {

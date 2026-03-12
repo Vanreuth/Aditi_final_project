@@ -1,6 +1,7 @@
 package finalproject.backend.service.impl;
 
 
+import finalproject.backend.config.JwtProperties;
 import finalproject.backend.exception.CustomMessageException;
 import finalproject.backend.modal.RefreshToken;
 import finalproject.backend.modal.Role;
@@ -53,6 +54,8 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final CookieUtil cookieUtil;
+    private final JwtProperties jwtProperties;
 
     // ─── REGISTER ─────────────────────────────────────────────────────────────
 
@@ -113,11 +116,11 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtService.generateAccessToken(authentication);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
-        CookieUtil.addCookie(response, CookieUtil.ACCESS_TOKEN,
+        cookieUtil.addCookie(response, CookieUtil.ACCESS_TOKEN,
                 accessToken, 15 * 60 * 1000L);                  // 15 min
 
-        CookieUtil.addCookie(response, CookieUtil.REFRESH_TOKEN,
-                refreshToken.getToken(), 24 * 60 * 60 * 1000L); // 24 hours
+        cookieUtil.addCookie(response, CookieUtil.REFRESH_TOKEN,
+                refreshToken.getToken(), jwtProperties.getRefreshExpiration());
 
         log.info("Logged in: {}", user.getUsername());
         return ApiResponse.success(buildAuthResponse(user), "Login successful");
@@ -128,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
     public ApiResponse<AuthResponse> refresh(HttpServletRequest request,
                                              HttpServletResponse response) {
         // 1. Read refresh token from cookie via CookieUtil ←────────────────────
-        String refreshTokenValue = CookieUtil.getCookieValue(request, CookieUtil.REFRESH_TOKEN);
+        String refreshTokenValue = cookieUtil.getCookieValue(request, CookieUtil.REFRESH_TOKEN);
 
         if (refreshTokenValue == null)
             throw new CustomMessageException(
@@ -143,7 +146,7 @@ public class AuthServiceImpl implements AuthService {
         String newAccessToken = jwtService.generateAccessToken(user);
 
         // 4. Set new access token cookie via CookieUtil ←───────────────────────
-        CookieUtil.addCookie(response,
+        cookieUtil.addCookie(response,
                 CookieUtil.ACCESS_TOKEN, newAccessToken,
                 15 * 60 * 1000L);                               // 15 min
 
@@ -158,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
     public ApiResponse<Void> logout(HttpServletRequest request,
                                     HttpServletResponse response) {
         // 1. Read and revoke refresh token from DB
-        String refreshTokenValue = CookieUtil.getCookieValue(request, CookieUtil.REFRESH_TOKEN);
+        String refreshTokenValue = cookieUtil.getCookieValue(request, CookieUtil.REFRESH_TOKEN);
         if (refreshTokenValue != null) {
             try {
                 refreshTokenService.revokeRefreshToken(refreshTokenValue);
@@ -168,8 +171,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 2. Clear both cookies (Max-Age=0 → browser deletes immediately)
-        CookieUtil.clearCookie(response, CookieUtil.ACCESS_TOKEN);
-        CookieUtil.clearCookie(response, CookieUtil.REFRESH_TOKEN);
+        cookieUtil.clearCookie(response, CookieUtil.ACCESS_TOKEN);
+        cookieUtil.clearCookie(response, CookieUtil.REFRESH_TOKEN);
 
         // 3. Clear Spring Security context
         SecurityContextHolder.clearContext();

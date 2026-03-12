@@ -5,6 +5,7 @@ import finalproject.backend.modal.Role;
 import finalproject.backend.modal.User;
 import finalproject.backend.repository.RoleRepository;
 import finalproject.backend.repository.UserRepository;
+import finalproject.backend.config.JwtProperties;
 import finalproject.backend.service.JwtService;
 import finalproject.backend.service.RefreshTokenService;
 import finalproject.backend.util.CookieUtil;
@@ -35,6 +36,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final RoleRepository roleRepository;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final CookieUtil cookieUtil;
+    private final JwtProperties jwtProperties;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -63,8 +66,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String accessToken = jwtService.generateAccessToken(authToken);
             RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
-            CookieUtil.addCookie(response, CookieUtil.ACCESS_TOKEN, accessToken, 15 * 60 * 1000L);
-            CookieUtil.addCookie(response, CookieUtil.REFRESH_TOKEN, refresh.getToken(), 24 * 60 * 60 * 1000L);
+            cookieUtil.addCookie(response, CookieUtil.ACCESS_TOKEN, accessToken, 15 * 60 * 1000L);
+            cookieUtil.addCookie(response, CookieUtil.REFRESH_TOKEN, refresh.getToken(), jwtProperties.getRefreshExpiration());
 
             log.info("OAuth2SuccessHandler: Successfully authenticated user={}, redirecting to={}", email, redirectUri);
 
