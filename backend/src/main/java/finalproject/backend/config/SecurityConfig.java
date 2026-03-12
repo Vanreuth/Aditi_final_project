@@ -5,6 +5,7 @@ import finalproject.backend.oauth.OAuth2SuccessHandler;
 import finalproject.backend.oauth.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,10 +28,12 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.endpoint.PkceParameterNames;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -45,6 +48,9 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler        oAuth2SuccessHandler;
     private final OAuth2FailureHandler        oAuth2FailureHandler;
     private final ClientRegistrationRepository clientRegistrationRepository;
+
+    @Value("${app.cors.allowed-origins:}")
+    private String allowedOriginsRaw;
 
     // ✅ Cookie-based OAuth2 state — eliminates JSESSIONID
     private final HttpCookieOAuth2AuthorizationRequestRepository
@@ -155,6 +161,38 @@ public class SecurityConfig {
         return resolver;
     }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        List<String> origins = new ArrayList<>();
+
+        // Always allow local dev origins
+        origins.add("http://localhost:3000");
+        origins.add("http://localhost:5173");
+
+        // Add production origins from env var (comma-separated)
+        if (StringUtils.hasText(allowedOriginsRaw)) {
+            for (String origin : allowedOriginsRaw.split(",")) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty()) {
+                    origins.add(trimmed);
+                }
+            }
+        }
+
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(origins);
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true); // required for httpOnly cookies
+        config.setMaxAge(3600L);          // cache preflight for 1 hour
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
     // ── Standard beans ────────────────────────────────────────────────────────
 
     @Bean
@@ -176,18 +214,18 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:5173"
-        ));
-        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+//    @Bean
+//    public CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowedOrigins(List.of(
+//                "http://localhost:3000",
+//                "http://localhost:5173"
+//        ));
+//        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+//        config.setAllowedHeaders(List.of("*"));
+//        config.setAllowCredentials(true);
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//        return source;
+//    }
 }
