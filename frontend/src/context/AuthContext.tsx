@@ -10,12 +10,18 @@ import {
   useCallback,
   ReactNode,
 } from 'react'
-import { authService }  from '../services/authService'
-import { hasAdminRole } from '@/types/apiType'
+import {
+  login    as apiLogin,
+  logout   as apiLogout,
+  getMe,
+  refreshToken,
+  updateProfile as apiUpdateProfile,
+} from '@/lib/api/auth'
+import { hasAdminRole, hasInstructorRole, hasUserRole } from '@/types/api'
 import type {
   AuthResponse,
   UpdateProfileRequest,
-} from '../types/authType'
+} from '@/types/auth'
 
 interface AuthContextValue {
   user            : AuthResponse | null
@@ -24,6 +30,8 @@ interface AuthContextValue {
   /** true while a refresh call is in-flight — prevents premature redirects */
   isRefreshing    : boolean
   isAdmin         : boolean
+  isInstructor    : boolean
+  isUser          : boolean
   isAuthenticated : boolean
   login           : (username: string, password: string) => Promise<AuthResponse>
   logout          : () => Promise<void>
@@ -51,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function bootstrap() {
       // ── Step 1: try /me with current access_token ────────────────────────
       try {
-        const userData = await authService.me()
+        const userData = await getMe()
         if (!cancelled) setUser(userData)
         return                        // ✅ already logged in — done
       } catch {
@@ -81,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         //   Use it directly — no second me() call needed.
         //   Even if the proxy hasn't forwarded Set-Cookie yet, the user is set
         //   in memory and the page renders correctly for this session.
-        const refreshed = await authService.refresh()
+        const refreshed = await refreshToken()
         if (!cancelled) setUser(refreshed)
       } catch {
         // refresh_token also expired/missing — call the logout endpoint via raw
@@ -113,14 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     username: string,
     password: string
   ): Promise<AuthResponse> => {
-    const userData = await authService.login({ username, password })
+    const userData = await apiLogin({ username, password })
     setUser(userData)
     return userData
   }, [])
 
   // ── Logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(async (): Promise<void> => {
-    await authService.logout()
+    await apiLogout()
+    if (typeof window !== 'undefined') window.location.href = '/login'
     setUser(null)
   }, [])
 
@@ -129,18 +138,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     payload: UpdateProfileRequest,
     photo?: File
   ): Promise<void> => {
-    const updated = await authService.updateProfile(payload, photo)
+    const updated = await apiUpdateProfile(payload, photo)
     setUser(updated)
   }, [])
 
   const isAdmin         = hasAdminRole(user?.roles)
+  const isInstructor    = hasInstructorRole(user?.roles)
+  const isUser          = hasUserRole(user?.roles) && !isAdmin && !isInstructor
   const isAuthenticated = !!user
   const initialized     = !loading
 
   return (
     <AuthContext.Provider value={{
       user, loading, initialized, isRefreshing,
-      isAdmin, isAuthenticated,
+      isAdmin, isInstructor, isUser, isAuthenticated,
       login, logout, updateProfile,
     }}>
       {children}

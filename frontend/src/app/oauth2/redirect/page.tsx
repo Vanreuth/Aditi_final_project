@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { hasAdminRole } from "@/types/apiType"
-import { authService } from "@/services/authService"
+import { getDefaultAppRoute } from '@/types/api'
+import { getMe } from '@/lib/api/auth'
 
 import OAuthCard from "@/components/auth/OAuthCard"
 import OAuthLoading from "@/components/auth/ OAuthLoading"
@@ -12,7 +12,7 @@ import OAuthError from "@/components/auth/OAuthError"
 
 type Status = "loading" | "success" | "error"
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackContent() {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -38,16 +38,14 @@ export default function OAuthCallbackPage() {
   useEffect(() => {
     if (redirectError) return
 
-    authService
-      .me()
+    getMe()
       .then((user) => {
         setStatus("success")
 
-        // ✅ Role from API response — no cookie needed
-        const admin = hasAdminRole(user.roles)
+        const destination = getDefaultAppRoute(user.roles ?? [])
 
         setTimeout(() => {
-          router.replace(admin ? "/dashboard" : "/account")
+          router.replace(destination)
         }, 1200)
       })
       .catch(() => {
@@ -69,5 +67,17 @@ export default function OAuthCallbackPage() {
         )}
       </OAuthCard>
     </div>
+  )
+}
+
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#080d18]">
+        <OAuthCard><OAuthLoading dots="" /></OAuthCard>
+      </div>
+    }>
+      <OAuthCallbackContent />
+    </Suspense>
   )
 }

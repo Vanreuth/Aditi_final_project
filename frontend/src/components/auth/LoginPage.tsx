@@ -3,7 +3,7 @@
 import { useState }        from 'react'
 import Link                from 'next/link'
 import { useAuth }         from '@/hooks/useAuth'
-import { authService }     from '@/services/authService'
+import { getOAuthUrl } from '@/lib/api/auth'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button }          from '@/components/ui/button'
 import { Input }           from '@/components/ui/input'
@@ -44,7 +44,7 @@ export default function LoginPage() {
   ) {
     setProviderLoading(true)
     try {
-      window.location.href = await authService.getOAuthUrl(provider)
+      window.location.href = await getOAuthUrl(provider)
     } catch {
       setError(`${provider} login failed. Please try again.`)
       setProviderLoading(false)

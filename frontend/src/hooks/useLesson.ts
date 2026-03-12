@@ -5,7 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import { lessonService } from '../services/lessonService'
+import { lessonService } from '@/lib/api/lessonService'
 import type { LessonResponse, LessonRequest } from '../types/lessonType'
 
 // ─────────────────────────────────────────────────────────────

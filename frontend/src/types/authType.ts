@@ -6,7 +6,7 @@ export interface AuthResponse {
   id: number
   username: string
   email: string
-  role: 'ROLE_USER' | 'ROLE_ADMIN'
+  role?: 'ROLE_USER' | 'ROLE_ADMIN' | 'ROLE_INSTRUCTOR'
   profilePicture?: string
   accessToken?: string
   phoneNumber?: string | null

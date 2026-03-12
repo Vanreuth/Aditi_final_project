@@ -3,8 +3,8 @@
 import { useState, ChangeEvent, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { authService } from "@/services/authService"
-import type { RegisterRequest } from "@/types/authType"
+import { register } from '@/lib/api/auth'
+import type { RegisterRequest } from '@/types/auth'
 import { Eye, EyeOff, Loader2, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await authService.register({ ...form }, profilePicture)
+      await register({ ...form }, profilePicture)
       router.push("/login")
     } catch {
       setError("Registration failed. Please try again.")

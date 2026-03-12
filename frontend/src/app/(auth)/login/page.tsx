@@ -1,17 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useAuthContext } from "@/context/AuthContext"
-import { authService } from "@/services/authService"
+import { getOAuthUrl } from '@/lib/api/auth'
+import { getDefaultAppRoute } from '@/types/api'
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuthContext()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -31,16 +32,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const userData = await login(username, password)
-      const isAdmin =
-        userData.roles?.includes("ADMIN") ||
-        userData.roles?.includes("ROLE_ADMIN") ||
-        userData.role === "ROLE_ADMIN"
-      if (isAdmin) {
-        router.replace("/dashboard")
-      } else {
-        const returnUrl = searchParams.get("returnUrl") || "/account"
-        router.replace(returnUrl)
-      }
+      const returnUrl = searchParams.get("returnUrl")
+      router.replace(returnUrl || getDefaultAppRoute(userData.roles ?? []))
     } catch {
       setError("Invalid username or password")
     } finally {
@@ -54,7 +47,7 @@ export default function LoginPage() {
   ) {
     try {
       setProviderLoading(true)
-      window.location.href = await authService.getOAuthUrl(provider)
+      window.location.href = await getOAuthUrl(provider)
     } catch {
       setError(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login failed`)
       setProviderLoading(false)
@@ -235,5 +228,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="w-full max-w-md" />}>
+      <LoginContent />
+    </Suspense>
   )
 }

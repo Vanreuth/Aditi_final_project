@@ -13,8 +13,8 @@ import {
 import { DataTable } from "@/components/dataTable/DataTable";
 import { StatCard } from "@/components/StatCard";
 import { useAllCoursePdfs, useCoursePdfAdmin } from "@/hooks/useCoursesPdf";
-import { pdfService } from "@/services/pdfService";
-import type { ApiResponse, PageResponse } from "@/types/apiType";
+import { pdfService } from "@/lib/api/pdfService";
+import type { ApiResponse, PageResponse } from '@/types/api';
 import type { CoursePdfExportResponse } from "@/types/coursePDFType";
 
 type PdfTableRow = Omit<CoursePdfExportResponse, "id"> & { id?: number };

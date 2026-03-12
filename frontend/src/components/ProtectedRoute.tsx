@@ -4,6 +4,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth }   from "@/hooks/useAuth";
+import { getDefaultAppRoute, hasRole } from '@/types/api';
 
 interface Props {
   children: React.ReactNode;
@@ -15,12 +16,13 @@ export default function ProtectedRoute({
   children,
   redirectTo = "/login",
   allowedRoles,
-  unauthorizedRedirectTo = "/",
+  unauthorizedRedirectTo,
 }: Props) {
   const { user, initialized } = useAuth();
   const router = useRouter();
   const hasAllowedRole =
-    !allowedRoles?.length || !!user?.roles?.some((role) => allowedRoles.includes(role));
+    !allowedRoles?.length || !!allowedRoles?.some((role) => hasRole(user?.roles, role));
+  const fallbackUnauthorizedRedirect = getDefaultAppRoute(user?.roles ?? []);
 
   useEffect(() => {
     if (!initialized) return;
@@ -31,9 +33,9 @@ export default function ProtectedRoute({
     }
 
     if (!hasAllowedRole) {
-      router.replace(unauthorizedRedirectTo);
+      router.replace(unauthorizedRedirectTo ?? fallbackUnauthorizedRedirect);
     }
-  }, [initialized, user, hasAllowedRole, router, redirectTo, unauthorizedRedirectTo]);
+  }, [initialized, user, hasAllowedRole, router, redirectTo, unauthorizedRedirectTo, fallbackUnauthorizedRedirect]);
 
   // Still checking session
   if (!initialized) {

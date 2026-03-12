@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import type { CoursePdfExportResponse } from "@/types/coursePDFType";
-import { pdfService } from "@/services/pdfService";
+import { pdfService } from "@/lib/api/pdfService";
 import { toast } from "sonner";
 import { PdfCourseCard, type BusyAction, type LevelOption, normalizeLevel } from "@/components/course/PdfCourseCard";
 import { PdfFilterBar } from "@/components/course/PdfFilterBar";

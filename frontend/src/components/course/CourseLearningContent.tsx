@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { courseService } from "@/services/courseService";
-import { lessonProgressService } from "@/services/lessonProgressService";
+import { courseService } from "@/lib/api/courseService";
+import { lessonProgressService } from "@/lib/api/lessonProgressService";
 import { toast } from "sonner";
 import { ArrowLeft, BookOpen, Menu, X } from "lucide-react";
 import {

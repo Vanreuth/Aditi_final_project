@@ -43,8 +43,8 @@ interface ProfileHeroProps {
   user: {
     username?: string;
     email?: string;
-    bio?: string;
-    profilePicture?: string;
+    bio?: string | null;
+    profilePicture?: string | null;
     roles?: string[];
     role?: string;
   };

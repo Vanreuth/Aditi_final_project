@@ -3,7 +3,7 @@
 import { useState }    from 'react'
 import Link            from 'next/link'
 import { useRouter }   from 'next/navigation'
-import { authService } from '@/services/authService'
+import { register } from '@/lib/api/auth'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button }  from '@/components/ui/button'
 import { Input }   from '@/components/ui/input'
@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setError(null)
     setLoading(true)
     try {
-      await authService.register({ username, email, password })
+      await register({ username, email, password })
       router.push('/login?registered=true')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })

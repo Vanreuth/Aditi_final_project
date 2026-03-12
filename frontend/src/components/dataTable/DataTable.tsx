@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Import your defined types
-import { ApiResponse, PageResponse, PaginationParams } from "@/types/apiType";
+import { ApiResponse, PageResponse, PaginationParams } from '@/types/api';
 
 type DataRow = { id?: number | string };
 

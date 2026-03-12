@@ -6,7 +6,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import { pdfService } from '../services/pdfService'
+import { pdfService } from '@/lib/api/pdfService'
 import type { CoursePdfExportResponse } from '../types/coursePDFType'
 
 // ─────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import { snippetService } from '../services/snippetCodeService'
+import { snippetService } from '@/lib/api/snippetCodeService'
 import type { CodeSnippetResponse, CodeSnippetRequest } from '../types/codeSnippetType'
 
 // ─────────────────────────────────────────────────────────────

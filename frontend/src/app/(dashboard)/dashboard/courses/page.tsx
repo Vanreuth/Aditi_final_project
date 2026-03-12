@@ -16,7 +16,7 @@ import { DeleteConfirmDialog }   from "@/components/dialog/DeleteConfirmDialog";
 
 import { useCourses, useCourseAdmin, courseKeys } from "@/hooks/useCourses";
 import { useCategories }  from "@/hooks/useCategories";
-import { courseService }  from "@/services/courseService";
+import { courseService } from "@/lib/api/courseService";
 import type { CourseResponse, CourseRequest } from "@/types/courseType";
 
 // ─── Gradients ────────────────────────────────────────────────────────────────

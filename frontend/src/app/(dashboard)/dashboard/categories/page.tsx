@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { useCategories, useCategoryAdmin, categoryKeys } from "@/hooks/useCategories";
-import { categoryService } from "@/services/categoryService";
+import { categoryService } from "@/lib/api/categoryService";
 import type { CategoryResponse, CategoryRequest } from "@/types/category";
 
 // ─── Gradient palette for category avatars ────────────────────────────────────

@@ -41,7 +41,7 @@ import {
 import { useChapterAdmin, useChaptersByCourse } from "@/hooks/useChapter";
 import { useCourses } from "@/hooks/useCourses";
 import { useLessonsByChapter } from "@/hooks/useLesson";
-import type { ApiResponse, PageResponse } from "@/types/apiType";
+import type { ApiResponse, PageResponse } from '@/types/api';
 import type { ChapterRequest, ChapterResponse } from "@/types/chapterType";
 import type { LessonResponse } from "@/types/lessonType";
 

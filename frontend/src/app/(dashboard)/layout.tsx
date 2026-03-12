@@ -30,7 +30,6 @@ export default function DashboardLayout({
     <ProtectedRoute
       redirectTo="/login?returnUrl=/dashboard"
       allowedRoles={["ADMIN"]}
-      unauthorizedRedirectTo="/"
     >
       <SidebarProvider
         style={

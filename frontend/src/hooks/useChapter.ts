@@ -5,7 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import { chapterService } from '../services/chapterService'
+import { chapterService } from '@/lib/api/chapterService'
 import type { ChapterResponse, ChapterRequest } from '../types/chapterType'
 
 // ─────────────────────────────────────────────────────────────

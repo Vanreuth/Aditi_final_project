@@ -7,8 +7,8 @@ import {
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query'
-import { userService } from '../services/userService'
-import type { PageResponse, PaginationParams } from '../types/apiType'
+import { fetchUsers, fetchUser, createUser, updateUser, deleteUser } from '@/lib/api/users'
+import type { PageResponse, PaginationParams } from '@/types/api'
 import type { UserResponse, UserRequest, UpdateUserRequest } from '../types/userType'
 
 // ─────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ export function useUsers(params: PaginationParams = {}) {
   const [page, setPage] = useState(params.page ?? 0)
   const query = useQuery({
     queryKey       : userKeys.list({ page, size, sortBy, sortDir }),
-    queryFn        : () => userService.getAll({ page, size, sortBy, sortDir }),
+    queryFn        : () => fetchUsers({ page, size, sortBy, sortDir }),
     placeholderData: keepPreviousData,
   })
   return { ...toState<PageResponse<UserResponse>>(query), page, setPage, refetch: query.refetch }
@@ -50,7 +50,7 @@ export function useUsers(params: PaginationParams = {}) {
 export function useUserById(id: number) {
   const query = useQuery({
     queryKey: userKeys.detail(id),
-    queryFn : () => userService.getById(id),
+    queryFn : () => fetchUser(id),
     enabled : !!id,
   })
   return { ...toState<UserResponse>(query), refetch: query.refetch }
@@ -66,13 +66,13 @@ export function useUserAdmin() {
 
   const createMutation = useMutation({
     mutationFn: ({ payload, profilePicture }: { payload: UserRequest; profilePicture?: File }) =>
-      userService.create(payload, profilePicture),
+      createUser(payload, profilePicture),
     onSuccess: invalidate,
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: UpdateUserRequest }) =>
-      userService.update(id, payload),
+      updateUser(id, payload),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: userKeys.detail(id) })
       invalidate()
@@ -80,7 +80,7 @@ export function useUserAdmin() {
   })
 
   const removeMutation = useMutation({
-    mutationFn: (id: number) => userService.remove(id),
+    mutationFn: (id: number) => deleteUser(id),
     onSuccess : invalidate,
   })
 

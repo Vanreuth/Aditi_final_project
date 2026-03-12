@@ -1,10 +1,11 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { courseService } from '../services/courseService'
-import { userService } from '../services/userService'
-import { categoryService } from '../services/categoryService'
-import type { PageResponse } from '../types/apiType'
+import { courseService } from '@/lib/api/courseService'
+import { fetchUsers } from '@/lib/api/users'
+import { categoryService } from '@/lib/api/categoryService'
+import { getPrimaryRole } from '@/types/api'
+import type { PageResponse } from '@/types/api'
 import type { CourseResponse } from '../types/courseType'
 import type { UserResponse } from '../types/userType'
 import type { CategoryResponse } from '../types/category'
@@ -60,7 +61,7 @@ export function useDashboardStats(): DashboardStats {
 
   const usersQuery = useQuery({
     queryKey: ['dashboard', 'users'],
-    queryFn: () => userService.getAll({ page: 0, size: 100, sortBy: 'id', sortDir: 'desc' }),
+    queryFn: () => fetchUsers({ page: 0, size: 100, sortBy: 'id', sortDir: 'desc' }),
     staleTime: 2 * 60 * 1000,
   })
 
@@ -86,7 +87,7 @@ export function useDashboardStats(): DashboardStats {
   const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
   const draftCourses = courses.filter(c => c.status === 'DRAFT').length
   const featuredCourses = courses.filter(c => c.featured || c.isFeatured).length
-  const activeUsers = users.filter(u => u.isActive).length
+  const activeUsers = users.filter(u => u.status === 'ACTIVE').length
   const activeCategories = categories.filter(c => c.isActive).length
 
   // --- Courses by level ---
@@ -111,7 +112,7 @@ export function useDashboardStats(): DashboardStats {
   // --- Users by role ---
   const roleCounts: Record<string, number> = {}
   users.forEach(u => {
-    const role = u.role ?? 'USER'
+    const role = getPrimaryRole(u.roles ?? []).replace('ROLE_', '')
     roleCounts[role] = (roleCounts[role] ?? 0) + 1
   })
   const usersByRole = Object.entries(roleCounts).map(([name, value]) => ({

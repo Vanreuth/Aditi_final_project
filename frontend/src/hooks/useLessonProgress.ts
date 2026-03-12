@@ -7,7 +7,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import { lessonProgressService } from '../services/lessonProgressService'
+import { lessonProgressService } from '@/lib/api/lessonProgressService'
 import type {
   LessonProgressResponse,
   LessonProgressRequest,

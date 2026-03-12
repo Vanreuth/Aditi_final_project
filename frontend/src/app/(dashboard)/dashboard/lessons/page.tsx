@@ -40,7 +40,7 @@ import { useChaptersByCourse } from "@/hooks/useChapter";
 import { useCourses } from "@/hooks/useCourses";
 import { useLessonAdmin, useLessonsByChapter, useLessonsByCourse } from "@/hooks/useLesson";
 import { useSnippetAdmin, useSnippetsByLesson } from "@/hooks/useSnippetCode";
-import type { ApiResponse, PageResponse } from "@/types/apiType";
+import type { ApiResponse, PageResponse } from '@/types/api';
 import type { CodeSnippetRequest, CodeSnippetResponse } from "@/types/codeSnippetType";
 import type { LessonRequest, LessonResponse } from "@/types/lessonType";
 

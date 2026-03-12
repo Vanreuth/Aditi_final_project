@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import type { CodeSnippetDto } from "@/lib/types";
+import type { CodeSnippetDto } from "@/types/codeSnippetType";
 
 // ─── Language registry ────────────────────────────────────────────────────────
 

@@ -23,6 +23,7 @@ import {
 } from "@/components/account";
 import type { ProfileFormValues } from "@/components/account";
 import type { LessonProgressResponse } from "@/types/lessonProgressType";
+import { getDefaultAppRoute, hasAdminRole, hasInstructorRole } from '@/types/api';
 
 // ─────────────────────────────────────────────────────────────
 //  deriveStats
@@ -42,7 +43,7 @@ function deriveStats(list: LessonProgressResponse[] | null) {
     new Set(data.map((p) => p.courseId).filter(Boolean)).size;
 
   const totalReadSeconds = data.reduce(
-    (sum, p) => sum + (p.readTimeSeconds ?? p.readingTimeSeconds ?? 0),
+    (sum, p) => sum + (p.readTimeSeconds ?? 0),
     0,
   );
 
@@ -105,17 +106,13 @@ export default function AccountPage() {
       router.replace("/login?callbackUrl=/account");
       return;
     }
-    const isAdmin =
-      user.roles?.includes("ADMIN") ||
-      user.roles?.includes("ROLE_ADMIN") ||
-      user.role === "ROLE_ADMIN";
-
-    if (isAdmin) router.replace("/dashboard");
+    if (hasAdminRole(user.roles) || hasInstructorRole(user.roles)) {
+      router.replace(getDefaultAppRoute(user.roles ?? []));
+    }
   }, [
     initialized,
     isRefreshing,
     user?.id,     
-    user?.role,
     user?.roles,
     router,
   ]);

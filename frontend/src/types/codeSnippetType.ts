@@ -1,4 +1,6 @@
 
+export type CodeSnippetDto = CodeSnippetResponse;
+
 export interface CodeSnippetResponse {
   id: number
   title?: string

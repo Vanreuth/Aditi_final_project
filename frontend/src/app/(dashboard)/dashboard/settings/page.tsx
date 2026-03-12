@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Camera, User, Mail, Phone, MapPin, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { authService } from "@/services/authService";
+import { getMe } from "@/lib/api/auth";
 
 const profileFormSchema = z.object({
 	username: z
@@ -74,7 +74,7 @@ export default function SettingsPage() {
 		async function fetchProfile() {
 			try {
 				setIsFetching(true);
-				const profile = await authService.me();
+				const profile = await getMe();
 				form.reset({
 					username: profile.username || "",
 					phoneNumber: profile.phoneNumber || "",

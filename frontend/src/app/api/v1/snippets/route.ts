@@ -1,0 +1,9 @@
+/**
+ * POST /api/v1/snippets  — create snippet
+ */
+import { NextRequest } from 'next/server'
+import { proxyToBackend } from '@/lib/proxy'
+
+export async function POST(request: NextRequest) {
+  return proxyToBackend(request, '/api/v1/snippets')
+}

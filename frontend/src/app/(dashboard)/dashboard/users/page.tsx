@@ -43,7 +43,7 @@ import {
 import { StatCard } from "@/components/StatCard";
 import { DataTable } from "@/components/dataTable/DataTable";
 import { useUsers, useUserAdmin, userKeys } from "@/hooks/useUsers";
-import { userService } from "@/services/userService";
+import { fetchUsers } from '@/lib/api/users'
 import type { UserResponse, UpdateUserRequest, UserRequest } from "@/types/userType";
 
 // --- DataTable adapter hook ---------------------------------------------------
@@ -52,7 +52,7 @@ function useUsersTable(params: any) {
   const { page = 0, size = 10, sortBy = "id", sortDir = "asc" } = params;
   const query = useQuery({
     queryKey: userKeys.list({ page, size, sortBy, sortDir }),
-    queryFn: () => userService.getAll({ page, size, sortBy, sortDir }),
+    queryFn: () => fetchUsers({ page, size, sortBy, sortDir }),
     placeholderData: keepPreviousData,
   });
   return {
@@ -68,8 +68,8 @@ function useUsersTable(params: any) {
 
 /** Pick highest-priority role from array */
 function primaryRole(roles: string[] = []): string {
-  if (roles.includes("ADMIN"))      return "ADMIN";
-  if (roles.includes("INSTRUCTOR")) return "INSTRUCTOR";
+  if (roles.includes("ADMIN") || roles.includes("ROLE_ADMIN"))      return "ADMIN";
+  if (roles.includes("INSTRUCTOR") || roles.includes("ROLE_INSTRUCTOR")) return "INSTRUCTOR";
   return "USER";
 }
 
@@ -622,8 +622,8 @@ export default function UsersPage() {
   const allUsers = statsData?.content ?? [];
   const stats = {
     total:       statsData?.totalElements ?? 0,
-    admins:      allUsers.filter((u) => u.roles?.includes("ADMIN")).length,
-    instructors: allUsers.filter((u) => u.roles?.includes("INSTRUCTOR") && !u.roles.includes("ADMIN")).length,
+    admins:      allUsers.filter((u) => primaryRole(u.roles) === "ADMIN").length,
+    instructors: allUsers.filter((u) => primaryRole(u.roles) === "INSTRUCTOR").length,
     activeUsers: allUsers.filter((u) => u.status === "ACTIVE").length,
   };
 

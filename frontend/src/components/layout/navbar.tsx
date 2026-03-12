@@ -8,6 +8,7 @@ import { ChevronRight, Menu, X, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
+import { getDefaultAppRoute } from '@/types/api';
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -25,7 +26,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const authHref = user ? "/account" : "/login";
+  const authHref = user ? getDefaultAppRoute(user.roles ?? []) : "/login";
   const authLabel = user ? "គណនីរបស់ខ្ញុំ" : "ចូលគណនី";
 
   useEffect(() => {

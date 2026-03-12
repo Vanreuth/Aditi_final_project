@@ -1,0 +1,19 @@
+/**
+ * GET    /api/v1/lesson-progress
+ * POST   /api/v1/lesson-progress
+ * DELETE /api/v1/lesson-progress
+ */
+import { NextRequest } from 'next/server'
+import { proxyToBackend } from '@/lib/proxy'
+
+export async function GET(request: NextRequest) {
+  return proxyToBackend(request, '/api/v1/lesson-progress')
+}
+
+export async function POST(request: NextRequest) {
+  return proxyToBackend(request, '/api/v1/lesson-progress')
+}
+
+export async function DELETE(request: NextRequest) {
+  return proxyToBackend(request, '/api/v1/lesson-progress')
+}

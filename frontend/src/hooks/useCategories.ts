@@ -7,8 +7,8 @@ import {
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query'
-import { categoryService } from '../services/categoryService'
-import type { PageResponse, PaginationParams } from '../types/apiType'
+import { categoryService } from '@/lib/api/categoryService'
+import type { PageResponse, PaginationParams } from '@/types/api'
 import type { CategoryResponse, CategoryRequest } from '../types/category'
 
 // ─────────────────────────────────────────────────────────────
