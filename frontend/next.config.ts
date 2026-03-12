@@ -1,8 +1,17 @@
 import type { NextConfig } from "next";
 
+const BACKEND = process.env.API_BASE_URL ?? 'https://growcodekh.onrender.com'
+
 const nextConfig: NextConfig = {
   // ✅ Stops double renders in development
   reactStrictMode: false,
+
+  // Make backend URL available to client-side code.
+  // Values here are baked in at build time, so even if .env is not deployed
+  // (it is gitignored) the correct URL is always present.
+  env: {
+    NEXT_PUBLIC_API_URL: BACKEND,
+  },
 
   images: {
     remotePatterns: [

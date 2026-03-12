@@ -20,7 +20,7 @@ import type {
 //                ▼
 //           Spring Boot /api/v1/auth/login ✅
 
-const AUTH_PATH = '/api/auth'   // ← BFF path (not /api/v1/auth directly!)
+const AUTH_PATH = '/api/v1/auth'
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 
@@ -66,8 +66,18 @@ export async function updateProfile(
   return put<AuthResponse>(`${AUTH_PATH}/profile`, form, { multipart: true })
 }
 
+// Backend URL for browser-level redirects (OAuth initiation).
+// Falls back to the production URL so it always works even if the env var
+// is not injected at runtime.
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? 'https://growcodekh.onrender.com'
+
 export function redirectToOAuth(provider: 'google' | 'github'): void {
-  window.location.href = `/api/v1/auth/oauth2/authorize/${provider}`
+  // Redirect the browser DIRECTLY to Spring Boot's OAuth2 endpoint.
+  // Must NOT go through the Next.js BFF — Spring Security needs to own
+  // the full OAuth handshake (session state, CSRF token, callback URL).
+  // After Google auth, Spring redirects to /oauth2/redirect?access_token=...&refresh_token=...
+  window.location.href = `${BACKEND_URL}/oauth2/authorization/${provider}`
 }
 
 /** List available OAuth2 providers */
