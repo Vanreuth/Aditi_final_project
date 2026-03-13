@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source     : "/api/((?!oauth/).*)",
+        source     : "/api/((?!oauth2/).*)",
         destination: `${API_BASE_URL}/api/$1`,
       },
     ]
