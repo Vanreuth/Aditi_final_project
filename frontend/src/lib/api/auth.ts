@@ -62,7 +62,7 @@ export async function updateProfile(
 // ✅ Goes to Next.js route handler → handler reads API_BASE_URL server-side
 // Browser never sees the backend URL
 export function redirectToOAuth(provider: 'google' | 'github'): void {
-  window.location.href = `/api/oauth/${provider}`
+  window.location.href = `/api/oauth2/${provider}`
 }
 
 export async function getOAuthProviders(): Promise<string[]> {
