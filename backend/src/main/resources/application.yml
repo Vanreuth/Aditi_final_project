@@ -20,6 +20,7 @@ spring:
       connection-timeout: 20000
       max-lifetime: 1800000
       keepalive-time: 30000
+      initialization-fail-timeout: 0
 
   jpa:
     hibernate:

@@ -1,26 +1,28 @@
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
+# ---------- Build Stage ----------
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
+
 COPY pom.xml .
-RUN mvn dependency:go-offline -q
-COPY src ./src
-RUN mvn clean package -DskipTests -q
+RUN mvn -q -e -B dependency:go-offline
 
-FROM eclipse-temurin:21-jre-alpine
+COPY src ./src
+RUN mvn -q -e -B clean package -DskipTests
+
+# ---------- Runtime Stage ----------
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-RUN addgroup -S app && adduser -S app -G app
+RUN useradd -ms /bin/bash app
 USER app
 
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=75.0", \
-  "-Xss256k", \
-  "-XX:+UseSerialGC", \
-  "-Djava.security.egd=file:/dev/./urandom", \
-  "-jar", "app.jar"]
-  # ↑ SerialGC uses less memory than default GC — good for free tier
-  # ↑ Xss256k reduces thread stack size
+ENTRYPOINT ["java",
+"-XX:+UseContainerSupport",
+"-XX:MaxRAMPercentage=75",
+"-XX:+UseSerialGC",
+"-Xss256k",
+"-Djava.security.egd=file:/dev/./urandom",
+"-jar","app.jar"]
