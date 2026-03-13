@@ -1,33 +1,20 @@
-// context/AuthContext.tsx
 'use client'
 
 import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  ReactNode,
+  createContext, useContext, useEffect,
+  useRef, useState, useCallback, ReactNode,
 } from 'react'
 import {
-  login    as apiLogin,
-  logout   as apiLogout,
-  getMe,
-  refreshToken,
-  updateProfile as apiUpdateProfile,
+  login as apiLogin, logout as apiLogout,
+  getMe, refreshToken, updateProfile as apiUpdateProfile,
 } from '@/lib/api/auth'
 import { hasAdminRole, hasInstructorRole, hasUserRole } from '@/types/api'
-import type {
-  AuthResponse,
-  UpdateProfileRequest,
-} from '@/types/auth'
+import type { AuthResponse, UpdateProfileRequest } from '@/types/auth'
 
 interface AuthContextValue {
   user            : AuthResponse | null
   loading         : boolean
   initialized     : boolean
-  /** true while a refresh call is in-flight — prevents premature redirects */
   isRefreshing    : boolean
   isAdmin         : boolean
   isInstructor    : boolean
@@ -42,73 +29,75 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,         setUser]         = useState<AuthResponse | null>(null)
-  const [loading,      setLoading]      = useState<boolean>(true)
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
-
-  // Prevent the bootstrap effect from running more than once
-  // (React 18 Strict Mode mounts twice in dev — this guard stops double-fetches)
+  const [loading,      setLoading]      = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const didInit = useRef(false)
 
-  // ── On mount: restore session ─────────────────────────────────────────────
   useEffect(() => {
     if (didInit.current) return
     didInit.current = true
 
+    // ✅ ONE cancelled var, used by the whole effect
     let cancelled = false
 
     async function bootstrap() {
-      // ── Step 1: try /me with current access_token ────────────────────────
       try {
-        const userData = await getMe()
-        if (!cancelled) setUser(userData)
-        return                        // ✅ already logged in — done
-      } catch {
-        // access_token missing or expired — fall through to refresh
-      }
-
-      // ── Step 2: try to get a new access_token via refresh_token ──────────
-      setIsRefreshing(true)
-      try {
-        const refreshed = await refreshToken()
-        if (!cancelled) setUser(refreshed)
-      } catch {
+        // Step 1: try existing access_token
         try {
-          await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' })
+          const userData = await getMe()
+          if (!cancelled) setUser(userData)
+          return // ✅ valid — done
         } catch {
-          // backend unreachable — nothing we can do, proceed anyway
+          // access_token expired/missing → fall through to refresh
         }
-        if (!cancelled) setUser(null)
+
+        // Step 2: refresh immediately
+        if (!cancelled) setIsRefreshing(true)
+
+        try {
+          const userData = await refreshToken()
+          if (!cancelled) setUser(userData)
+        } catch {
+          // Both tokens invalid → clear session
+          try {
+            await fetch('/api/v1/auth/logout', {
+              method: 'POST',
+              credentials: 'include',
+            })
+          } catch {}
+          if (!cancelled) setUser(null)
+        }
+
       } finally {
-        if (!cancelled) setIsRefreshing(false)
+        // ✅ ONE place — always unblocks spinner
+        if (!cancelled) {
+          setIsRefreshing(false)
+          setLoading(false)      // initialized = !loading = true
+        }
       }
     }
 
-    bootstrap().finally(() => {
-      if (!cancelled) setLoading(false)
-    })
+    bootstrap()
 
     return () => { cancelled = true }
   }, [])
+
   const login = useCallback(async (
-    username: string,
-    password: string
+    username: string, password: string
   ): Promise<AuthResponse> => {
     const userData = await apiLogin({ username, password })
     setUser(userData)
     return userData
   }, [])
 
-  // ── Logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(async (): Promise<void> => {
     await apiLogout()
-    if (typeof window !== 'undefined') window.location.href = '/login'
     setUser(null)
+    if (typeof window !== 'undefined') window.location.href = '/login'
   }, [])
 
-  // ── Update profile ────────────────────────────────────────────────────────
   const updateProfile = useCallback(async (
-    payload: UpdateProfileRequest,
-    photo?: File
+    payload: UpdateProfileRequest, photo?: File
   ): Promise<void> => {
     const updated = await apiUpdateProfile(payload, photo)
     setUser(updated)
@@ -118,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isInstructor    = hasInstructorRole(user?.roles)
   const isUser          = hasUserRole(user?.roles) && !isAdmin && !isInstructor
   const isAuthenticated = !!user
-  const initialized     = !loading
+  const initialized     = !loading   // ✅ derived — no separate state needed
 
   return (
     <AuthContext.Provider value={{
@@ -131,12 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// ── useAuth (alias kept for backward compat with AccountPage) ─────────────
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within <AuthProvider>')
   return ctx
 }
 
-// ── useAuthContext (original name) ────────────────────────────────────────
 export const useAuthContext = useAuth
