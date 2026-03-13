@@ -1,8 +1,11 @@
 package finalproject.backend.config;
 
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Playwright;
 import finalproject.backend.modal.*;
 import finalproject.backend.repository.*;
 import finalproject.backend.util.RoleUtil;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -106,6 +109,7 @@ public class DataInitializer implements CommandLineRunner {
                 }
         );
     }
+
 
     private void seedInstructor() {
         String encodedPassword = passwordEncoder.encode("Instructor@1234");
