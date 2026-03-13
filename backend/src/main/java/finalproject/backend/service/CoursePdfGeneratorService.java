@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -136,17 +137,31 @@ public class CoursePdfGeneratorService {
     public byte[] generate(Course course) {
         log.info("🖨️  Generating PDF — course='{}'", course.getSlug());
         try (Playwright playwright = Playwright.create()) {
+
+            // ✅ Launch with Docker/Render required args
             Browser browser = playwright.chromium().launch(
-                    new BrowserType.LaunchOptions().setHeadless(true));
-            Page page = browser.newContext().newPage();
+                    new BrowserType.LaunchOptions()
+                            .setHeadless(true)
+                            .setArgs(List.of(
+                                    "--no-sandbox",
+                                    "--disable-setuid-sandbox",
+                                    "--disable-dev-shm-usage",
+                                    "--disable-gpu",
+                                    "--no-zygote",
+                                    "--single-process"
+                            ))
+            );
+
+            Page page = browser.newContext(
+                    new Browser.NewContextOptions()
+                            .setLocale("km-KH")  // ✅ Khmer font rendering
+            ).newPage();
 
             page.setContent(buildHtml(course),
                     new Page.SetContentOptions()
                             .setWaitUntil(WaitUntilState.NETWORKIDLE));
 
-            page.waitForFunction(
-                  "() => window.__prismDone === true"
-            );
+            page.waitForFunction("() => window.__prismDone === true");
             page.waitForTimeout(1000);
 
             byte[] pdf = page.pdf(new Page.PdfOptions()
@@ -158,6 +173,7 @@ public class CoursePdfGeneratorService {
 
             log.info("✅ PDF generated — course='{}'", course.getSlug());
             return pdf;
+
         } catch (Exception e) {
             log.error("❌ PDF failed — courseId={}: {}", course.getId(), e.getMessage(), e);
             throw new RuntimeException("PDF generation failed: " + e.getMessage(), e);
@@ -183,8 +199,8 @@ public class CoursePdfGeneratorService {
                 .append("<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n")
                 .append("<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n")
                 .append("<link href=\"https://fonts.googleapis.com/css2?")
-                .append("family=Noto+Sans+Khmer:wght@300;400;500;600;700")
-                .append("family=Noto+Serif+Khmer:wght@300;400;600;700")
+                .append("family=Noto+Sans+Khmer:wght@300;400;500;600;700&")
+                .append("family=Noto+Serif+Khmer:wght@300;400;600;700&")
                 .append("&family=Inter:wght@300;400;500;600;700;800;900")
                 .append("&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400")
                 .append("&display=swap\" rel=\"stylesheet\">\n")
