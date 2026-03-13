@@ -1,16 +1,3 @@
-/**
- * lib/api/client.ts
- *
- * HTTP client layer for all BFF → Spring Boot calls.
- *
- * Exports:
- *  - httpClient  : Axios instance with auto token-refresh interceptor
- *  - get / post / put / patch / del : typed request helpers
- *  - buildFormData : multipart helper
- *
- * Usage:
- *   import { get, post, put, del } from '@/lib/api/client'
- */
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ApiResponse } from '@/types/apiType'

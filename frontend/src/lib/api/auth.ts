@@ -1,6 +1,3 @@
-/**
- * lib/api/auth.ts
- */
 
 import { get, post, put, buildFormData } from '@/lib/api/client'
 import type {
@@ -10,17 +7,8 @@ import type {
   UpdateProfileRequest,
 } from '@/types/authType'
 
-// ── Paths ──────────────────────────────────────────────────────────────────
-//
-// All paths go through Next.js BFF (/api/...)
-// BFF forwards to Spring Boot with httpOnly cookies attached
-//
-// Browser → /api/auth/login  (Next.js BFF)
-//                │
-//                ▼
-//           Spring Boot /api/v1/auth/login ✅
-
 const AUTH_PATH = '/api/v1/auth'
+const API_BASE_URL = process.env.API_BASE_URL
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 
@@ -33,7 +21,13 @@ export async function logout(): Promise<void> {
 }
 
 export async function getMe(): Promise<AuthResponse> {
-  return get<AuthResponse>(`${AUTH_PATH}/me`)
+  const res = await fetch(`${AUTH_PATH}/me`, {
+    credentials: 'include',
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('Unauthorized')
+  const data = await res.json()
+  return data.data
 }
 
 export async function register(
@@ -50,9 +44,12 @@ export async function register(
     { multipart: true, raw: true }
   )
 }
-
-export async function refreshToken(): Promise<AuthResponse> {
-  return post<AuthResponse>(`${AUTH_PATH}/refresh`)
+export async function refreshToken(): Promise<void> {
+  const res = await fetch(`${AUTH_PATH}/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error('Refresh failed')
 }
 
 export async function updateProfile(
@@ -66,20 +63,10 @@ export async function updateProfile(
   return put<AuthResponse>(`${AUTH_PATH}/profile`, form, { multipart: true })
 }
 
-// Backend URL for browser-level redirects (OAuth initiation).
-// Configure this in frontend/.env for local development and in Vercel env vars
-// for production deployments.
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-
 export function redirectToOAuth(provider: 'google' | 'github'): void {
-  // Redirect the browser DIRECTLY to Spring Boot's OAuth2 endpoint.
-  // Must NOT go through the Next.js BFF — Spring Security needs to own
-  // the full OAuth handshake (session state, CSRF token, callback URL).
-  // After Google auth, Spring redirects to /oauth2/redirect?access_token=...&refresh_token=...
-  window.location.href = `${BACKEND_URL}/oauth2/authorization/${provider}`
+  window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`
 }
 
-/** List available OAuth2 providers */
 export async function getOAuthProviders(): Promise<string[]> {
   return get<string[]>(`${AUTH_PATH}/oauth2/providers`)
 }

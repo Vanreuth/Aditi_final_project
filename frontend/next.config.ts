@@ -1,17 +1,9 @@
 import type { NextConfig } from "next";
 
-const BACKEND = process.env.API_BASE_URL ?? 'https://growcodekh.onrender.com'
+const API_BASE_URL = process.env.API_BASE_URL ?? 'https://growcodekh.onrender.com'
 
 const nextConfig: NextConfig = {
-  // ✅ Stops double renders in development
   reactStrictMode: false,
-
-  // Make backend URL available to client-side code.
-  // Values here are baked in at build time, so even if .env is not deployed
-  // (it is gitignored) the correct URL is always present.
-  env: {
-    NEXT_PUBLIC_API_URL: BACKEND,
-  },
 
   images: {
     remotePatterns: [
@@ -24,24 +16,22 @@ const nextConfig: NextConfig = {
         hostname: "localhost",
         port: "8080",
       },
+      {
+      protocol: "https",
+      hostname: "growcodekh.onrender.com", // ✅ add this
+    },
     ],
   },
 
-//   async redirects() {
-//   return [
-//     {
-//       source: "/:slug(...).+)",
-//       destination: "/courses/:slug",
-//       permanent: true,
-//     },
-//     {
-//       source: "/:slug(...)/:lesson",
-//       destination: "/courses/:slug/:lesson",
-//       permanent: true,
-//     },
-//   ];
-// },
-
+  // ✅ Proxy /api/* through Next.js → cookies stay same-domain
+  async rewrites() {
+    return [
+      {
+        source     : "/api/:path*",
+        destination: `${API_BASE_URL}/api/:path*`,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
