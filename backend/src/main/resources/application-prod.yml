@@ -1,13 +1,15 @@
 # application-prod.yml
 
 spring:
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    hikari:
-      maximum-pool-size: ${DB_POOL_SIZE:3}
-      initialization-fail-timeout: 60000  # ✅ correct location (was under spring.jpa before)
+  spring:
+    datasource:
+      url: ${DB_URL}
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: ${DB_POOL_SIZE:3}
+        initialization-fail-timeout: 60000
 
   jpa:
     hibernate:
