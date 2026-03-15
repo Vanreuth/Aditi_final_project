@@ -9,12 +9,8 @@ spring:
     name: backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://ep-noisy-leaf-a1ssyg1b-pooler.ap-southeast-1.aws.neon.tech/backend?sslmode=require&channel_binding=require}
-    username: ${DB_USERNAME:neondb_owner}
-    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${DB_POOL_SIZE:3}
       minimum-idle: 1
       idle-timeout: 600000
       connection-timeout: 20000
@@ -22,19 +18,13 @@ spring:
       keepalive-time: 30000
 
   jpa:
-    hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-    show-sql: false
     properties:
       hibernate:
         format_sql: false
 
-
   servlet:
     multipart:
       enabled: true
-      max-file-size: ${MAX_FILE_SIZE:10MB}
-      max-request-size: ${MAX_REQUEST_SIZE:20MB}
       file-size-threshold: 0
 
   security:
@@ -42,14 +32,10 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: profile, email
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             authorization-grant-type: authorization_code
           github:
-            client-id: ${GITHUB_CLIENT_ID}
-            client-secret: ${GITHUB_CLIENT_SECRET}
             scope: read:user, user:email
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             authorization-grant-type: authorization_code
@@ -81,20 +67,6 @@ app:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:900000}
     refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}
-  cookie:
-    secure: ${COOKIE_SECURE:false}
-    same-site: ${COOKIE_SAME_SITE:Lax}
-  oauth2:
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
-  cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
-
-logging:
-  level:
-    root: ${LOG_LEVEL_ROOT:WARN}
-    finalproject.backend: ${LOG_LEVEL_APP:INFO}
-    org.springframework.security: WARN
-    org.hibernate.SQL: OFF
 
 management:
   endpoints:
@@ -104,3 +76,5 @@ management:
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
