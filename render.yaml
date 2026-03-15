@@ -20,7 +20,7 @@ services:
         - backend/pom.xml
         - backend/Dockerfile
 
-    healthCheckPath: /health
+    healthCheckPath: /actuator/health/readiness
     autoDeploy: true
 
     envVars:
