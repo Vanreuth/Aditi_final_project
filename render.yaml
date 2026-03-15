@@ -27,8 +27,18 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
 
-      - key: DB_URL
-        value: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - key: DB_HOST
+        fromDatabase:
+          name: growcodekh-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: growcodekh-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: growcodekh-db
+          property: database
       - key: DB_USERNAME
         fromDatabase:
           name: growcodekh-db
