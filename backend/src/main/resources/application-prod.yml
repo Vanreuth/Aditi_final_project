@@ -1,5 +1,9 @@
 # application-prod.yml
 
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
+
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
@@ -46,3 +50,14 @@ logging:
     finalproject.backend: ${LOG_LEVEL_APP:INFO}
     org.springframework.security: WARN
     org.hibernate.SQL: OFF
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
