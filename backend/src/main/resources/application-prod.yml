@@ -36,6 +36,8 @@ spring:
             client-secret: ${GITHUB_CLIENT_SECRET}
 
 app:
+  seed:
+    enabled: ${APP_SEED_ENABLED:false}
   cookie:
     secure: true
     same-site: None

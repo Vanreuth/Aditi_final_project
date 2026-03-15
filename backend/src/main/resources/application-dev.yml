@@ -8,7 +8,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update      # auto-sync schema locally
+      ddl-auto: create      # auto-sync schema locally
     show-sql: true          # visible queries in dev
     properties:
       hibernate:
@@ -31,6 +31,8 @@ spring:
             client-secret: ${GITHUB_CLIENT_SECRET}
 
 app:
+  seed:
+    enabled: ${APP_SEED_ENABLED:true}
   cookie:
     secure: false
     same-site: Lax

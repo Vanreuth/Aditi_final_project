@@ -6,6 +6,7 @@ import finalproject.backend.util.RoleUtil;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -7190,6 +7192,161 @@ public class DataInitializer implements CommandLineRunner {
 
         done(c);
     }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // 8. Git & DevOps Basics
+        // ══════════════════════════════════════════════════════════════════════════
+        private void seedGit(User ins, Category cat) {
+        Course c = course("Git & DevOps Fundamentals", "git-devops-fundamentals-km",
+            "រៀន Git ពីមូលដ្ឋាន ដល់ branching, merging, .gitignore និង best practices សម្រាប់ team workflow។",
+            "BEGINNER", true, ins, cat);
+
+    Chapter ch2 = ch(c, "Git Basics", 2);
+    Lesson l2 = ls(ch2, c, "init, add, commit, status, log", 1,
+            "Git workflow: Working Directory → Staging Area → Repository ។\n\n" +
+                    "git init, git add, git commit, git status, git log ។");
+    sn(l2, "Git Basic Commands", """
+                        # 1. Initialize repository
+                        mkdir my-project && cd my-project
+                        git init
+                        # ➡️ Initialized empty Git repository in .git/
+
+                        # 2. Create file
+                        echo "# My Project" > README.md
+                        echo "console.log('Hello');" > index.js
+
+                        # 3. Check status
+                        git status
+                        # ➡️ Untracked files: README.md, index.js
+
+                        # 4. Stage files
+                        git add README.md        # stage one file
+                        git add .                # stage ALL changes
+
+                        # 5. Commit
+                        git commit -m "feat: initial project setup"
+
+                        # 6. View history
+                        git log
+                        git log --oneline        # compact view
+                        git log --oneline --graph --all  # visual branches
+
+                        # 7. See what changed
+                        git diff                 # unstaged changes
+                        git diff --staged        # staged changes
+
+                        # 8. Undo
+                        git restore index.js     # discard unstaged changes
+                        git restore --staged .   # unstage files""", "bash",
+            "Commit message ល្អ: type(scope): description ។ feat, fix, docs, refactor ។", 1);
+
+    Chapter ch3 = ch(c, "Branching & Merging", 3);
+    Lesson l3 = ls(ch3, c, "Branches & Merge", 1,
+            "Branch ជួយ work on features ដោយឯករាជ្យ ។\n\n" +
+                    "main branch = production code ។ feature branches ។\n\n" +
+                    "merge: combine branch ។ rebase: linear history ។");
+    sn(l3, "Branching Workflow", """
+                        # ─── Create & switch branch ───────────────────────────────────
+                        git branch feature/login         # create branch
+                        git checkout feature/login       # switch to it
+                        # OR shortcut:
+                        git checkout -b feature/login    # create + switch
+
+                        # ─── Modern syntax (Git 2.23+) ───────────────────────────────
+                        git switch -c feature/register   # create + switch
+                        git switch main                  # switch to main
+
+                        # ─── Work on feature ─────────────────────────────────────────
+                        # ... edit files ...
+                        git add .
+                        git commit -m "feat: add login endpoint"
+                        git commit -m "feat: add JWT token service"
+
+                        # ─── List branches ───────────────────────────────────────────
+                        git branch          # local branches
+                        git branch -a       # all branches (including remote)
+
+                        # ─── Merge feature into main ──────────────────────────────────
+                        git switch main
+                        git merge feature/login
+                        # If conflict: fix manually → git add . → git commit
+
+                        # ─── Delete branch after merge ───────────────────────────────
+                        git branch -d feature/login""", "bash",
+            "ប្រើ descriptive branch names: feature/, fix/, hotfix/ ។ Delete branch after merge ។", 1);
+    Chapter ch5 = ch(c, ".gitignore & Best Practices", 5);
+    Lesson l5 = ls(ch5, c, ".gitignore & Git Tips", 1,
+            ".gitignore: tell Git ឯកសារណាដែលត្រូវ ignore ។\n\n" +
+                    "node_modules, .env, target/, build/ មិន commit ។");
+    sn(l5, ".gitignore ស្តង់ដារ", """
+                        # .gitignore for Full-Stack Project
+
+                        # ─── Environment / Secrets ────────────────────────────────────
+                        .env
+                        .env.local
+                        .env.production
+                        *.key
+                        *.pem
+
+                        # ─── Node.js / React / Next.js ───────────────────────────────
+                        node_modules/
+                        .next/
+                        dist/
+                        build/
+                        .cache/
+
+                        # ─── Java / Spring Boot ───────────────────────────────────────
+                        target/
+                        *.class
+                        *.jar
+                        *.war
+                        .mvn/
+                        !/src/main//target/
+
+                        # ─── IDE ──────────────────────────────────────────────────────
+                        .idea/
+                        *.iml
+                        .vscode/
+                        .DS_Store        # macOS
+                        Thumbs.db        # Windows
+
+                        # ─── Logs ─────────────────────────────────────────────────────
+                        *.log
+                        logs/
+                        npm-debug.log*""", "bash",
+            ".env មិន commit ព្រោះមាន secrets ។ node_modules មិន commit ព្រោះធំ ។ gitignore.io generate ។", 1);
+    sn(l5, "Git Best Practices", """
+                        # ✅ Commit message convention (Conventional Commits)
+                        feat: add course detail page
+                        fix: resolve JWT token expiry bug
+                        docs: update API documentation
+                        style: format code with prettier
+                        refactor: extract useFetch hook
+                        test: add unit tests for CourseService
+                        chore: update dependencies
+
+                        # ✅ Useful aliases
+                        git config --global alias.st  "status"
+                        git config --global alias.lg  "log --oneline --graph --all"
+                        git config --global alias.undo "reset --soft HEAD~1"
+
+                        # Use:
+                        git st    # instead of git status
+                        git lg    # beautiful log
+                        git undo  # undo last commit (keep changes staged)
+
+                        # ✅ See who changed what
+                        git blame filename.java
+
+                        # ✅ Find commit that introduced a bug
+                        git bisect start
+                        git bisect bad          # current commit is bad
+                        git bisect good v1.0    # this tag was good
+                        # Git binary search through commits""", "bash",
+            "Conventional Commits ធ្វើ history ច្បាស់ ។ git aliases ប្រើ fast ។", 2);
+
+    done(c);
+}
 
     // ══════════════════════════════════════════════════════════════════════════
 // HELPERS - short names for clean code above
