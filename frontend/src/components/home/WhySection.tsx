@@ -1,27 +1,18 @@
 import { Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { features } from "@/components/constants/home-data";
+import SectionHeader from "../section/SectionHeader";
 
 export function WhySection() {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-      <div className="mb-12 text-center">
-        <Badge className="mb-3 border-indigo-200/60 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
-          <Zap className="mr-1.5 h-3 w-3" />
-          ហេតុអ្វីបានជាជ្រើសរើស GrowCodeKh?
-        </Badge>
-        <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-          បទពិសោធន៍{" "}
-          <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-            រៀន
-          </span>
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-          ពន្យល់ជាខ្មែរ — Build project​ ពិត — Roadmap ច្បាស់ — Support សកម្ម
-        </p>
-      </div>
+      <SectionHeader
+        title="ហេតុអ្វីបានជាជ្រើសរើស"
+        highlight="GrowCodeKh?"
+        description="យើងមិនមែនគ្រាន់តែផ្តល់វគ្គសិក្សា ពន្យល់ជាខ្មែរ Roadmap ច្បាស់  តែបង្កើតបទពិសោធន៍រៀនដែលពិតប្រាកដសម្រាប់អ្នក។"
+      />
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3 mt-12">
         {features.map((f) => (
           <div
             key={f.title}

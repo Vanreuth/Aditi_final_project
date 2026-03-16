@@ -1,4 +1,5 @@
 import { ClipboardList, Rocket, ShieldCheck } from "lucide-react";
+import SectionHeader from "../section/SectionHeader";
 
 const focusItems = [
   {
@@ -27,15 +28,11 @@ const focusItems = [
 export function LearningFocusSection() {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-      <div className="mx-auto max-w-3xl text-center">
-        <div className="mx-auto mb-4 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
-        <h2 className="text-3xl font-black text-foreground md:text-5xl">
-      ​​​​​      គោលបំណងនៃការបង្កើតវេបសាយនេះ
-        </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-         វេបសាយនេះត្រូវបានបង្កើតឡើងដើម្បីផ្តល់ឱកាសសម្រាប់ការរៀនកូដ និងជួយបង្កើតការយល់ដឹងពីភាសាកូដនានាជាភាសាខ្មែរ។
-        </p>
-      </div>
+      <SectionHeader
+        title="គោលបំណងនៃការបង្កើត"
+        highlight=" វេបសាយនេះ"
+        description="វេបសាយនេះត្រូវបានបង្កើតឡើងដើម្បីផ្តល់ឱកាសសម្រាប់ការរៀនកូដ និងជួយបង្កើតការយល់ដឹងពីភាសាកូដនានាជាភាសាខ្មែរ។"
+      />
 
       <div className="mt-12 grid gap-6 md:grid-cols-3">
         {focusItems.map((item) => {

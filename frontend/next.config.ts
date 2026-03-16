@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "pub-21ac384ecd8e4ec88d9c0d2834aa1d5f.r2.dev" },
       { protocol: "https", hostname: "codegrowthkh.onrender.com" },
+      { protocol: "https", hostname: "cdn.codegrowthkh.site" },
       { protocol: "http",  hostname: "localhost", port: "8080" },
     ],
   },

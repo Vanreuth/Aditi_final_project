@@ -40,6 +40,13 @@ const EXPERIENCE_LEVELS = [
   "Intermediate",
 ];
 
+const quickLinks = [
+  { label: "ឥតគិតថ្លៃ", href: "/courses" },
+  { label: "ទាញយកសៀវភៅឥតគិតថ្លៃ", href: "/courses/download_pdf" },
+  { label: "តាមដានវឌ្ឍនភាពមេរៀន", href: "/account" },
+  { label: "ជាភាសាខ្មែរ", href: "/roadmap" },
+] as const;
+
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState("");
@@ -77,19 +84,15 @@ export default function ContactPage() {
 
           {/* Quick trust row */}
           <div className="mt-5 flex flex-wrap gap-3">
-            {[
-              "ឥតគិតថ្លៃ",
-              "ទាញយកសៀវភៅឥតគិតថ្លៃ",
-              "តាមដានវឌ្ឍនភាពមេរៀន",
-              "ជាភាសាខ្មែរ",
-            ].map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"
+            {quickLinks.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:text-blue-300"
               >
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                {t}
-              </span>
+                {item.label}
+              </Link>
             ))}
           </div>
         </div>

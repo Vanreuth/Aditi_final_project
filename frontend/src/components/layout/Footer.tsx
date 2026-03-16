@@ -10,6 +10,7 @@ import {
   Send,
   Youtube,
 } from "lucide-react";
+import { learningCourseLinks } from "@/components/constants/roadmap-data";
 
 const quickLinks = [
   { href: "/",        label: "ទំព័រដើម",     en: "Home"    },
@@ -19,30 +20,23 @@ const quickLinks = [
   { href: "/contact", label: "ទំនាក់ទំនង",   en: "Contact" },
 ];
 
-const courses = [
-  { label: "HTML & CSS មូលដ្ឋានគ្រឹះ",      href: "/courses" },
-  { label: "JavaScript ពីដំបូង",            href: "/courses" },
-  { label: "React.js UI ទំនើប",             href: "/courses" },
-  { label: "Next.js Full-Stack",            href: "/courses" },
-  { label: "Spring Boot Backend",           href: "/courses" },
-  { label: "Docker & DevOps",               href: "/courses" },
-];
+const courses = learningCourseLinks.slice(0, 6);
 
 const socials = [
   {
-    href: "#",
+    href: "https://facebook.com/codegrowthkh",
     icon: Facebook,
     label: "Facebook",
     color: "hover:bg-blue-600 hover:border-blue-600 hover:text-white",
   },
   {
-    href: "#",
+    href: "https://youtube.com/@codegrowthkh",
     icon: Youtube,
     label: "YouTube",
     color: "hover:bg-red-500 hover:border-red-500 hover:text-white",
   },
   {
-    href: "#",
+    href: "https://t.me/Vanreuth",
     icon: Send,
     label: "Telegram",
     color: "hover:bg-sky-500 hover:border-sky-500 hover:text-white",
@@ -168,9 +162,11 @@ export default function Footer() {
             {/* Socials */}
             <div className="flex items-center gap-2 pt-1">
               {socials.map(({ href, icon: Icon, label, color }) => (
-                <Link
+                <a
                   key={label}
                   href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={label}
                   title={label}
                   className={cn(
@@ -179,7 +175,7 @@ export default function Footer() {
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                </Link>
+                </a>
               ))}
             </div>
           </div>

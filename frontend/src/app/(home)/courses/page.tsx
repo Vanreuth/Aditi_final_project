@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BookOpen } from "lucide-react";
 import { CourseFilterBar } from "@/components/course/CourseFilterBar";
 import { CourseGrid } from "@/components/course/CourseGrid";
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
 import { useCourses } from "@/hooks/useCourses";
 import type { CourseLevel } from "@/types/courseType";
+import SectionHeader from "@/components/section/SectionHeader";
 
 const PAGE_SIZE = 12;
 
@@ -25,6 +25,7 @@ export default function CoursesPage() {
     setPage,
   } = useCourses({
     size: PAGE_SIZE,
+    status: "PUBLISHED",
     search: query.trim() || undefined,
     level: selectedLevel === "All" ? undefined : selectedLevel,
     categoryId: selectedCategoryId,
@@ -55,19 +56,14 @@ export default function CoursesPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-[#2f8d46]/10 p-2.5 text-[#2f8d46]">
-            <BookOpen className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">វគ្គសិក្សាទាំងអស់</h1>
-            <p className="text-sm text-muted-foreground">ជ្រើសរើសវគ្គដែលសាកសមសម្រាប់អ្នក</p>
-          </div>
-        </div>
-      </header>
 
-      <div className="space-y-6">
+      <SectionHeader
+        title="វគ្គសិក្សាទាំងអស់"
+        highlight="ជ្រើសរើសវគ្គដែលសាកសមសម្រាប់អ្នក"
+        description="បង្ហាញវគ្គវគ្គសិក្សាទាំងអស់យើងមានសម្រាប់អ្នកជ្រើសរើស"
+      />
+
+      <div className="space-y-6 mt-6">
         <CourseFilterBar
           query={query}
           onQueryChange={setQuery}

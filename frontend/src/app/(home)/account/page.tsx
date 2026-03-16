@@ -103,11 +103,11 @@ export default function AccountPage() {
     if (isRefreshing)  return;  
 
     if (!user) {
-      router.replace("/login?callbackUrl=/account");
+      router.replace("/login?callbackUrl=/account", { scroll: true });
       return;
     }
     if (hasAdminRole(user.roles) || hasInstructorRole(user.roles)) {
-      router.replace(getDefaultAppRoute(user.roles ?? []));
+      router.replace(getDefaultAppRoute(user.roles ?? []), { scroll: true });
     }
   }, [
     initialized,

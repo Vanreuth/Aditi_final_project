@@ -17,6 +17,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import {
+  learningCourseLinks,
   roadmapPaths,
   type RoadmapPath,
   type RoadmapStage,
@@ -235,7 +236,7 @@ export default function RoadmapPage() {
         </p>
 
         <Link
-          href="/courses"
+          href={learningCourseLinks[0].href}
           className="inline-flex items-center gap-2 mt-5 bg-white text-black px-6 py-3 rounded-full font-semibold hover:scale-105 transition"
         >
           Start Learning
@@ -360,25 +361,38 @@ function StageCard({
 
             {stage.resources.length > 0 && (
 
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-5 space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Resources & Courses
+                </p>
 
-                {stage.resources.map((r) => (
+                <div className="flex flex-wrap gap-2">
 
-                  <a
-                    key={r.url}
-                    href={r.url}
-                    target="_blank"
-                    className="text-xs border px-2 py-1 rounded-full hover:bg-muted transition"
-                  >
+                  {stage.resources.map((r) =>
+                    r.internal ? (
+                      <Link
+                        key={r.url}
+                        href={r.url}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition hover:scale-[1.02] hover:bg-primary/10"
+                      >
+                        {r.label}
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    ) : (
+                      <a
+                        key={r.url}
+                        href={r.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-muted"
+                      >
+                        {r.label}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )
+                  )}
 
-                    {r.label}
-
-                    <ExternalLink className="inline w-3 h-3 ml-1" />
-
-                  </a>
-
-                ))}
-
+                </div>
               </div>
 
             )}

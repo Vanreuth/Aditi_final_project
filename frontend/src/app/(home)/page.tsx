@@ -2,7 +2,6 @@
 import { StatsBar } from "@/components/home/StatsBar";
 import { WhySection } from "@/components/home/WhySection";
 import { LearningFocusSection } from "@/components/home/LearningFocusSection";
-import { TechMarquee } from "@/components/home/TechMarquee";
 import { DemoCodeSection } from "@/components/home/DemoCodeSection";
 import { FeaturedCoursesSection } from "@/components/home/FeaturedCoursesSection";
 import { CommingCourseSection } from "@/components/home/CommingCourseSection";
@@ -15,12 +14,11 @@ const HomePage = () => {
   return (
     <div className="overflow-x-hidden">
       <HeroSection />
-      <StatsBar />
       <FeaturedCoursesSection />
       <CommingCourseSection />
       <WhySection />
       <LearningFocusSection />
-      <TechMarquee />
+      <StatsBar />
       <RoadmapSection />
       <DemoCodeSection />
       <TestimonialsSection />

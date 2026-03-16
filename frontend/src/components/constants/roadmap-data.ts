@@ -12,7 +12,7 @@ export type RoadmapStage = {
   project: string;
   projectKh: string;
   color: string;
-  resources: { label: string; url: string }[];
+  resources: { label: string; url: string; internal?: boolean }[];
 };
 
 export type RoadmapPath = {
@@ -26,6 +26,17 @@ export type RoadmapPath = {
   gradient: string;
   stages: RoadmapStage[];
 };
+
+export const learningCourseLinks = [
+  { label: "HTML សម្រាប់អ្នកចាប់ផ្តើម", href: "/courses/html-សម្រាប់អ្នកចាប់ផ្តើម" },
+  { label: "CSS Styling ជាភាសាខ្មែរ", href: "/courses/css-styling-ជាភាសាខ្មែរ-full-course" },
+  { label: "JavaScript ជាភាសាខ្មែរ", href: "/courses/javascript-ជាភាសាខ្មែរ" },
+  { label: "React.js ជាភាសាខ្មែរ", href: "/courses/reactjs-ជាភាសាខ្មែរ" },
+  { label: "Next.js ជាភាសាខ្មែរ", href: "/courses/nextjs-ជាភាសាខ្មែរ" },
+  { label: "Java ជាភាសាខ្មែរ", href: "/courses/java-ជាភាសាខ្មែរ" },
+  { label: "Spring Boot ជាភាសាខ្មែរ", href: "/courses/spring-boot-ជាភាសាខ្មែរ" },
+  { label: "Git & DevOps Fundamentals", href: "/courses/git-devops-fundamentals" },
+] as const;
 
 export const roadmapPaths: RoadmapPath[] = [
   {
@@ -69,6 +80,9 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "គេហទំព័រ Portfolio ផ្ទាល់ខ្លួន — responsive, deploy ទៅ GitHub Pages",
         color: "from-orange-500 to-pink-500",
         resources: [
+          { label: "HTML Course", url: "/courses/html-សម្រាប់អ្នកចាប់ផ្តើម", internal: true },
+          { label: "CSS Course", url: "/courses/css-styling-ជាភាសាខ្មែរ-full-course", internal: true },
+          { label: "Git & DevOps Course", url: "/courses/git-devops-fundamentals", internal: true },
           { label: "MDN Web Docs", url: "https://developer.mozilla.org" },
           { label: "CSS Tricks", url: "https://css-tricks.com" },
         ],
@@ -104,6 +118,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "App ព្យាករណ៍អាកាសធាតុ — fetch real API, UI dynamic",
         color: "from-yellow-400 to-orange-500",
         resources: [
+          { label: "JavaScript Course", url: "/courses/javascript-ជាភាសាខ្មែរ", internal: true },
           { label: "JavaScript.info", url: "https://javascript.info" },
           { label: "TypeScript Docs", url: "https://typescriptlang.org" },
         ],
@@ -139,6 +154,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "App លក់ទំនិញ — cart, filter, auth, API",
         color: "from-sky-500 to-indigo-500",
         resources: [
+          { label: "React Course", url: "/courses/reactjs-ជាភាសាខ្មែរ", internal: true },
           { label: "React Docs", url: "https://react.dev" },
           { label: "Tailwind CSS", url: "https://tailwindcss.com" },
         ],
@@ -174,6 +190,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "Platform Blog — auth, CRUD, SEO, deploy Vercel",
         color: "from-slate-600 to-slate-800",
         resources: [
+          { label: "Next.js Course", url: "/courses/nextjs-ជាភាសាខ្មែរ", internal: true },
           { label: "Next.js Docs", url: "https://nextjs.org/docs" },
           { label: "Vercel", url: "https://vercel.com" },
         ],
@@ -221,6 +238,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "Task Manager CLI — CRUD, save ចូល file, OOP",
         color: "from-emerald-500 to-green-400",
         resources: [
+          { label: "Java Course", url: "/courses/java-ជាភាសាខ្មែរ", internal: true },
           { label: "Java Docs", url: "https://docs.oracle.com/en/java/" },
           { label: "Python Docs", url: "https://docs.python.org" },
         ],
@@ -256,6 +274,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "API Bookstore — CRUD, validation, Swagger docs",
         color: "from-teal-500 to-cyan-500",
         resources: [
+          { label: "Spring Boot Course", url: "/courses/spring-boot-ជាភាសាខ្មែរ", internal: true },
           { label: "Spring Boot Docs", url: "https://spring.io/projects/spring-boot" },
           { label: "Express.js", url: "https://expressjs.com" },
         ],
@@ -326,6 +345,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "API E-commerce — auth, Docker, CI/CD, deploy VPS",
         color: "from-violet-500 to-purple-600",
         resources: [
+          { label: "Git & DevOps Course", url: "/courses/git-devops-fundamentals", internal: true },
           { label: "Docker Docs", url: "https://docs.docker.com" },
           { label: "GitHub Actions", url: "https://docs.github.com/actions" },
         ],
@@ -373,6 +393,10 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "Landing Page — animations, form, deploy live",
         color: "from-pink-500 to-rose-500",
         resources: [
+          { label: "HTML Course", url: "/courses/html-សម្រាប់អ្នកចាប់ផ្តើម", internal: true },
+          { label: "CSS Course", url: "/courses/css-styling-ជាភាសាខ្មែរ-full-course", internal: true },
+          { label: "JavaScript Course", url: "/courses/javascript-ជាភាសាខ្មែរ", internal: true },
+          { label: "Git & DevOps Course", url: "/courses/git-devops-fundamentals", internal: true },
           { label: "MDN Web Docs", url: "https://developer.mozilla.org" },
           { label: "The Odin Project", url: "https://theodinproject.com" },
         ],
@@ -408,6 +432,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "App រកភាពយន្ត — React, TypeScript, API, Tailwind",
         color: "from-sky-500 to-blue-600",
         resources: [
+          { label: "React Course", url: "/courses/reactjs-ជាភាសាខ្មែរ", internal: true },
           { label: "React Docs", url: "https://react.dev" },
           { label: "Tailwind CSS", url: "https://tailwindcss.com" },
         ],
@@ -478,6 +503,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "SaaS Dashboard — auth, CRUD, analytics, Vercel",
         color: "from-violet-600 to-purple-600",
         resources: [
+          { label: "Next.js Course", url: "/courses/nextjs-ជាភាសាខ្មែរ", internal: true },
           { label: "Next.js Docs", url: "https://nextjs.org/docs" },
           { label: "NextAuth.js", url: "https://next-auth.js.org" },
         ],
@@ -513,6 +539,7 @@ export const roadmapPaths: RoadmapPath[] = [
         projectKh: "Portfolio Platform — Docker, CI/CD, domain ផ្ទាល់ខ្លួន",
         color: "from-rose-500 to-pink-600",
         resources: [
+          { label: "Git & DevOps Course", url: "/courses/git-devops-fundamentals", internal: true },
           { label: "Docker Docs", url: "https://docs.docker.com" },
           { label: "GitHub Actions", url: "https://docs.github.com/actions" },
         ],

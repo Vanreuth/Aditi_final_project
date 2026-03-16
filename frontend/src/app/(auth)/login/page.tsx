@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense }          from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams }  from "next/navigation"
 import Link                            from "next/link"
 import { useAuthContext }              from "@/context/AuthContext"
@@ -23,6 +23,10 @@ function LoginContent() {
   const [rememberMe,   setRememberMe]   = useState(false)
   const [error,        setError]        = useState<string | null>(null)
   const [loading,      setLoading]      = useState(false)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+  }, [])
 
   // ── Credential login ──────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

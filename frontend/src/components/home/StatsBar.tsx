@@ -1,25 +1,447 @@
-import { stats } from "@/components/constants/home-data";
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { startTransition, useEffect, useState } from "react";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { learningCourseLinks } from "@/components/constants/roadmap-data";
+import SectionHeader from "../section/SectionHeader";
+
+type TechItem = {
+  name: string;
+  icon?: string;
+  badge?: string;
+  badgeClassName?: string;
+  glow: string;
+  href?: string;
+};
+
+const autoplayMs = 4200;
+const progressTickMs = 120;
+const courseLinkByTechName: Partial<Record<string, string>> = {
+  HTML5: learningCourseLinks[0].href,
+  CSS3: learningCourseLinks[1].href,
+  JavaScript: learningCourseLinks[2].href,
+  React: learningCourseLinks[3].href,
+  Java: learningCourseLinks[5].href,
+  Spring: learningCourseLinks[6].href,
+  Git: learningCourseLinks[7].href,
+};
+
+const techCatalog: TechItem[] = [
+  {
+    name: "CSS3",
+    icon: "/tech/css.png",
+    glow: "rgba(37, 99, 235, 0.22)",
+    href: courseLinkByTechName.CSS3,
+  },
+  {
+    name: "JavaScript",
+    icon: "/tech/javascript.png",
+    glow: "rgba(250, 204, 21, 0.24)",
+    href: courseLinkByTechName.JavaScript,
+  },
+  {
+    name: "TypeScript",
+    icon: "/tech/typescript.png",
+    glow: "rgba(37, 99, 235, 0.22)",
+  },
+  {
+    name: "React",
+    icon: "/tech/reactjs.png",
+    glow: "rgba(34, 211, 238, 0.2)",
+    href: courseLinkByTechName.React,
+  },
+  {
+    name: "Node.js",
+    icon: "/tech/nodejs.png",
+    glow: "rgba(34, 197, 94, 0.22)",
+  },
+  {
+    name: "Python",
+    badge: "Py",
+    badgeClassName:
+      "bg-[linear-gradient(135deg,#2563eb_0%,#60a5fa_48%,#facc15_52%,#fbbf24_100%)] text-white",
+    glow: "rgba(59, 130, 246, 0.2)",
+  },
+  {
+    name: "C++",
+    badge: "C++",
+    badgeClassName: "bg-[linear-gradient(135deg,#93c5fd,#2563eb)] text-white",
+    glow: "rgba(37, 99, 235, 0.18)",
+  },
+  {
+    name: "Java",
+    icon: "/tech/java.png",
+    glow: "rgba(239, 68, 68, 0.16)",
+    href: courseLinkByTechName.Java,
+  },
+  {
+    name: "PHP",
+    badge: "php",
+    badgeClassName: "bg-[#7c83c7] text-white italic lowercase",
+    glow: "rgba(99, 102, 241, 0.18)",
+  },
+  {
+    name: "Swift",
+    badge: "Swift",
+    badgeClassName:
+      "bg-[linear-gradient(135deg,#fb923c,#ef4444)] text-white text-[10px]",
+    glow: "rgba(249, 115, 22, 0.18)",
+  },
+  {
+    name: "Kotlin",
+    badge: "K",
+    badgeClassName:
+      "bg-[linear-gradient(135deg,#7c3aed,#d946ef_55%,#3b82f6)] text-white",
+    glow: "rgba(139, 92, 246, 0.18)",
+  },
+  {
+    name: "HTML5",
+    icon: "/tech/html.png",
+    glow: "rgba(249, 115, 22, 0.22)",
+    href: courseLinkByTechName.HTML5,
+  },
+  {
+    name: "Dart",
+    badge: "D",
+    badgeClassName:
+      "bg-[linear-gradient(135deg,#0ea5e9,#14b8a6)] text-white",
+    glow: "rgba(6, 182, 212, 0.18)",
+  },
+  {
+    name: "Go",
+    badge: "Go",
+    badgeClassName: "bg-[#8de1ef] text-slate-800",
+    glow: "rgba(34, 211, 238, 0.18)",
+  },
+  {
+    name: "Spring",
+    icon: "/tech/spring_boot.png",
+    glow: "rgba(34, 197, 94, 0.2)",
+    href: courseLinkByTechName.Spring,
+  },
+  {
+    name: "MongoDB",
+    icon: "/tech/mongodb.png",
+    glow: "rgba(34, 197, 94, 0.18)",
+  },
+  {
+    name: "Docker",
+    icon: "/tech/docker.png",
+    glow: "rgba(14, 165, 233, 0.22)",
+  },
+  {
+    name: "Git",
+    icon: "/tech/git.png",
+    glow: "rgba(249, 115, 22, 0.2)",
+    href: courseLinkByTechName.Git,
+  },
+  {
+    name: "Figma",
+    icon: "/tech/figma.png",
+    glow: "rgba(217, 70, 239, 0.18)",
+  },
+  {
+    name: "Redux",
+    icon: "/tech/redux.png",
+    glow: "rgba(124, 58, 237, 0.18)",
+  },
+  {
+    name: "Tailwind",
+    icon: "/tech/tailwind.png",
+    glow: "rgba(6, 182, 212, 0.22)",
+  },
+  {
+    name: "Three.js",
+    icon: "/tech/threejs.svg",
+    glow: "rgba(15, 23, 42, 0.16)",
+  },
+];
+
+const techByName = Object.fromEntries(
+  techCatalog.map((item) => [item.name, item] as const),
+);
+
+const techSlides: TechItem[][] = [
+  [
+    "CSS3",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Node.js",
+    "Python",
+    "C++",
+    "Java",
+    "PHP",
+    "Swift",
+    "Kotlin",
+    "TypeScript",
+    "JavaScript",
+    "CSS3",
+    "HTML5",
+    "Dart",
+    "Go",
+    "Kotlin",
+    "Swift",
+    "PHP",
+  ].map((name) => techByName[name]),
+  [
+    "React",
+    "TypeScript",
+    "Node.js",
+    "MongoDB",
+    "Docker",
+    "Java",
+    "Spring",
+    "Tailwind",
+    "Redux",
+    "Three.js",
+    "HTML5",
+    "CSS3",
+    "JavaScript",
+    "Go",
+    "Dart",
+    "Figma",
+    "Git",
+    "Python",
+    "React",
+    "TypeScript",
+  ].map((name) => techByName[name] ?? {
+    name,
+    badge: name.slice(0, 2),
+    glow: "rgba(148, 163, 184, 0.18)",
+  }),
+];
+
+function TechCard({
+  item,
+  active,
+  delay,
+}: {
+  item: TechItem;
+  active: boolean;
+  delay: number;
+}) {
+  const cardInner = (
+    <>
+      <div className="relative flex h-[94px] w-[94px] items-center justify-center sm:h-[102px] sm:w-[102px]">
+        <div
+          className="absolute inset-[-8px] rounded-full blur-[18px] opacity-70 transition-opacity duration-300 group-hover:opacity-100 animate-pulse"
+          style={{
+            background: `radial-gradient(circle, ${item.glow}, transparent 68%)`,
+          }}
+        />
+        <div className="relative flex h-full w-full items-center justify-center rounded-full border border-slate-500/70 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_14px_28px_rgba(37,99,235,0.14)]">
+          <div
+            className="pointer-events-none absolute inset-[10px] rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle at 30% 28%, rgba(255,255,255,0.95), rgba(255,255,255,0))",
+            }}
+          />
+          {item.icon ? (
+            <div className="relative h-[48px] w-[48px] sm:h-[54px] sm:w-[54px]">
+              <Image
+                src={item.icon}
+                alt={item.name}
+                fill
+                className="object-contain"
+                sizes="54px"
+              />
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "relative z-10 flex h-[54px] w-[54px] items-center justify-center rounded-2xl text-base font-extrabold tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.24)]",
+                item.badgeClassName ?? "bg-slate-200 text-slate-700",
+              )}
+            >
+              {item.badge}
+            </div>
+          )}
+        </div>
+      </div>
+      <span className="text-center text-[15px] font-semibold tracking-tight text-slate-300 transition-colors duration-300 group-hover:text-slate-500">
+        {item.name}
+      </span>
+      {item.href ? (
+        <span className="text-[11px] font-semibold text-blue-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          View course
+        </span>
+      ) : null}
+    </>
+  );
+
+  const sharedClassName = cn(
+    "group flex flex-col items-center gap-4 text-center transition-all duration-700",
+    active ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
+    item.href ? "cursor-pointer" : "",
+  );
+
+  if (item.href) {
+    return (
+      <Link
+        href={item.href}
+        className={sharedClassName}
+        style={{ transitionDelay: `${delay}ms` }}
+      >
+        {cardInner}
+      </Link>
+    );
+  }
+
+  return (
+    <article className={sharedClassName} style={{ transitionDelay: `${delay}ms` }}>
+      {cardInner}
+    </article>
+  );
+}
 
 export function StatsBar() {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+
+    const increment = (progressTickMs / autoplayMs) * 100;
+    const timer = window.setInterval(() => {
+      setProgress((current) => {
+        const next = current + increment;
+
+        if (next < 100) return next;
+
+        startTransition(() => {
+          setActiveSlide((prev) => (prev + 1) % techSlides.length);
+        });
+        return 0;
+      });
+    }, progressTickMs);
+
+    return () => window.clearInterval(timer);
+  }, [paused]);
+
+  const goToSlide = (index: number) => {
+    setProgress(0);
+    startTransition(() => {
+      setActiveSlide(index);
+    });
+  };
+
+  const goPrev = () => {
+    goToSlide(activeSlide === 0 ? techSlides.length - 1 : activeSlide - 1);
+  };
+
+  const goNext = () => {
+    goToSlide((activeSlide + 1) % techSlides.length);
+  };
+
   return (
-    <section className="border-y border-border/80 bg-card/70 backdrop-blur-sm">
-      <div
-        className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-2 divide-x divide-y divide-border/80 lg:grid-cols-4 lg:divide-y-0"
-      >
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="flex flex-col items-center gap-1 py-9 text-center"
+    <section className="relative overflow-hidden bg-white py-16 sm:py-20">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 rounded-full bg-blue-300/10 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      </div>
+
+      <div className="relative mx-auto w-full max-w-8xl px-4 sm:px-6 lg:px-8">
+
+        <SectionHeader
+          title="ភាសា និងបច្ចេកវិទ្យាពេញនិយម"
+          highlight="ក្នុងសហគមន៍"
+          description="ស្វែងយល់អំពីភាសាកូដ និងបច្ចេកវិទ្យាដែលពេញនិយម និងត្រូវបានប្រើប្រាស់យ៉ាងទូលំទូលាយក្នុងសហគមន៍កូដ។"
+        />
+
+      ​​​​
+
+        <div
+          className="relative mt-12"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          <button
+            type="button"
+            onClick={goPrev}
+            className="absolute left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-600 lg:inline-flex"
+            aria-label="Previous technologies"
           >
-            <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-3xl font-extrabold text-transparent md:text-4xl">
-              {s.value}
-            </span>
-            <span className="text-sm font-semibold text-foreground">
-              {s.label}
-            </span>
-            <span className="text-xs text-muted-foreground">{s.sub}</span>
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={goNext}
+            className="absolute right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-600 lg:inline-flex"
+            aria-label="Next technologies"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+            >
+              {techSlides.map((slide, slideIndex) => (
+                <div key={slideIndex} className="w-full shrink-0 px-2 sm:px-4">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-12 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10">
+                    {slide.map((item, itemIndex) => (
+                      <TechCard
+                        key={`${slideIndex}-${item.name}-${itemIndex}`}
+                        item={item}
+                        active={slideIndex === activeSlide}
+                        delay={itemIndex * 55}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+
+          <div className="mt-10 flex items-center justify-center gap-3">
+            {techSlides.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => goToSlide(index)}
+                className={cn(
+                  "h-2.5 rounded-full transition-all duration-300",
+                  index === activeSlide
+                    ? "w-12 bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500"
+                    : "w-2.5 bg-slate-300 hover:bg-slate-400",
+                )}
+                aria-label={`Go to technology slide ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          <div className="mx-auto mt-4 w-36 sm:w-44">
+            <Progress value={progress} className="h-1.5 bg-slate-200 [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-blue-500 [&_[data-slot=progress-indicator]]:via-violet-500 [&_[data-slot=progress-indicator]]:to-blue-500" />
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-2 lg:hidden">
+            <button
+              type="button"
+              onClick={goPrev}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
+              aria-label="Previous technologies"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
+              aria-label="Next technologies"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
