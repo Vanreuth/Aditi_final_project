@@ -40,7 +40,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -66,8 +68,8 @@ public class CourseServiceImpl implements CourseService {
         // Manual validation (replaces @Valid on multipart endpoint)
         if (request.getTitle() == null || request.getTitle().isBlank())
             throw new CustomMessageException("Course title is required", "400");
-        if (request.getCategoryId() == null)
-            throw new CustomMessageException("Category ID is required", "400");
+        if (request.getResolvedCategoryIds().isEmpty())
+            throw new CustomMessageException("At least one category ID is required", "400");
 
         User currentUser = getCurrentUser();
         request.setInstructorId(currentUser.getId());
@@ -86,10 +88,10 @@ public class CourseServiceImpl implements CourseService {
                     String.valueOf(HttpStatus.CONFLICT.value()));
 
         User instructor = currentUser;
-        Category category = findCategoryOrThrow(request.getCategoryId());
+        Set<Category> categories = findCategoriesOrThrow(request.getResolvedCategoryIds());
 
         // createdAt, status, level set by @PrePersist
-        Course course = courseMapper.toEntity(request, instructor, category);
+        Course course = courseMapper.toEntity(request, instructor, categories);
 
         if (thumbnail != null && !thumbnail.isEmpty()) {
             try {
@@ -182,7 +184,8 @@ public class CourseServiceImpl implements CourseService {
     private Specification<Course> hasCategory(Long categoryId) {
         return (root, query, cb) -> {
             if (categoryId == null) return null;
-            return cb.equal(root.get("category").get("id"), categoryId);
+            query.distinct(true);
+            return cb.equal(root.join("categories").get("id"), categoryId);
         };
     }
 
@@ -256,7 +259,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CourseResponse> getCoursesByCategory(int categoryId, Pageable pageable) {
-        return PageResponse.of(courseRepository.findByCategoryId(categoryId, pageable)
+        return PageResponse.of(courseRepository.findDistinctByCategories_Id(categoryId, pageable)
                 .map(courseMapper::toResponse));
     }
 
@@ -309,10 +312,10 @@ public class CourseServiceImpl implements CourseService {
             ? findInstructorOrThrow(request.getInstructorId())
             : null;
 
-        Category category = request.getCategoryId() != null
-                ? findCategoryOrThrow(request.getCategoryId()) : null;
+        Set<Category> categories = request.hasCategorySelection()
+                ? findCategoriesOrThrow(request.getResolvedCategoryIds()) : null;
 
-        courseMapper.updateEntity(request, course, instructor, category);
+        courseMapper.updateEntity(request, course, instructor, categories);
         // updatedAt + publishedAt handled by @PreUpdate
 
         if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -434,11 +437,16 @@ public class CourseServiceImpl implements CourseService {
                         String.valueOf(HttpStatus.NOT_FOUND.value())));
     }
 
-    private Category findCategoryOrThrow(Integer categoryId) {
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new CustomMessageException(
-                        "Category not found with id: " + categoryId,
-                        String.valueOf(HttpStatus.NOT_FOUND.value())));
+    private Set<Category> findCategoriesOrThrow(List<Integer> categoryIds) {
+        Set<Category> categories = new LinkedHashSet<>();
+        for (Integer categoryId : categoryIds) {
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new CustomMessageException(
+                            "Category not found with id: " + categoryId,
+                            String.valueOf(HttpStatus.NOT_FOUND.value())));
+            categories.add(category);
+        }
+        return categories;
     }
 
 

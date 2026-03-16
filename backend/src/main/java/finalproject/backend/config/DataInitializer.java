@@ -64,6 +64,43 @@ public class DataInitializer implements CommandLineRunner {
         } catch (Exception e) {
             log.debug("Schema fix skipped (already applied or not needed): {}", e.getMessage());
         }
+
+        try {
+            entityManager.createNativeQuery("""
+                    CREATE TABLE IF NOT EXISTS course_categories (
+                        course_id BIGINT NOT NULL,
+                        category_id INTEGER NOT NULL,
+                        PRIMARY KEY (course_id, category_id)
+                    )
+                    """).executeUpdate();
+            Number legacyCategoryColumnCount = (Number) entityManager.createNativeQuery("""
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
+                    WHERE table_schema = current_schema()
+                      AND table_name = 'course'
+                      AND column_name = 'category_id'
+                    """).getSingleResult();
+
+            if (legacyCategoryColumnCount != null && legacyCategoryColumnCount.intValue() > 0) {
+                entityManager.createNativeQuery("""
+                        INSERT INTO course_categories (course_id, category_id)
+                        SELECT c.id, c.category_id
+                        FROM course c
+                        WHERE c.category_id IS NOT NULL
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM course_categories cc
+                            WHERE cc.course_id = c.id
+                              AND cc.category_id = c.category_id
+                        )
+                        """).executeUpdate();
+                log.info("✅ Schema fix: course_categories synced from legacy course.category_id");
+            } else {
+                log.info("ℹ️ Schema fix: legacy course.category_id not found, skipping backfill");
+            }
+        } catch (Exception e) {
+            log.debug("Schema fix for course_categories skipped: {}", e.getMessage());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -150,40 +187,36 @@ public class DataInitializer implements CommandLineRunner {
         // ── Categories ────────────────────────────────────────────────────────
         Category webDev = cat(
                 "ការអភិវឌ្ឍន៍គេហទំព័រ(Web Development)",
-                "web-development",
                 "សិក្សា HTML, CSS និង JavaScript ពីមូលដ្ឋានរហូតដល់ Framework ទំនើប",
                 1
         );
 
         Category fe = cat(
                 "ការអភិវឌ្ឍន៍ផ្នែកខាងមុខ (Frontend)",
-                "frontend-engineering",
                 "សិក្សា React.js, Next.js, TypeScript និង Tailwind CSS សម្រាប់បង្កើត UI ទំនើប",
                 2
         );
 
         Category be = cat(
                 "ការអភិវឌ្ឍន៍ផ្នែកខាងក្រោយ (Backend)",
-                "backend-engineering",
                 "សិក្សា Java, Spring Boot, REST API, JPA និង Security សម្រាប់ Server",
                 3
         );
 
         Category devops = cat(
                 "DevOps និងឧបករណ៍អភិវឌ្ឍន៍",
-                "devops-tools",
                 "សិក្សា Git, Docker, CI/CD, GitHub Actions និងឧបករណ៍សម្រាប់ Automation",
                 4
         );
 
         // ── Courses ───────────────────────────────────────────────────────────
-        seedHTML(ins, webDev);
-        seedCSS(ins, webDev);
-        seedJavaScript(ins, webDev);
-        seedReact(ins, fe);
-        seedNextJS(ins, fe);
-        seedJava(ins, be);
-        seedSpringBoot(ins, be);
+        seedHTML(ins, webDev, fe);
+        seedCSS(ins, webDev, fe);
+        seedJavaScript(ins, webDev,fe);
+        seedReact(ins, webDev, fe);
+        seedNextJS(ins, webDev, fe);
+        seedJava(ins, webDev, be);
+        seedSpringBoot(ins, webDev, be);
         seedGit(ins, devops);
 
         log.info("✅ All {} courses seeded.", courseRepository.count());
@@ -192,13 +225,13 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 1. HTML
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedHTML(User ins, Category cat) {
-        Course c = course("HTML សម្រាប់អ្នកចាប់ផ្តើម", "html-for-beginners-km",
+    private void seedHTML(User ins, Category... cats) {
+        Course c = course("HTML សម្រាប់អ្នកចាប់ផ្តើម",
                 "រៀន HTML ពីដំបូងរហូតដល់ HTML5 Advanced ជាភាសាខ្មែរ។ " +
                         "Tags, Elements, Attributes, Lists, Links, Images, Media, " +
                         "Tables, Forms, Semantic HTML, Embedded Content, Accessibility, " +
                         "CSS Introduction និង Responsive Design។",
-                "BEGINNER", true, ins, cat);
+                "BEGINNER", true, ins, cats);
 
         // ═══════════════════════════════════════════════════════════════════
         // CHAPTER 1 — ការណែនាំអំពី HTML
@@ -1326,11 +1359,11 @@ public class DataInitializer implements CommandLineRunner {
 
     // ══════════════════════════════════════════════════════════════════════════
     // 2. CSS
-    private void seedCSS(User ins, Category cat) {
-        Course c = course("CSS Styling ជាភាសាខ្មែរ (Full Course)", "css-styling-khmer",
+    private void seedCSS(User ins, Category... cats) {
+        Course c = course("CSS Styling ជាភាសាខ្មែរ (Full Course)",
                 "រៀន CSS ពីមូលដ្ឋានដល់កម្រិតខ្ពស់ផ្អែកលើ CodeKhmerLearning ។ " +
                         "រួមមាន Selectors, Box Model, Flexbox, Grid, Responsive និង Animations។",
-                "BEGINNER_TO_ADVANCED", true, ins, cat);
+                "BEGINNER", true, ins, cats);
 
         // Ch1: CSS Syntax and Selectors
         Chapter ch1 = ch(c, "1. CSS Syntax and Selectors", 1);
@@ -1479,10 +1512,10 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 3. JAVASCRIPT
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedJavaScript(User ins, Category cat) {
-        Course c = course("JavaScript ជាភាសាខ្មែរ", "javascript-khmer",
+    private void seedJavaScript(User ins, Category... cats) {
+        Course c = course("JavaScript ជាភាសាខ្មែរ",
                 "រៀន JavaScript ពីមូលដ្ឋានរហូតដល់ ES6+, DOM, Fetch API ជាភាសាខ្មែរ ។",
-                "BEGINNER", true, ins, cat);
+                "BEGINNER", true, ins, cats);
 
         Chapter ch1 = ch(c, "ការណែនាំ & Variables", 1);
         Lesson l1 = ls(ch1, c, "JavaScript គឺជាអ្វី?", 1,
@@ -1799,11 +1832,12 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 4. REACT
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedReact(User ins, Category cat) {
-        Course c = course("React.js ជាភាសាខ្មែរ", "reactjs-khmer",
+    private void seedReact(User ins, Category... cats) {
+        Course c = course("React.js ជាភាសាខ្មែរ",
                 "រៀន React.js 18+: Components, Hooks, Router, State Management, " +
                         "API Calls, Performance, Firebase, Testing និង Deployment ជាភាសាខ្មែរ ។",
-                "INTERMEDIATE", true, ins, cat);
+                "JavaScript ជាមូលដ្ឋាន",
+                "INTERMEDIATE", true, ins, cats);
 
         // ═══════════════════════════════════════════════════════════════════
         // CHAPTER 1 — React Introduction
@@ -3567,11 +3601,12 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 5. NEXT.JS
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedNextJS(User ins, Category cat) {
-        Course c = course("Next.js ជាភាសាខ្មែរ", "nextjs-khmer",
+    private void seedNextJS(User ins, Category... cats) {
+        Course c = course("Next.js ជាភាសាខ្មែរ",
                 "រៀន Next.js 14+ App Router, Server Components, API Routes, Data Fetching, " +
                         "Tailwind CSS, Authentication, Deployment ជាភាសាខ្មែរ ។",
-                "INTERMEDIATE", false, ins, cat);
+                "React.js ជាមូលដ្ឋាន",
+                "INTERMEDIATE", false, ins, cats);
 
         // ══════════════════════════════════════════════════════════════
         // CHAPTER 1 - ការណែនាំ & Setup
@@ -4537,11 +4572,11 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 6. JAVA
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedJava(User ins, Category cat) {
-        Course c = course("Java ជាភាសាខ្មែរ", "java-for-beginners-ជាភាសាខ្មែរ",
+    private void seedJava(User ins, Category... cats) {
+        Course c = course("Java ជាភាសាខ្មែរ",
                 "រៀន Java OOP, Collections, Exception Handling, Generics, " +
                         "Interfaces, Lambdas, Stream API ជាភាសាខ្មែរ ។",
-                "BEGINNER", true, ins, cat);
+                "INTERMEDIATE", true, ins, cats);
 
         // ══════════════════════════════════════════════════════════════
         // CHAPTER 1 - ការណែនាំ & Data Types
@@ -5715,17 +5750,17 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 7. SPRING BOOT
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedSpringBoot(User ins, Category cat) {
+    private void seedSpringBoot(User ins, Category... cats) {
         Course c = course(
                 "Spring Boot ជាភាសាខ្មែរ",
-                "spring-boot-khmer",
                 "វគ្គ Spring Boot សម្រាប់អ្នកដែលមានចំណេះដឹង Java មូលដ្ឋានហើយ ចង់ក្លាយជា " +
                         "Backend Developer ពិតប្រាកដ។ អ្នករៀននឹងបង្កើត REST API ពេញលេញ " +
                         "ជាមួយ Spring Boot 3.x, Spring Data JPA, PostgreSQL, Spring Security " +
                         "ជាមួយ JWT Authentication, Global Exception Handling, File Upload " +
                         "ទៅ Cloudinary, Bean Validation, MapStruct, Pagination, Unit Testing " +
                         "ជាមួយ JUnit ",
-                "INTERMEDIATE", false, ins, cat);
+                "Java ជាមូលដ្ឋាន",
+                "ADVANCED", false, ins, cats);
 
         // ══════════════════════════════════════════════════════════════════
         //  CHAPTER 1 – ការណែនាំ & Project Setup
@@ -7197,7 +7232,7 @@ public class DataInitializer implements CommandLineRunner {
         // 8. Git & DevOps Basics
         // ══════════════════════════════════════════════════════════════════════════
         private void seedGit(User ins, Category cat) {
-        Course c = course("Git & DevOps Fundamentals", "git-devops-fundamentals-km",
+        Course c = course("Git & DevOps Fundamentals",
             "រៀន Git ពីមូលដ្ឋាន ដល់ branching, merging, .gitignore និង best practices សម្រាប់ team workflow។",
             "BEGINNER", true, ins, cat);
 
@@ -7352,8 +7387,9 @@ public class DataInitializer implements CommandLineRunner {
 // HELPERS - short names for clean code above
 // ══════════════════════════════════════════════════════════════════════════
 
-    private Category cat(String name, String slug, String desc, int order) {
-        return categoryRepository.findBySlug(slug).orElseGet(() -> {
+    private Category cat(String name, String desc, int order) {
+        return categoryRepository.findByName(name).orElseGet(() -> {
+            String slug = uniqueCategorySlug(name);
             log.info("🗂️ Cat: {}", name);
             return categoryRepository.save(Category.builder()
                     .name(name).slug(slug).description(desc)
@@ -7361,8 +7397,13 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
-    private Course course(String title, String slug, String desc,
-                          String level, boolean featured, User ins, Category cat) {
+    private Course course(String title, String desc,
+                          String level, boolean featured, User ins, Category... cats) {
+        return course(title, desc, null, level, featured, ins, cats);
+    }
+
+    private Course course(String title, String desc, String requirements,
+                          String level, boolean featured, User ins, Category... cats) {
 
         CourseLevel parsedLevel;
         try {
@@ -7374,16 +7415,29 @@ public class DataInitializer implements CommandLineRunner {
         }
         final CourseLevel finalLevel = parsedLevel;
 
-        return courseRepository.findBySlug(slug)
-                .or(() -> courseRepository.findByTitle(title))
+        Set<Category> categories = new HashSet<>(List.of(cats));
+
+        return courseRepository.findByTitle(title)
+                .map(existing -> {
+                    if (!categories.isEmpty()) {
+                        existing.getCategories().addAll(categories);
+                    }
+                    if (requirements != null && !requirements.isBlank()) {
+                        existing.setRequirements(requirements);
+                    }
+                    courseRepository.save(existing);
+                    return existing;
+                })
                 .orElseGet(() -> {
+                    String slug = uniqueCourseSlug(title);
                     log.info("📚 Course: {}", title);
                     return courseRepository.save(Course.builder()
                             .title(title).slug(slug).description(desc)
+                            .requirements(requirements)
                             .level(finalLevel).language("Khmer")
                             .status(CourseStatus.PUBLISHED)
                             .isFeatured(featured).isFree(true)
-                            .instructor(ins).category(cat)
+                            .instructor(ins).categories(categories)
                             .createdAt(now()).publishedAt(now()).build());
                 });
     }
@@ -7444,15 +7498,35 @@ public class DataInitializer implements CommandLineRunner {
      * "Variables & Data Types" → "variables-data-types"
      * "HTML គឺជាអ្វី?"        → "html-គឺជាអ្វី"
      */
-    private String toSlug(String text) {
-        if (text == null || text.isBlank()) return "lesson";
+    private String toSlug(String text, String fallbackPrefix) {
+        if (text == null || text.isBlank()) return fallbackPrefix;
         String slug = text.toLowerCase().trim()
                 // Keep latin a-z, 0-9, whitespace, hyphens, Khmer main block, Khmer symbols
                 .replaceAll("[^a-z0-9\\s\\-\u1780-\u17FF\u19E0-\u19FF]", "")
                 .replaceAll("\\s+", "-")
                 .replaceAll("-{2,}", "-")
                 .replaceAll("^-|-$", "");
-        return slug.isBlank() ? "lesson" : slug;
+        return slug.isBlank() ? fallbackPrefix : slug;
+    }
+
+    private String uniqueCategorySlug(String name) {
+        String base = toSlug(name, "category");
+        String candidate = base;
+        int suffix = 2;
+        while (categoryRepository.existsBySlug(candidate)) {
+            candidate = base + "-" + suffix++;
+        }
+        return candidate;
+    }
+
+    private String uniqueCourseSlug(String title) {
+        String base = toSlug(title, "course");
+        String candidate = base;
+        int suffix = 2;
+        while (courseRepository.existsBySlug(candidate)) {
+            candidate = base + "-" + suffix++;
+        }
+        return candidate;
     }
 
     /**
@@ -7460,7 +7534,7 @@ public class DataInitializer implements CommandLineRunner {
      * If "spring-boot-គឺជាអ្វី" already exists → "spring-boot-គឺជាអ្វី-2", etc.
      */
     private String uniqueLessonSlug(Course course, String title) {
-        String base = toSlug(title);
+        String base = toSlug(title, "lesson");
         String candidate = base;
         int suffix = 2;
         while (lessonRepository.existsByCourseIdAndSlug(course.getId(), candidate)) {

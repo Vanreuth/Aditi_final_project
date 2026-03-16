@@ -7,9 +7,15 @@ import finalproject.backend.modal.CourseStatus;
 import finalproject.backend.modal.User;
 import finalproject.backend.repository.LessonProgressRepository;
 import finalproject.backend.request.CourseRequest;
+import finalproject.backend.response.CategorySummaryResponse;
 import finalproject.backend.response.CourseResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +28,14 @@ public class CourseMapper {
                 ? lessonProgressRepository.countDistinctUsersByCourseId(course.getId())
                 : 0L;
         long views = course.getViewCount() != null ? course.getViewCount() : 0L;
+        List<Category> categories = course.getCategories() == null
+                ? List.of()
+                : course.getCategories().stream()
+                .sorted(Comparator
+                        .comparing((Category category) -> category.getOrderIndex() == null ? Integer.MAX_VALUE : category.getOrderIndex())
+                        .thenComparing(Category::getId))
+                .toList();
+        Category primaryCategory = categories.isEmpty() ? null : categories.get(0);
 
         return CourseResponse.builder()
                 .id(course.getId())
@@ -40,21 +54,18 @@ public class CourseMapper {
                 .avgRating(course.getAvgRating())
                 .viewCount(views)
                 .enrolledCount(enrolled)
-                .pdfUrl(course.getPdfUrl())
-                .pdfName(course.getPdfName())
-                .pdfSizeKb(course.getPdfSizeKb())
-                .pdfUpdatedAt(course.getPdfUpdatedAt())
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .publishedAt(course.getPublishedAt())
                 .instructorId(course.getInstructor() != null ? course.getInstructor().getId() : null)
                 .instructorName(course.getInstructor() != null ? course.getInstructor().getUsername() : null)
-                .categoryId(course.getCategory() != null ? course.getCategory().getId() : 0)
-                .categoryName(course.getCategory() != null ? course.getCategory().getName() : null)
+                .categoryId(primaryCategory != null ? primaryCategory.getId() : null)
+                .categoryName(primaryCategory != null ? primaryCategory.getName() : null)
+                .categories(categories.stream().map(this::toCategorySummary).toList())
                 .build();
     }
 
-    public Course toEntity(CourseRequest request, User instructor, Category category) {
+    public Course toEntity(CourseRequest request, User instructor, Set<Category> categories) {
         return Course.builder()
                 .title(request.getTitle())
                 .slug(request.getSlug())
@@ -67,11 +78,11 @@ public class CourseMapper {
                 .isFree(request.getIsFree())
                 .price(request.getPrice())
                 .instructor(instructor)
-                .category(category)
+                .categories(categories != null ? new LinkedHashSet<>(categories) : new LinkedHashSet<>())
                 .build();
     }
 
-    public void updateEntity(CourseRequest request, Course course, User instructor, Category category) {
+    public void updateEntity(CourseRequest request, Course course, User instructor, Set<Category> categories) {
         if (request.getTitle() != null && !request.getTitle().isBlank())
             course.setTitle(request.getTitle());
 
@@ -103,7 +114,15 @@ public class CourseMapper {
         if (instructor != null)
             course.setInstructor(instructor);
 
-        if (category != null)
-            course.setCategory(category);
+        if (categories != null)
+            course.setCategories(new LinkedHashSet<>(categories));
+    }
+
+    private CategorySummaryResponse toCategorySummary(Category category) {
+        return CategorySummaryResponse.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .slug(category.getSlug())
+                .build();
     }
 }

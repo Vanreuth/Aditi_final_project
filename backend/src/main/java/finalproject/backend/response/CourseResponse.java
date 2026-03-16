@@ -46,6 +46,7 @@ public class CourseResponse {
     private String instructorName;
     private Integer categoryId;
     private String categoryName;
+    private List<CategorySummaryResponse> categories;
 
     // Full course view — chapters with lessons (populated only on /full endpoint)
     private List<ChapterResponse> chapters;

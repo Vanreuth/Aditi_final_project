@@ -9,6 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -35,9 +38,8 @@ public class CourseRequest {
 
     private BigDecimal price = BigDecimal.ZERO;
 
-
-    @NotNull(message = "Category ID is required")
     private Integer categoryId;
+    private List<Integer> categoryIds = new ArrayList<>();
 
     private Long instructorId;  // optional — auto-set from logged-in user if blank
 
@@ -47,5 +49,24 @@ public class CourseRequest {
 
     public void setFree(Boolean free) {
         isFree = free;
+    }
+
+    public List<Integer> getResolvedCategoryIds() {
+        LinkedHashSet<Integer> ids = new LinkedHashSet<>();
+        if (categoryId != null) {
+            ids.add(categoryId);
+        }
+        if (categoryIds != null) {
+            for (Integer id : categoryIds) {
+                if (id != null) {
+                    ids.add(id);
+                }
+            }
+        }
+        return new ArrayList<>(ids);
+    }
+
+    public boolean hasCategorySelection() {
+        return categoryId != null || (categoryIds != null && !categoryIds.isEmpty());
     }
 }

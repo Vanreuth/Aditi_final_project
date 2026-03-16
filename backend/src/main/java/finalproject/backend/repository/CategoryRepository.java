@@ -15,5 +15,6 @@ public interface CategoryRepository
 
     boolean existsByName(String name);
     boolean existsBySlug(String slug);
+    Optional<Category> findByName(String name);
     Optional<Category> findBySlug(String slug);
 }

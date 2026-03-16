@@ -1,5 +1,6 @@
 package finalproject.backend.service;
 
+import jakarta.annotation.PostConstruct;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.Margin;
@@ -11,17 +12,16 @@ import finalproject.backend.modal.Lesson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -31,11 +31,11 @@ import java.util.List;
  *  1. SINGLETON BROWSER  — injected from PlaywrightConfig and created lazily
  *     on first PDF request, not during web-service startup.
  *
- *  2. INLINED PRISM BUNDLE — Prism assets fetched once on the first PDF
- *     request and embedded as a single <script> block. Saves ~600–900 ms / call.
+ *  2. INLINED PRISM BUNDLE — Prism assets loaded from classpath resources
+ *     and embedded as a single <script> block. No runtime CDN dependency.
  *
  *  3. INLINED PRISM CSS — theme + line-numbers CSS embedded in <style>.
- *     Saves 2 CDN round-trips per request.
+ *     Saves extra asset round-trips per request.
  *
  *  4. RESOURCE BLOCKING — images / media aborted at browser level.
  *
@@ -51,9 +51,31 @@ public class CoursePdfGeneratorService {
     // ── Injected singleton browser provider (from PlaywrightConfig) ───────
     private final ObjectProvider<Browser> browserProvider;
 
-    // ── CDN base (used on first PDF request to pre-fetch assets) ─────────
-    private static final String PRISM_CDN =
-            "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0";
+    private static final List<String> PRISM_RESOURCE_PATHS = List.of(
+            "/pdf/prism.min.js",
+            "/pdf/prism-markup-templating.min.js",
+            "/pdf/prism-typescript.min.js",
+            "/pdf/prism-jsx.min.js",
+            "/pdf/prism-tsx.min.js",
+            "/pdf/prism-java.min.js",
+            "/pdf/prism-python.min.js",
+            "/pdf/prism-sql.min.js",
+            "/pdf/prism-bash.min.js",
+            "/pdf/prism-json.min.js",
+            "/pdf/prism-kotlin.min.js",
+            "/pdf/prism-dart.min.js",
+            "/pdf/prism-php.min.js",
+            "/pdf/prism-c.min.js",
+            "/pdf/prism-cpp.min.js",
+            "/pdf/prism-swift.min.js",
+            "/pdf/prism-go.min.js",
+            "/pdf/prism-rust.min.js",
+            "/pdf/prism-csharp.min.js",
+            "/pdf/prism-yaml.min.js",
+            "/pdf/prism-docker.min.js",
+            "/pdf/prism-graphql.min.js",
+            "/pdf/prism-line-numbers.min.js"
+    );
 
     // ── Timeouts ──────────────────────────────────────────────────────────
     private static final double CONTENT_TIMEOUT_MS = 30_000;
@@ -66,6 +88,8 @@ public class CoursePdfGeneratorService {
     private String prismBundle         = "";
     private String prismThemeCss       = "";
     private String prismLineNumbersCss = "";
+    private String localFontsCss       = "";
+    private String logoDataUri         = "";
     private final Object prismLock = new Object();
     private volatile boolean prismAssetsLoaded;
 
@@ -73,7 +97,7 @@ public class CoursePdfGeneratorService {
     private static final String G_PRIMARY = "#2f8d46";
 
     // ═══════════════════════════════════════════════════════════════════
-    //  PRISM ASSETS — fetch once, inline them forever after
+    //  PDF ASSETS — load once from classpath, inline them forever after
     // ═══════════════════════════════════════════════════════════════════
 
     private void ensurePrismAssetsLoaded() {
@@ -86,67 +110,82 @@ public class CoursePdfGeneratorService {
                 return;
             }
 
-            log.info("⚡ Loading Prism assets on first PDF request …");
+            log.info("⚡ Loading PDF assets from classpath …");
             long t0 = System.currentTimeMillis();
 
-            HttpClient http = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
-
-            prismThemeCss = fetchText(http, PRISM_CDN + "/themes/prism-tomorrow.min.css");
-            prismLineNumbersCss = fetchText(http, PRISM_CDN + "/plugins/line-numbers/prism-line-numbers.min.css");
-
-            List<String> jsUrls = List.of(
-                    PRISM_CDN + "/prism.min.js",
-                    PRISM_CDN + "/components/prism-markup-templating.min.js",
-                    PRISM_CDN + "/components/prism-typescript.min.js",
-                    PRISM_CDN + "/components/prism-jsx.min.js",
-                    PRISM_CDN + "/components/prism-tsx.min.js",
-                    PRISM_CDN + "/components/prism-java.min.js",
-                    PRISM_CDN + "/components/prism-python.min.js",
-                    PRISM_CDN + "/components/prism-sql.min.js",
-                    PRISM_CDN + "/components/prism-bash.min.js",
-                    PRISM_CDN + "/components/prism-json.min.js",
-                    PRISM_CDN + "/components/prism-kotlin.min.js",
-                    PRISM_CDN + "/components/prism-dart.min.js",
-                    PRISM_CDN + "/components/prism-php.min.js",
-                    PRISM_CDN + "/components/prism-c.min.js",
-                    PRISM_CDN + "/components/prism-cpp.min.js",
-                    PRISM_CDN + "/components/prism-swift.min.js",
-                    PRISM_CDN + "/components/prism-go.min.js",
-                    PRISM_CDN + "/components/prism-rust.min.js",
-                    PRISM_CDN + "/components/prism-csharp.min.js",
-                    PRISM_CDN + "/components/prism-yaml.min.js",
-                    PRISM_CDN + "/components/prism-docker.min.js",
-                    PRISM_CDN + "/components/prism-graphql.min.js",
-                    PRISM_CDN + "/plugins/line-numbers/prism-line-numbers.min.js"
-            );
+            prismThemeCss = readRequiredResource("/pdf/prism-tomorrow.min.css");
+            prismLineNumbersCss = readRequiredResource("/pdf/prism-line-numbers.min.css");
+            localFontsCss = readOptionalResource("/pdf/fonts.css");
+            logoDataUri = readOptionalBinaryResource("/pdf/growth.png", "image/png");
 
             StringBuilder sb = new StringBuilder();
-            for (String url : jsUrls) {
-                String js = fetchText(http, url);
-                if (!js.isEmpty()) {
-                    sb.append(js).append('\n');
-                }
+            for (String path : PRISM_RESOURCE_PATHS) {
+                sb.append(readRequiredResource(path)).append('\n');
             }
             prismBundle = sb.toString();
             prismAssetsLoaded = true;
 
-            log.info("✅ Prism ready — {} KB in {} ms",
+            log.info("✅ PDF assets ready — {} KB in {} ms",
                     prismBundle.length() / 1024, System.currentTimeMillis() - t0);
         }
     }
 
-    private String fetchText(HttpClient http, String url) {
+    @PostConstruct
+    void warmup() {
+        ensurePrismAssetsLoaded();
+        warmBrowser();
+    }
+
+    private void warmBrowser() {
         try {
-            HttpResponse<String> r = http.send(
-                    HttpRequest.newBuilder(URI.create(url))
-                            .timeout(Duration.ofSeconds(10)).GET().build(),
-                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            return r.statusCode() == 200 ? r.body() : "";
+            Browser browser = browserProvider.getObject();
+            try (BrowserContext ctx = browser.newContext(
+                    new Browser.NewContextOptions().setLocale("km-KH"))) {
+                Page page = ctx.newPage();
+                page.setContent("<html><body>Warmup</body></html>");
+                page.pdf(new Page.PdfOptions().setFormat("A4"));
+            }
+            log.info("✅ Playwright PDF warmup complete");
         } catch (Exception e) {
-            log.warn("Pre-fetch failed {}: {}", url, e.getMessage());
+            log.warn("Playwright warmup failed: {}", e.getMessage());
+        }
+    }
+
+    private String readRequiredResource(String path) {
+        String text = readResource(path);
+        if (text.isEmpty()) {
+            throw new IllegalStateException("Missing required PDF asset: " + path);
+        }
+        return text;
+    }
+
+    private String readOptionalResource(String path) {
+        return readResource(path);
+    }
+
+    private String readOptionalBinaryResource(String path, String contentType) {
+        ClassPathResource resource = new ClassPathResource(path.startsWith("/") ? path.substring(1) : path);
+        if (!resource.exists()) {
             return "";
+        }
+
+        try (InputStream in = resource.getInputStream()) {
+            return "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(in.readAllBytes());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read binary resource: " + path, e);
+        }
+    }
+
+    private String readResource(String path) {
+        ClassPathResource resource = new ClassPathResource(path.startsWith("/") ? path.substring(1) : path);
+        if (!resource.exists()) {
+            return "";
+        }
+
+        try (InputStream in = resource.getInputStream()) {
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read resource: " + path, e);
         }
     }
 
@@ -218,6 +257,7 @@ public class CoursePdfGeneratorService {
                       return fontsOk && prismOk;
                     }
                     """,
+                    null,
                     new Page.WaitForFunctionOptions()
                             .setTimeout(ASSET_TIMEOUT_MS)
                             .setPollingInterval(50));
@@ -242,16 +282,8 @@ public class CoursePdfGeneratorService {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html>\n<html lang=\"km\">\n<head>\n")
                 .append("<meta charset=\"UTF-8\">\n")
-                .append("<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n")
-                .append("<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n")
-                .append("<link href=\"https://fonts.googleapis.com/css2?")
-                .append("family=Noto+Sans+Khmer:wght@300;400;500;600;700&")
-                .append("family=Noto+Serif+Khmer:wght@300;400;600;700&")
-                .append("family=Inter:wght@300;400;500;600;700;800;900&")
-                .append("family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&")
-                .append("display=swap\" rel=\"stylesheet\">\n")
-                // Prism CSS inlined — zero CDN round-trips
                 .append("<style>\n")
+                .append(localFontsCss).append('\n')
                 .append(prismThemeCss).append('\n')
                 .append(prismLineNumbersCss).append('\n')
                 .append(css())
@@ -263,6 +295,8 @@ public class CoursePdfGeneratorService {
         int ci = 0;
         for (Chapter ch : course.getChapters())
             html.append(chapterPage(ch, ++ci));
+
+        html.append(footerInfoPage());
 
         // Prism JS inlined — 1 script block instead of 22 CDN requests
         html.append("<script>\n")
@@ -387,18 +421,36 @@ public class CoursePdfGeneratorService {
         String accessBg    = isFree ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)";
         String access      = isFree ? "FREE" : "PREMIUM";
         String desc        = course.getDescription() != null ? course.getDescription() : "";
+        String requirements = course.getRequirements() != null ? course.getRequirements().trim() : "";
         int    chCount     = course.getChapters()    != null ? course.getChapters().size() : 0;
+        String logoHtml    = logoDataUri.isBlank()
+                ? "<div class=\"cv-logo-fallback\"></div>"
+                : "<img src=\"" + logoDataUri + "\" alt=\"CodeGrowthKH\" class=\"cv-logo-img\" />";
+        String requirementsHtml = requirements.isBlank()
+                ? "<p class=\"cv-req-empty\">No prerequisites listed</p>"
+                : "<p class=\"cv-req-text\">" + esc(requirements) + "</p>";
 
         return """
             <div class="page cover">
-              <div class="cv-stripe-top"></div><div class="cv-stripe-left"></div>
               <div class="cv-glow-tr"></div><div class="cv-glow-bl"></div>
-              <div class="cv-brand"><span class="cv-brand-dot"></span>CodeGrowthKH &nbsp;·&nbsp; codegrowthkh.site</div>
-              <div class="cv-hero">
+              <div class="cv-topbar">
+                <div class="cv-brand">
+                  <div class="cv-logo-wrap">%s</div>
+                  <div class="cv-brand-copy">
+                    <div class="cv-brand-name">CodeGrowthKH</div>
+                    <div class="cv-brand-tagline">រៀនកូដជាភាសាខ្មែរ</div>
+                  </div>
+                </div>
                 <div class="cv-tag">COURSE DOCUMENTATION</div>
+              </div>
+              <div class="cv-hero">
                 <h1 class="cv-title">%s</h1>
                 <div class="cv-rule"></div>
                 <p class="cv-desc">%s</p>
+                <div class="cv-req-card">
+                  <div class="cv-req-label">Requirements</div>
+                  %s
+                </div>
               </div>
               <div class="cv-stats">
                 <div class="cv-stat"><div class="cv-stat-icon">📊</div><div class="cv-stat-info"><div class="cv-stat-lbl">Level</div><div class="cv-stat-val">%s</div></div></div>
@@ -408,23 +460,21 @@ public class CoursePdfGeneratorService {
                 <div class="cv-stat"><div class="cv-stat-icon">📚</div><div class="cv-stat-info"><div class="cv-stat-lbl">Lessons</div><div class="cv-stat-val">%d</div></div></div>
                 <div class="cv-stat-div"></div>
                 <div class="cv-stat"><div class="cv-stat-icon">📂</div><div class="cv-stat-info"><div class="cv-stat-lbl">Chapters</div><div class="cv-stat-val">%d</div></div></div>
-                <div class="cv-stat-div"></div>
-                <div class="cv-stat"><div class="cv-stat-icon">🔑</div><div class="cv-stat-info"><div class="cv-stat-lbl">Access</div><div class="cv-stat-val" style="color:%s;background:%s;padding:2px 8px;border-radius:4px;font-size:9pt;">%s</div></div></div>
               </div>
               <div class="cv-meta">
-                <div class="cv-meta-row"><span class="cv-meta-icon">👨‍🏫</span><span class="cv-meta-key">Instructor</span><span class="cv-meta-sep">·</span><span class="cv-meta-val">%s</span></div>
                 <div class="cv-meta-row"><span class="cv-meta-icon">📅</span><span class="cv-meta-key">Generated</span><span class="cv-meta-sep">·</span><span class="cv-meta-val">%s</span></div>
                 <div class="cv-meta-row"><span class="cv-meta-icon">🌍</span><span class="cv-meta-key">Platform</span><span class="cv-meta-sep">·</span><span class="cv-meta-val" style="color:#2f8d46;">codegrowthkh.site</span></div>
               </div>
               <div class="cv-footer">
-                <span>© %d CodeGrowthKH — All rights reserved</span>
-                <span style="color:#2f8d46;font-weight:700;">codegrowthkh.site</span>
+                <span class="cv-footer-brand">CodeGrowthKH</span>
+                <span class="cv-footer-copy">© %d CodeGrowthKH — All rights reserved</span>
+                <span class="cv-footer-site">codegrowthkh.site</span>
               </div>
             </div>
-            """.formatted(esc(course.getTitle()), esc(desc),
+            """.formatted(logoHtml, esc(course.getTitle()), esc(desc),
+                requirementsHtml,
                 esc(level), esc(lang), lessons, chCount,
-                accessColor, accessBg, access,
-                esc(instructor), esc(date), LocalDate.now().getYear());
+                esc(date), LocalDate.now().getYear());
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -465,13 +515,54 @@ public class CoursePdfGeneratorService {
         }
         sb.append("""
               <div class="pg-footer">
-                <span class="pf-brand">© CodeGrowthKH</span>
+                <span class="pf-brand">CodeGrowthKH</span>
                 <span class="pg-num">— 2 —</span>
-                <span class="pf-site">codegrowthkh.site</span>
+                <span class="pf-site">រៀនកូដជាភាសាខ្មែរ · codegrowthkh.site</span>
               </div>
             </div>
             """);
         return sb.toString();
+    }
+
+    private String footerInfoPage() {
+        return """
+            <div class="page footer-page">
+              <div class="fp-section">
+                <h2 class="fp-heading">អំពីយើង</h2>
+                <p class="fp-copy">
+                  CodeGrowthKH គឺជាវេទិកាសិក្សា IT ជាភាសាខ្មែរ ដែលផ្តោតលើមេរៀនងាយយល់
+                  roadmap ជាក់ស្តែង និងការអនុវត្តដែលជួយអ្នករៀនក្លាយជា developer បានពិតប្រាកដ។
+                </p>
+                <p class="fp-copyright">© %d CodeGrowthKH. All Rights Reserved.</p>
+              </div>
+
+              <div class="fp-section">
+                <h2 class="fp-heading">តំណភ្ជាប់រហ័ស</h2>
+                <div class="fp-links">
+                  <span>ទំព័រដើម</span>
+                  <span>វគ្គសិក្សា</span>
+                  <span>អំពីយើង</span>
+                  <span>ទំនាក់ទំនង</span>
+                </div>
+              </div>
+
+              <div class="fp-section">
+                <h2 class="fp-heading">ទំនាក់ទំនង</h2>
+                <p class="fp-subcopy">សូមទាក់ទងមកកាន់យើងតាមរយៈ:</p>
+                <p class="fp-contact">Email: codegrowthkh@gmail.com</p>
+                <p class="fp-contact">Telegram: https://t.me/Vanreuth</p>
+                <p class="fp-contact">Facebook: facebook.com/codegrowthkh</p>
+              </div>
+
+              <div class="fp-socials">
+                <span class="fp-social fp-facebook">f</span>
+                <span class="fp-social fp-telegram">✈</span>
+                <span class="fp-social fp-youtube">▶</span>
+              </div>
+
+              <div class="fp-bottom">© %d CodeGrowthKH. All rights reserved.</div>
+            </div>
+            """.formatted(LocalDate.now().getYear(), LocalDate.now().getYear());
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -499,9 +590,9 @@ public class CoursePdfGeneratorService {
 
         sb.append("""
               <div class="pg-footer">
-                <span class="pf-brand">© CodeGrowthKH</span>
+                <span class="pf-brand">CodeGrowthKH</span>
                 <span class="pg-num">— %d —</span>
-                <span class="pf-site">codegrowthkh.site</span>
+                <span class="pf-site">រៀនកូដជាភាសាខ្មែរ · codegrowthkh.site</span>
               </div>
             </div>
             """.formatted(ci + 2));
@@ -694,9 +785,9 @@ public class CoursePdfGeneratorService {
         return """
             *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
             :root {
-              --font-kh: 'Noto Sans Khmer', 'Noto Serif Khmer', serif;
-              --font-en: 'Inter', system-ui, sans-serif;
-              --font-code: 'JetBrains Mono', 'Noto Sans Khmer', Consolas, 'Courier New', monospace;
+              --font-kh: 'PdfKhmer', 'Noto Sans Khmer', 'Khmer OS Battambang', 'Khmer OS Siemreap', sans-serif;
+              --font-en: 'PdfSans', 'Inter', 'Segoe UI', Arial, sans-serif;
+              --font-code: 'PdfMono', 'JetBrains Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
             }
             body { font-family: var(--font-kh), var(--font-en); font-size: 11pt; color: #1e293b; background: #f8f9fa; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             @page { size: A4; margin: 0; }
@@ -709,42 +800,69 @@ public class CoursePdfGeneratorService {
             .ch-banner { page-break-after: avoid; }
 
             /* Cover */
-            .cover { background: #07100f; color: #f0fdf4; padding: 48px 56px; position: relative; }
-            .cv-stripe-top { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #2f8d46, #059669 50%, #10b981); }
-            .cv-stripe-left { position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, #2f8d46, #059669 60%, transparent); }
-            .cv-glow-tr { position: absolute; top: -100px; right: -60px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(47,141,70,.18) 0%, transparent 68%); pointer-events: none; }
-            .cv-glow-bl { position: absolute; bottom: 20px; left: 40px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(5,150,105,.10) 0%, transparent 68%); pointer-events: none; }
-            .cv-brand { font-family: 'Inter', sans-serif; font-size: 8pt; font-weight: 700; color: #2f8d46; letter-spacing: .12em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 52px; }
-            .cv-brand-dot { display: inline-block; width: 8px; height: 8px; background: #2f8d46; border-radius: 50%; }
-            .cv-hero { margin-bottom: 40px; }
-            .cv-tag { display: inline-block; font-family: 'Inter', sans-serif; font-size: 7.5pt; font-weight: 700; color: #2f8d46; letter-spacing: .12em; border: 1px solid rgba(47,141,70,.40); padding: 3px 12px; border-radius: 3px; margin-bottom: 14px; }
-            .cv-title { font-size: 28pt; font-weight: 800; line-height: 1.5; color: #f0fdf4; margin-bottom: 16px; }
+            .cover { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); color: #0f172a; padding: 48px 56px; position: relative; }
+            .cv-glow-tr { position: absolute; top: -100px; right: -60px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(47,141,70,.12) 0%, transparent 70%); pointer-events: none; }
+            .cv-glow-bl { position: absolute; bottom: 20px; left: 40px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(37,99,235,.08) 0%, transparent 70%); pointer-events: none; }
+            .cv-topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom: 52px; position:relative; z-index:1; }
+            .cv-brand { display:flex; align-items:center; gap:14px; }
+            .cv-logo-wrap { width:56px; height:56px; border-radius:16px; background:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(15,23,42,.08); border:1px solid rgba(148,163,184,.18); }
+            .cv-logo-img { width:42px; height:42px; object-fit:contain; }
+            .cv-logo-fallback { width:26px; height:26px; border-radius:999px; background:linear-gradient(135deg, #16a34a, #2563eb); }
+            .cv-brand-copy { display:flex; flex-direction:column; justify-content:center; gap:2px; }
+            .cv-brand-name { font-family: var(--font-en); font-size: 18pt; font-weight: 800; letter-spacing: -.02em; background: linear-gradient(90deg, #16a34a, #10b981 45%, #2563eb); -webkit-background-clip: text; background-clip:text; color: transparent; }
+            .cv-brand-tagline { font-family: var(--font-kh); font-size: 9pt; color: #64748b; }
+            .cv-hero { margin-bottom: 36px; position:relative; z-index:1; }
+            .cv-tag { display: inline-flex; align-items:center; font-family: var(--font-en); font-size: 7.5pt; font-weight: 800; color: #0f172a; letter-spacing: .12em; border: 1px solid rgba(15,23,42,.10); background:#ffffff; padding: 6px 14px; border-radius: 999px; box-shadow:0 8px 20px rgba(15,23,42,.05); }
+            .cv-title { font-size: 28pt; font-weight: 800; line-height: 1.4; color: #0f172a; margin-bottom: 16px; max-width: 88%; }
             .cv-rule { width: 56px; height: 4px; background: linear-gradient(90deg, #2f8d46, #10b981); border-radius: 2px; margin-bottom: 18px; }
-            .cv-desc { font-size: 10.5pt; color: #6ee7b7; line-height: 2.15; max-width: 88%; }
-            .cv-stats { display: flex; align-items: stretch; background: rgba(255,255,255,.04); border: 1px solid rgba(47,141,70,.22); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+            .cv-desc { font-size: 10.5pt; color: #475569; line-height: 2.05; max-width: 88%; }
+            .cv-req-card { margin-top: 18px; max-width: 88%; border: 1px solid rgba(148,163,184,.18); background: rgba(255,255,255,.88); border-radius: 16px; padding: 14px 16px; box-shadow:0 10px 28px rgba(15,23,42,.05); }
+            .cv-req-label { font-family: var(--font-en); font-size: 7pt; font-weight: 800; color: #2f8d46; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; }
+            .cv-req-text { font-size: 9.5pt; color: #334155; line-height: 1.9; }
+            .cv-req-empty { font-size: 9.5pt; color: #64748b; line-height: 1.7; }
+            .cv-stats { display: flex; align-items: stretch; background: rgba(255,255,255,.92); border: 1px solid rgba(148,163,184,.18); border-radius: 16px; overflow: hidden; margin-bottom: 24px; box-shadow:0 16px 40px rgba(15,23,42,.06); }
             .cv-stat { flex: 1; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
-            .cv-stat-div { width: 1px; background: rgba(47,141,70,.20); flex-shrink: 0; }
+            .cv-stat-div { width: 1px; background: rgba(148,163,184,.18); flex-shrink: 0; }
             .cv-stat-icon { font-size: 15pt; line-height: 1; }
             .cv-stat-info { display: flex; flex-direction: column; gap: 2px; }
             .cv-stat-lbl { font-family: 'Inter', sans-serif; font-size: 7pt; font-weight: 700; color: #6b7280; letter-spacing: .08em; text-transform: uppercase; }
-            .cv-stat-val { font-family: 'Inter', sans-serif; font-size: 10.5pt; font-weight: 700; color: #ecfdf5; }
-            .cv-meta { background: rgba(47,141,70,.08); border-left: 4px solid #2f8d46; border-radius: 0 6px 6px 0; padding: 14px 18px; display: flex; flex-direction: column; margin-bottom: auto; }
-            .cv-meta-row { display: flex; align-items: center; gap: 8px; font-size: 9.5pt; color: #a7f3d0; line-height: 2.4; font-family: 'Inter', sans-serif; }
+            .cv-stat-val { font-family: 'Inter', sans-serif; font-size: 10.5pt; font-weight: 700; color: #0f172a; }
+            .cv-meta { background: #ffffff; border: 1px solid rgba(148,163,184,.18); border-left: 4px solid #2f8d46; border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; margin-bottom: auto; box-shadow:0 16px 40px rgba(15,23,42,.05); }
+            .cv-meta-row { display: flex; align-items: center; gap: 8px; font-size: 9.5pt; color: #334155; line-height: 2.4; font-family: 'Inter', sans-serif; }
             .cv-meta-icon { font-size: 10pt; }
-            .cv-meta-key { font-weight: 600; color: #6ee7b7; min-width: 90px; }
+            .cv-meta-key { font-weight: 600; color: #2f8d46; min-width: 90px; }
             .cv-meta-sep { color: #2f8d46; font-weight: 700; }
-            .cv-meta-val { color: #ecfdf5; }
-            .cv-footer { margin-top: 32px; display: flex; justify-content: space-between; align-items: center; font-family: 'Inter', sans-serif; font-size: 8pt; color: #374151; border-top: 1px solid rgba(47,141,70,.18); padding-top: 16px; }
+            .cv-meta-val { color: #0f172a; }
+            .cv-footer { margin-top: 28px; display: flex; justify-content: space-between; align-items: center; gap:14px; font-family: 'Inter', sans-serif; font-size: 8pt; color: #475569; border-top: 1px solid rgba(148,163,184,.24); padding-top: 16px; }
+            .cv-footer-brand { font-weight: 800; color: #0f172a; }
+            .cv-footer-copy { color: #64748b; flex:1; text-align:center; }
+            .cv-footer-site { color: #2f8d46; font-weight: 700; }
 
             /* Inner page */
             .inner-page { padding: 40px 52px; flex: 1; background: #ffffff; }
             .pg-header { font-family: 'Inter', sans-serif; font-size: 8pt; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2f8d46; padding-bottom: 8px; margin-bottom: 24px; }
             .pg-site { font-weight: 800; color: #2f8d46; letter-spacing: .05em; }
             .pg-title { color: #64748b; font-size: 7.5pt; max-width: 65%; text-align: right; }
-            .pg-footer { font-family: 'Inter', sans-serif; font-size: 8pt; color: #64748b; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 24px; }
+            .pg-footer { font-family: 'Inter', sans-serif; font-size: 8pt; color: #64748b; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 24px; gap: 12px; }
             .pg-num { font-weight: 800; color: #2f8d46; font-size: 9pt; }
-            .pf-brand { font-weight: 600; color: #475569; }
-            .pf-site { color: #2f8d46; font-weight: 600; }
+            .pf-brand { font-weight: 700; color: #0f172a; }
+            .pf-site { color: #2f8d46; font-weight: 600; text-align: right; }
+
+            /* Final footer / info page */
+            .footer-page { background: #ffffff; color: #0f172a; align-items: center; justify-content: center; padding: 44px 56px; text-align: center; }
+            .fp-section { width: 100%; max-width: 620px; margin-bottom: 34px; }
+            .fp-heading { font-size: 22pt; font-weight: 800; line-height: 1.4; margin-bottom: 14px; color: #0f172a; }
+            .fp-copy { font-size: 11pt; line-height: 2; color: #334155; }
+            .fp-copyright { margin-top: 18px; font-family: var(--font-en); font-size: 10pt; color: #0f172a; }
+            .fp-links { display: flex; flex-direction: column; gap: 8px; font-size: 11pt; line-height: 1.9; color: #0f172a; }
+            .fp-subcopy { font-size: 10.5pt; color: #475569; margin-bottom: 14px; }
+            .fp-contact { font-family: var(--font-en); font-size: 10.5pt; color: #0f172a; margin-bottom: 10px; }
+            .fp-socials { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 8px 0 24px; }
+            .fp-social { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 999px; font-family: var(--font-en); font-size: 18px; font-weight: 800; }
+            .fp-facebook { color: #2563eb; background: rgba(37,99,235,.08); }
+            .fp-telegram { color: #0284c7; background: rgba(2,132,199,.08); }
+            .fp-youtube { color: #dc2626; background: rgba(220,38,38,.08); }
+            .fp-bottom { font-family: var(--font-en); font-size: 10pt; color: #0f172a; }
 
             /* TOC */
             .toc-eyebrow { display: inline-block; font-family: 'Inter', sans-serif; font-size: 7.5pt; font-weight: 800; color: #fff; background: #2f8d46; padding: 3px 12px; letter-spacing: .10em; border-radius: 3px; margin-bottom: 8px; }

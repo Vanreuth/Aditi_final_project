@@ -6,7 +6,9 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Setter
 @Getter
@@ -67,19 +69,6 @@ public class Course {
     @Builder.Default
     private Integer totalLessons = 0;
 
-    // ─── Download full course as PDF ──────────────────────────────────────────
-    @Column(name = "pdf_url")
-    private String pdfUrl;              // ← full course PDF (all lessons merged)
-
-    @Column(name = "pdf_name")
-    private String pdfName;             // "HTML-Beginner-Full-Course.pdf"
-
-    @Column(name = "pdf_size_kb")
-    private Long pdfSizeKb;             // file size in KB
-
-    @Column(name = "pdf_updated_at")
-    private LocalDateTime pdfUpdatedAt; // when PDF was last regenerated
-
     @Column(name = "avg_rating", precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal avgRating = BigDecimal.ZERO; // 0.00–5.00
@@ -100,14 +89,22 @@ public class Course {
     @JoinColumn(name = "instructor_id", nullable = false)
     private User instructor;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "course_categories",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    @Builder.Default
+    private Set<Category> categories = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")
     @Builder.Default
     private List<Chapter> chapters = new ArrayList<>();
+
+    @OneToOne(mappedBy = "course", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private CoursePdfExport pdfExport;
 
 
     @PrePersist
