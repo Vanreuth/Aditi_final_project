@@ -1,17 +1,12 @@
 package finalproject.backend.oauth;
 
-import finalproject.backend.modal.Role;
 import finalproject.backend.modal.User;
-import finalproject.backend.repository.RoleRepository;
-import finalproject.backend.repository.UserRepository;
-import finalproject.backend.util.RoleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -27,8 +22,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,9 +29,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private static final String GITHUB_EMAILS_URL = "https://api.github.com/user/emails";
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final RestTemplate restTemplate; // ✅ injected from AppConfig
+    private final OAuthUserProvisioningService oAuthUserProvisioningService;
+    private final RestTemplate restTemplate;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest req) throws OAuth2AuthenticationException {
@@ -68,34 +60,15 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         log.info("OAuth2 resolved email={} provider={}", email, provider);
 
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createNewUser(email));
+        String profilePictureUrl = resolveProfilePicture(provider, oauth2User);
+        User user = oAuthUserProvisioningService.upsertOAuthUser(email, profilePictureUrl);
 
         Map<String, Object> attributes = new HashMap<>(oauth2User.getAttributes());
         attributes.put("email", email);
+        attributes.put("profile_picture", user.getProfilePicture());
 
         String nameAttr = resolveNameAttribute(configuredNameAttribute, provider, attributes);
         return new DefaultOAuth2User(user.getAuthorities(), attributes, nameAttr);
-    }
-
-    private User createNewUser(String email) {
-        Role roleUser = roleRepository.findByName(RoleUtil.ROLE_USER)
-                .orElseGet(() -> roleRepository.save(
-                Role.builder().name(RoleUtil.ROLE_USER).build()));
-
-        String baseUsername = email.split("@")[0];
-        String username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
-        while (userRepository.existsByUsername(username)) {
-            username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
-        }
-
-        return userRepository.save(User.builder()
-                .email(email)
-                .username(username)
-                .password(null)
-                .status("ACTIVE")
-                .roles(Set.of(roleUser))
-                .build());
     }
 
     private String resolveEmail(String provider, OAuth2User oauth2User, OAuth2UserRequest req) {
@@ -114,6 +87,30 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (attributes.containsKey("sub"))   return "sub";
         if (attributes.containsKey("email")) return "email";
         return attributes.keySet().stream().findFirst().orElse("email");
+    }
+
+    private String resolveProfilePicture(String provider, OAuth2User oauth2User) {
+        Map<String, Object> attributes = oauth2User.getAttributes();
+
+        Object raw = "github".equalsIgnoreCase(provider)
+                ? attributes.get("avatar_url")
+                : attributes.get("picture");
+
+        if (raw instanceof String profilePicture && !profilePicture.isBlank()) {
+            return profilePicture;
+        }
+
+        Object fallback = attributes.get("avatar_url");
+        if (fallback instanceof String profilePicture && !profilePicture.isBlank()) {
+            return profilePicture;
+        }
+
+        fallback = attributes.get("picture");
+        if (fallback instanceof String profilePicture && !profilePicture.isBlank()) {
+            return profilePicture;
+        }
+
+        return null;
     }
 
     private String fetchGithubPrimaryEmail(String accessToken) {

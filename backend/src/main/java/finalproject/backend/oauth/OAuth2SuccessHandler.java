@@ -1,15 +1,11 @@
 package finalproject.backend.oauth;
 
 import finalproject.backend.modal.RefreshToken;
-import finalproject.backend.modal.Role;
 import finalproject.backend.modal.User;
-import finalproject.backend.repository.RoleRepository;
-import finalproject.backend.repository.UserRepository;
 import finalproject.backend.config.JwtProperties;
 import finalproject.backend.service.JwtService;
 import finalproject.backend.service.RefreshTokenService;
 import finalproject.backend.util.CookieUtil;
-import finalproject.backend.util.RoleUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,16 +20,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final OAuthUserProvisioningService oAuthUserProvisioningService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final CookieUtil cookieUtil;
@@ -58,8 +51,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 return;
             }
 
-            User user = userRepository.findByEmail(email)
-                    .orElseGet(() -> createOAuthUser(email));
+            String profilePictureUrl = resolveProfilePicture(oauthUser);
+            User user = oAuthUserProvisioningService.upsertOAuthUser(email, profilePictureUrl);
 
             Authentication authToken = new UsernamePasswordAuthenticationToken(
                     user, null, user.getAuthorities());
@@ -78,29 +71,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             log.error("OAuth2SuccessHandler: Exception occurred: {}", ex.getMessage(), ex);
             redirectWithError(request, response, ex.getMessage());
         }
-    }
-
-    private User createOAuthUser(String email) {
-        Role roleUser = roleRepository.findByName(RoleUtil.ROLE_USER)
-                .orElseGet(() -> roleRepository.save(Role.builder().name(RoleUtil.ROLE_USER).build()));
-
-        String baseUsername = email.split("@")[0];
-        String username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
-        while (userRepository.existsByUsername(username)) {
-            username = baseUsername + "_" + UUID.randomUUID().toString().substring(0, 6);
-        }
-
-        log.info("Creating new OAuth2 user: email={}, username={}", email, username);
-
-        User newUser = User.builder()
-                .email(email)
-                .username(username)
-                .password(null)
-                .status("ACTIVE")
-                .roles(Set.of(roleUser))
-                .build();
-
-        return userRepository.save(newUser);
     }
 
     private void redirectWithError(HttpServletRequest request,
@@ -153,5 +123,19 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private boolean isLocalHost(String host) {
         return "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host);
+    }
+
+    private String resolveProfilePicture(OAuth2User oauthUser) {
+        Object avatarUrl = oauthUser.getAttributes().get("avatar_url");
+        if (avatarUrl instanceof String profilePicture && !profilePicture.isBlank()) {
+            return profilePicture;
+        }
+
+        Object picture = oauthUser.getAttributes().get("picture");
+        if (picture instanceof String profilePicture && !profilePicture.isBlank()) {
+            return profilePicture;
+        }
+
+        return null;
     }
 }
