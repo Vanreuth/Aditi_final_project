@@ -2,7 +2,7 @@ databases:
   - name: codegrowthkh-db
     databaseName: codegrowthkh
     region: singapore
-    plan: free
+    plan: basic-256mb
 
 services:
   - type: web
@@ -11,7 +11,7 @@ services:
     rootDir: ./backend
     dockerfilePath: ./Dockerfile 
     region: singapore
-    plan: free
+    plan: starter
     branch: main
 
     buildFilter:
@@ -99,4 +99,3 @@ services:
         value: WARN
       - key: LOG_LEVEL_APP
         value: INFO
-      - key: 
