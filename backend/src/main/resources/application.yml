@@ -69,6 +69,11 @@ app:
     refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 management:
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
   endpoints:
     web:
       exposure:

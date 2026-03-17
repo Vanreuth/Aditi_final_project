@@ -54,6 +54,11 @@ logging:
     org.hibernate.SQL: OFF
 
 management:
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
   endpoints:
     web:
       exposure:
