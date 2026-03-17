@@ -223,7 +223,7 @@ export function Topbar() {
             )}
           >
             <Avatar className="size-7 rounded-xl">
-              <AvatarImage src={user?.profilePicture} />
+              <AvatarImage src={user?.profilePicture || undefined} />
               <AvatarFallback className="rounded-xl bg-primary/10 text-[11px] font-bold text-primary">
                 {initials}
               </AvatarFallback>
