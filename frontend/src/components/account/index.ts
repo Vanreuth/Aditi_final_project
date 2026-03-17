@@ -4,3 +4,5 @@ export type { ProfileFormValues } from "./Profileform";
 export { LearningProgressCard, AchievementGrid } from "./Learningprogresscard";
 export { ActivityTab } from "./Activitytab";
 export { SettingsTab } from "./Settingstab";
+export { UserPerformanceCard } from "./Userperformancecard";
+ 

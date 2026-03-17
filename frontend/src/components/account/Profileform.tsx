@@ -20,14 +20,27 @@ import { z } from "zod";
 export const profileFormSchema = z.object({
   username: z
     .string()
+    .trim()
     .min(3, { message: "ឈ្មោះអ្នកប្រើត្រូវមានយ៉ាងតិច 3 តួអក្សរ" })
     .max(50, { message: "ឈ្មោះអ្នកប្រើមិនអាចលើសពី 50 តួអក្សរ" })
     .regex(/^[a-zA-Z0-9_]+$/, {
       message: "ឈ្មោះអ្នកប្រើអាចមានតែអក្សរ លេខ និង underscore",
     }),
-  phoneNumber: z.string(),
-  address: z.string().max(255),
-  bio: z.string().max(500),
+  phoneNumber: z
+    .string()
+    .trim()
+    .max(32, { message: "លេខទូរស័ព្ទមិនអាចលើសពី 32 តួអក្សរ" })
+    .regex(/^[0-9+()\-\s]*$/, {
+      message: "លេខទូរស័ព្ទអាចមានតែលេខ សញ្ញា + ដកឃ្លា និងសញ្ញាវង់ក្រចក",
+    }),
+  address: z
+    .string()
+    .trim()
+    .max(255, { message: "អាសយដ្ឋានមិនអាចលើសពី 255 តួអក្សរ" }),
+  bio: z
+    .string()
+    .trim()
+    .max(500, { message: "អំពីខ្ញុំមិនអាចលើសពី 500 តួអក្សរ" }),
 });
 
 export type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -36,12 +49,22 @@ interface ProfileFormProps {
   form: UseFormReturn<ProfileFormValues>;
   isEditing: boolean;
   isLoading: boolean;
+  hasPendingChanges: boolean;
   userEmail?: string;
   onSubmit: (data: ProfileFormValues) => Promise<void>;
 }
 
-export function ProfileForm({ form, isEditing, isLoading, userEmail, onSubmit }: ProfileFormProps) {
+export function ProfileForm({
+  form,
+  isEditing,
+  isLoading,
+  hasPendingChanges,
+  userEmail,
+  onSubmit,
+}: ProfileFormProps) {
   const fieldClass = !isEditing ? "bg-slate-50 dark:bg-slate-800/50" : "";
+  const addressValue = form.watch("address") ?? "";
+  const bioValue = form.watch("bio") ?? "";
 
   return (
     <Card className="lg:col-span-2">
@@ -131,6 +154,7 @@ export function ProfileForm({ form, isEditing, isLoading, userEmail, onSubmit }:
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>{addressValue.length}/255 តួអក្សរ</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -155,7 +179,7 @@ export function ProfileForm({ form, isEditing, isLoading, userEmail, onSubmit }:
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>អតិបរមា 500 តួអក្សរ</FormDescription>
+                  <FormDescription>{bioValue.length}/500 តួអក្សរ</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -163,7 +187,7 @@ export function ProfileForm({ form, isEditing, isLoading, userEmail, onSubmit }:
 
             {isEditing && (
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isLoading} className="gap-2">
+                <Button type="submit" disabled={isLoading || !hasPendingChanges} className="gap-2">
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (

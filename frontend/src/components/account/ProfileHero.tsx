@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { AuthResponse } from "@/types/authType";
 
 // ─────────────────────────────────────────────────────────────
 //  Helpers
@@ -40,20 +41,14 @@ interface QuickStat {
 }
 
 interface ProfileHeroProps {
-  user: {
-    username?: string;
-    email?: string;
-    bio?: string | null;
-    profilePicture?: string | null;
-    roles?: string[];
-    role?: string;
-  };
+  user: AuthResponse;
   isEditing: boolean;
   previewUrl: string | null;
   profilePicture: File | null;
   progressLoading: boolean;
   totalLessonsTracked: number;
   lessonsCompleted: number;
+  distinctCourses: number;
   totalReadSeconds: number;
   onEditToggle: () => void;
   onCancelEdit: () => void;
@@ -82,6 +77,7 @@ export function ProfileHero({
   progressLoading,
   totalLessonsTracked,
   lessonsCompleted,
+  distinctCourses,
   totalReadSeconds,
   onEditToggle,
   onCancelEdit,
@@ -112,6 +108,12 @@ export function ProfileHero({
       value: progressLoading ? <Pulse /> : formatReadTime(totalReadSeconds),
       label: "ម៉ោងសិក្សា",
       bgClass: "bg-blue-100 dark:bg-blue-900/30",
+    },
+    {
+      icon: <Award className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
+      value: progressLoading ? <Pulse /> : distinctCourses,
+      label: "វគ្គសិក្សា",
+      bgClass: "bg-amber-100 dark:bg-amber-900/30",
     },
   ];
 

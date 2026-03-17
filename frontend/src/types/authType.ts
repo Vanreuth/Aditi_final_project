@@ -7,12 +7,17 @@ export interface AuthResponse {
   username: string
   email: string
   role?: 'ROLE_USER' | 'ROLE_ADMIN' | 'ROLE_INSTRUCTOR'
-  profilePicture?: string
+  profilePicture?: string | null
   accessToken?: string
   phoneNumber?: string | null
   address?: string | null
   bio?: string | null
   roles?: string[]
+  status?: string
+  createdAt?: string
+  updatedAt?: string | null
+  loginAttempt?: number
+  login_attempt?: number
 }
 
 export interface LoginRequest {
