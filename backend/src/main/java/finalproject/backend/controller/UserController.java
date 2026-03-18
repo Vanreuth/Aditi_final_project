@@ -27,14 +27,16 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status
     ) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<UserResponse> users = userService.getAllUsers(pageable);
+        PageResponse<UserResponse> users = userService.getAllUsers(pageable, search, status);
 
         return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
     }
@@ -59,7 +61,7 @@ public class UserController {
             @ModelAttribute UpdateUserRequest request,
             @RequestParam(value = "profilePicture", required = false) MultipartFile photo) {
         return ResponseEntity
-                .status(HttpStatus.CREATED)
+                .ok()
                 .body(userService.updateUser(id, request, photo));
     }
 
@@ -68,6 +70,4 @@ public class UserController {
         return ResponseEntity.ok(userService.deleteUser(id));
     }
 }
-
-
 

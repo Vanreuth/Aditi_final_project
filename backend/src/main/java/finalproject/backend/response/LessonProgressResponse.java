@@ -36,6 +36,7 @@ public class LessonProgressResponse {
     // Course (derived from lesson → chapter → course)
     private Long courseId;
     private String courseTitle;
+    private Integer courseTotalLessons;
 }
 
 

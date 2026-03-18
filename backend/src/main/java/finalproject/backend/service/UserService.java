@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface UserService {
 
   ApiResponse<UserResponse> createUser(UserRequest userRequest , MultipartFile profilePicture);
-  PageResponse<UserResponse> getAllUsers(Pageable pageable);
+  PageResponse<UserResponse> getAllUsers(Pageable pageable, String search, String status);
   ApiResponse<UserResponse> getUserById(Long id);// ← new
   ApiResponse<UserResponse> updateUser(Long id, UpdateUserRequest request, MultipartFile photo);
   ApiResponse<UserResponse> updateUserRole(Long id, UpdateUserRoleRequest request);

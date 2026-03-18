@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -67,8 +68,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<UserResponse> getAllUsers(Pageable pageable) {
-        Page<User> page = userRepository.findAll(pageable);
+    public PageResponse<UserResponse> getAllUsers(Pageable pageable, String search, String status) {
+        Specification<User> spec = Specification
+                .where(searchByUsernameOrEmail(search))
+                .and(hasStatus(status));
+
+        Page<User> page = userRepository.findAll(spec, pageable);
         return PageResponse.of(page.map(userMapper::toResponse));
     }
 
@@ -174,6 +179,39 @@ public class UserServiceImpl implements UserService {
         return requestedRoles.stream()
                 .map(this::findOrCreateRole)
                 .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null) return null;
+        String trimmed = search.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) return null;
+        String trimmed = status.trim();
+        return trimmed.isEmpty() ? null : trimmed.toUpperCase();
+    }
+
+    private Specification<User> searchByUsernameOrEmail(String search) {
+        return (root, query, cb) -> {
+            String normalizedSearch = normalizeSearch(search);
+            if (normalizedSearch == null) return null;
+
+            String like = "%" + normalizedSearch.toLowerCase() + "%";
+            return cb.or(
+                    cb.like(cb.lower(root.get("username")), like),
+                    cb.like(cb.lower(root.get("email")), like)
+            );
+        };
+    }
+
+    private Specification<User> hasStatus(String status) {
+        return (root, query, cb) -> {
+            String normalizedStatus = normalizeStatus(status);
+            if (normalizedStatus == null) return null;
+            return cb.equal(cb.upper(root.get("status")), normalizedStatus);
+        };
     }
 
     private Role findOrCreateRole(String name) {

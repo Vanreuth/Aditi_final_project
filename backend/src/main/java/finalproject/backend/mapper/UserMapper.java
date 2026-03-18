@@ -37,11 +37,11 @@ public class UserMapper {
 
     public User toEntity(UserRequest request) {
         return User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .address(request.getAddress())
-                .phoneNumber(request.getPhoneNumber())
-                .bio(request.getBio())
+                .username(request.getUsername() != null ? request.getUsername().trim() : null)
+                .email(request.getEmail() != null ? request.getEmail().trim() : null)
+                .address(normalizeOptional(request.getAddress()))
+                .phoneNumber(normalizeOptional(request.getPhoneNumber()))
+                .bio(normalizeOptional(request.getBio()))
                 // password → encoded in service before save
                 // roles    → resolved in service
                 // status   → set in service
@@ -51,23 +51,29 @@ public class UserMapper {
     // ─── Apply update to existing entity ─────────────────────────────────────
 
     public void updateEntity(UpdateUserRequest request, User user) {
-        if (request.getUsername()    != null && !request.getUsername().isEmpty())
-            user.setUsername(request.getUsername());
+        if (request.getUsername() != null) {
+            String username = request.getUsername().trim();
+            if (!username.isEmpty()) user.setUsername(username);
+        }
 
-        if (request.getEmail()       != null && !request.getEmail().isEmpty())
-            user.setEmail(request.getEmail());
+        if (request.getEmail() != null) {
+            String email = request.getEmail().trim();
+            if (!email.isEmpty()) user.setEmail(email);
+        }
 
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty())
-            user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getPhoneNumber() != null)
+            user.setPhoneNumber(normalizeOptional(request.getPhoneNumber()));
 
-        if (request.getAddress()     != null && !request.getAddress().isEmpty())
-            user.setAddress(request.getAddress());
+        if (request.getAddress() != null)
+            user.setAddress(normalizeOptional(request.getAddress()));
 
-        if (request.getBio()         != null && !request.getBio().isEmpty())
-            user.setBio(request.getBio());
+        if (request.getBio() != null)
+            user.setBio(normalizeOptional(request.getBio()));
 
-        if (request.getStatus()      != null && !request.getStatus().isEmpty())
-            user.setStatus(request.getStatus());
+        if (request.getStatus() != null) {
+            String status = request.getStatus().trim();
+            if (!status.isEmpty()) user.setStatus(status.toUpperCase());
+        }
 
         // password + roles resolved in service (needs encoder + repo)
     }
@@ -87,5 +93,11 @@ public class UserMapper {
                     }
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

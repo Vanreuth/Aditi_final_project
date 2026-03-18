@@ -40,6 +40,7 @@ public class LessonProgressMapper {
                 // ── Course ────────────────────────────────────────────────────
                 .courseId(course    != null ? course.getId()    : null)
                 .courseTitle(course != null ? course.getTitle() : null)
+                .courseTotalLessons(course != null ? course.getTotalLessons() : null)
                 .build();
     }
 }
