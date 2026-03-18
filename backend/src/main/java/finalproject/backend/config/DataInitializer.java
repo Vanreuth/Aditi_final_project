@@ -101,6 +101,16 @@ public class DataInitializer implements CommandLineRunner {
         } catch (Exception e) {
             log.debug("Schema fix for course_categories skipped: {}", e.getMessage());
         }
+
+        try {
+            entityManager.createNativeQuery("""
+                    ALTER TABLE course
+                    ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0
+                    """).executeUpdate();
+            log.info("✅ Schema fix: course.order_index is ready");
+        } catch (Exception e) {
+            log.debug("Schema fix for course.order_index skipped: {}", e.getMessage());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -187,37 +197,37 @@ public class DataInitializer implements CommandLineRunner {
         // ── Categories ────────────────────────────────────────────────────────
         Category webDev = cat(
                 "ការអភិវឌ្ឍន៍គេហទំព័រ(Web Development)",
-                "សិក្សា HTML, CSS និង JavaScript ពីមូលដ្ឋានរហូតដល់ Framework ទំនើប",
+                "ប្រភេទនេះផ្តោតលើគ្រឹះសំខាន់នៃការបង្កើតគេហទំព័រ ចាប់ពី HTML សម្រាប់រចនាសម្ព័ន្ធ, CSS សម្រាប់រចនាប័ទ្ម និង JavaScript សម្រាប់អន្តរកម្ម។ វាសាកសមសម្រាប់អ្នកចាប់ផ្តើមដែលចង់កសាងមូលដ្ឋានរឹងមាំមុនចូលទៅកាន់ framework ទំនើប។",
                 1
         );
 
         Category fe = cat(
                 "ការអភិវឌ្ឍន៍ផ្នែកខាងមុខ (Frontend)",
-                "សិក្សា React.js, Next.js, TypeScript និង Tailwind CSS សម្រាប់បង្កើត UI ទំនើប",
+                "ប្រភេទ Frontend ផ្តោតលើការសាងសង់ user interface ដែលស្អាត លឿន និង responsive ដោយប្រើ React.js, Next.js, TypeScript និងឧបករណ៍ទំនើបផ្សេងៗ។ សម្រាប់អ្នកចង់ក្លាយជា Frontend Developer ពិតប្រាកដ។",
                 2
         );
 
         Category be = cat(
                 "ការអភិវឌ្ឍន៍ផ្នែកខាងក្រោយ (Backend)",
-                "សិក្សា Java, Spring Boot, REST API, JPA និង Security សម្រាប់ Server",
+                "ប្រភេទ Backend ផ្តោតលើ business logic, database, API design, authentication, authorization និង architecture នៅផ្នែក server។ វាជាគ្រឹះសម្រាប់អ្នកចង់សរសេរ system ដែលមានស្ថេរភាព និងពង្រីកបាន។",
                 3
         );
 
         Category devops = cat(
                 "DevOps និងឧបករណ៍អភិវឌ្ឍន៍",
-                "សិក្សា Git, Docker, CI/CD, GitHub Actions និងឧបករណ៍សម្រាប់ Automation",
+                "ប្រភេទនេះផ្តោតលើ workflow, version control, deployment mindset និងឧបករណ៍ automation ដូចជា Git, Docker, CI/CD និង GitHub Actions ដែលជួយឱ្យក្រុមអភិវឌ្ឍន៍ធ្វើការលឿន និងមានវិន័យ។",
                 4
         );
 
         // ── Courses ───────────────────────────────────────────────────────────
-        seedHTML(ins, webDev, fe);
-        seedCSS(ins, webDev, fe);
-        seedJavaScript(ins, webDev,fe);
-        seedReact(ins, webDev, fe);
-        seedNextJS(ins, webDev, fe);
-        seedJava(ins, webDev, be);
-        seedSpringBoot(ins, webDev, be);
-        seedGit(ins, devops);
+        seedHTML(ins, 1, webDev, fe);
+        seedCSS(ins, 2, webDev, fe);
+        seedJavaScript(ins, 3, webDev,fe);
+        seedReact(ins, 4, webDev, fe);
+        seedNextJS(ins, 5, webDev, fe);
+        seedJava(ins, 6, webDev, be);
+        seedSpringBoot(ins, 7, webDev, be);
+        seedGit(ins, 8, devops);
 
         log.info("✅ All {} courses seeded.", courseRepository.count());
     }
@@ -225,13 +235,13 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 1. HTML
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedHTML(User ins, Category... cats) {
+    private void seedHTML(User ins, int orderIndex, Category... cats) {
         Course c = course("HTML សម្រាប់អ្នកចាប់ផ្តើម",
-                "រៀន HTML ពីដំបូងរហូតដល់ HTML5 Advanced ជាភាសាខ្មែរ។ " +
-                        "Tags, Elements, Attributes, Lists, Links, Images, Media, " +
-                        "Tables, Forms, Semantic HTML, Embedded Content, Accessibility, " +
-                        "CSS Introduction និង Responsive Design។",
-                "BEGINNER", true, ins, cats);
+                "វគ្គ HTML ជាភាសាខ្មែរនេះត្រូវបានរៀបចំសម្រាប់អ្នកចាប់ផ្តើមដែលចង់យល់ពីគ្រឹះនៃ Web ពិតៗ។ " +
+                        "អ្នកនឹងរៀនពីរចនាសម្ព័ន្ធ HTML Document, tags, elements, attributes, headings, paragraphs, lists, links, images, tables និង forms " +
+                        "ជាមួយការពន្យល់ជាភាសាខ្មែរងាយយល់។ បន្ទាប់ពីគ្រឹះ អ្នកនឹងបន្តទៅ semantic HTML5, accessibility, iframe, audio/video, SEO meta tags, " +
+                        "responsive page structure និង best practices សម្រាប់សរសេរ markup ដែលស្អាត ស្តង់ដារ និងត្រៀមរួចសម្រាប់ CSS និង JavaScript។",
+                "BEGINNER", true, orderIndex, ins, cats);
 
         // ═══════════════════════════════════════════════════════════════════
         // CHAPTER 1 — ការណែនាំអំពី HTML
@@ -239,12 +249,12 @@ public class DataInitializer implements CommandLineRunner {
         Chapter ch1 = ch(c, "ការណែនាំអំពី HTML", 1);
 
         Lesson l1_1 = ls(ch1, c, "HTML គឺជាអ្វី?", 1,
-                "HTML (HyperText Markup Language) ជាភាសាសម្គាល់ (markup language) " +
-                        "ដែលត្រូវបានប្រើដើម្បីបង្កើតទំព័របណ្តាញ។\n\n" +
-                        "HTML មិនមែនជាភាសាសរសេរកម្មវិធីទេ ប៉ុន្តែជាវិធីប្រាប់ browser " +
-                        "ពីរបៀបបង្ហាញខ្លឹមសារ (អត្ថបទ, រូបភាព, តំណភ្ជាប់) ។\n\n" +
-                        "HTML ប្រើជាមួយ CSS (រចនាប័ទ្ម) និង JavaScript (ឥរិយាបថ) " +
-                        "ដើម្បីបង្កើតគេហទំព័រពេញលេញ ។");
+                "HTML (HyperText Markup Language) ជាភាសាសម្គាល់ដែលប្រើសម្រាប់រៀបចំរចនាសម្ព័ន្ធទំព័របណ្តាញ។\n\n" +
+                        "HTML មិនមែនជាភាសាសរសេរកម្មវិធីដូចជា JavaScript ឬ Java ទេ ប៉ុន្តែវាជាវិធីសរសេរស្លាក (tags) " +
+                        "ដើម្បីប្រាប់ browser ថា ខ្លឹមសារណាជាចំណងជើង កថាខណ្ឌ បញ្ជី តារាង រូបភាព ឬប៊ូតុង។\n\n" +
+                        "នៅលើគេហទំព័រពិត HTML មានតួនាទីដូចជាគ្រោងឆ្អឹងរបស់ផ្ទះ។ CSS ជួយតុបតែងឱ្យស្អាត " +
+                        "ហើយ JavaScript ជួយឱ្យទំព័រមានចលនា និងអន្តរកម្ម។ បើគ្មាន HTML browser មិនអាចយល់ថាខ្លឹមសាររបស់អ្នកត្រូវបង្ហាញជារបៀបណាទេ។\n\n" +
+                        "ការយល់ HTML ឱ្យច្បាស់ គឺជាជំហានដំបូងសំខាន់បំផុតសម្រាប់អ្នកចង់ក្លាយជា Frontend ឬ Fullstack Developer។");
         sn(l1_1, "HTML Paragraph មូលដ្ឋាន", """
                         <p>This is a paragraph in HTML.</p>""", "html",
                 "ស្លាក <p> បង្ហាញកថាខណ្ឌ។ Browser នឹងបង្ហាញអត្ថបទជាកថាខណ្ឌធម្មតា។", 1);
@@ -1359,21 +1369,26 @@ public class DataInitializer implements CommandLineRunner {
 
     // ══════════════════════════════════════════════════════════════════════════
     // 2. CSS
-    private void seedCSS(User ins, Category... cats) {
+    private void seedCSS(User ins, int orderIndex, Category... cats) {
         Course c = course("CSS Styling ជាភាសាខ្មែរ (Full Course)",
-                "រៀន CSS ពីមូលដ្ឋានដល់កម្រិតខ្ពស់ផ្អែកលើ CodeKhmerLearning ។ " +
-                        "រួមមាន Selectors, Box Model, Flexbox, Grid, Responsive និង Animations។",
-                "BEGINNER", true, ins, cats);
+                "វគ្គ CSS នេះបង្រៀនអ្នកពីរបៀបធ្វើឱ្យ HTML ទំនើប ស្អាត និងអាចប្រើបានល្អលើគ្រប់អេក្រង់។ " +
+                        "អ្នកនឹងរៀន selectors, colors, backgrounds, spacing, typography, box model, display, positioning, pseudo-classes, animations, transitions, " +
+                        "Flexbox, Grid, media queries, responsive design និង CSS variables ជាមួយឧទាហរណ៍ជាក់ស្តែងជាភាសាខ្មែរ។ " +
+                        "គោលដៅរបស់វគ្គគឺឱ្យអ្នកអាចរចនា landing page, dashboard, form និង layout ផ្សេងៗដោយខ្លួនឯងបានយ៉ាងមានរចនាសម្ព័ន្ធ។",
+                "BEGINNER", true, orderIndex, ins, cats);
 
         // Ch1: CSS Syntax and Selectors
         Chapter ch1 = ch(c, "1. CSS Syntax and Selectors", 1);
         Lesson l1 = ls(ch1, c, "វាក្យសម្ព័ន្ធ CSS និងប្រភេទ Selector", 1,
-                "CSS (Cascading Style Sheets) ត្រូវបានប្រើដើម្បីកំណត់រចនាប័ទ្ទ។\n\n" +
+                "CSS (Cascading Style Sheets) ជាភាសាសម្រាប់កំណត់រចនាប័ទ្មរបស់ HTML ដូចជា ពណ៌ ទំហំអក្សរ spacing layout animation និង responsive behavior។\n\n" +
+                        "បើ HTML ជាគ្រោងរចនាសម្ព័ន្ធ នោះ CSS គឺជាផ្នែកតុបតែងដែលធ្វើឱ្យ page មើលទៅមានជីវិត និងមានអត្តសញ្ញាណ។\n\n" +
+                        "Selector គឺជាវិធីជ្រើស element ដែលយើងចង់ style:\n" +
                         "• Element Selector: ហៅឈ្មោះ tag ចំៗ (ឧ. p, h1)\n" +
-                        "• Class Selector (.): ប្រើសញ្ញាចុចសម្រាប់ class (ឧ. .highlight)\n" +
-                        "• ID Selector (#): ប្រើសញ្ញាទ្រុងជ្រូកសម្រាប់ ID (ឧ. #header)\n" +
-                        "• Universal (*): ជ្រើសរើសធាតុទាំងអស់\n" +
-                        "• Attribute, Pseudo-class (:hover), Pseudo-element (::first-line)");
+                        "• Class Selector (.): ប្រើសម្រាប់ elements ច្រើនដែលចង់ style ដូចគ្នា\n" +
+                        "• ID Selector (#): ប្រើសម្រាប់ element តែមួយដែលមានអត្តសញ្ញាណពិសេស\n" +
+                        "• Universal (*): ជ្រើស element ទាំងអស់\n" +
+                        "• Attribute, Pseudo-class និង Pseudo-element: ជ្រើសតាម state ឬផ្នែកពិសេសនៃ element\n\n" +
+                        "ការយល់ selector ឱ្យច្បាស់គឺជាគ្រឹះសំខាន់សម្រាប់សរសេរ CSS ដែលអានងាយ និង maintain បានយូរ។");
         sn(l1, "CSS Selectors", """
                         /* Class Selector */
                         .highlight { background-color: yellow; }
@@ -1512,16 +1527,19 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 3. JAVASCRIPT
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedJavaScript(User ins, Category... cats) {
+    private void seedJavaScript(User ins, int orderIndex, Category... cats) {
         Course c = course("JavaScript ជាភាសាខ្មែរ",
-                "រៀន JavaScript ពីមូលដ្ឋានរហូតដល់ ES6+, DOM, Fetch API ជាភាសាខ្មែរ ។",
-                "BEGINNER", true, ins, cats);
+                "វគ្គ JavaScript ជាភាសាខ្មែរនេះបង្កើតឡើងសម្រាប់អ្នកចង់បន្តពី HTML/CSS ទៅការបង្កើត website ដែលមានអន្តរកម្ម។ " +
+                        "អ្នកនឹងរៀន variables, data types, conditionals, loops, functions, arrays, objects, DOM manipulation, events, async/await, Fetch API, ES6+ syntax " +
+                        "និងការគិតបែប problem solving ជាមួយឧទាហរណ៍អនុវត្តជាក់ស្តែង។ វាជាគ្រឹះសំខាន់សម្រាប់បន្តទៅ React, Next.js ឬ Node.js នៅជំហានបន្ទាប់។",
+                "BEGINNER", true, orderIndex, ins, cats);
 
         Chapter ch1 = ch(c, "ការណែនាំ & Variables", 1);
         Lesson l1 = ls(ch1, c, "JavaScript គឺជាអ្វី?", 1,
-                "JavaScript ជា programming language ដែលដំណើរការ browser ។ JS ធ្វើឱ្យ HTML interactive ។\n\n" +
-                        "JS ប្រើក្នុង Frontend (browser), Backend (Node.js), Mobile (React Native) ។\n\n" +
-                        "Dynamic typing: variable type កំណត់ automatically ។");
+                "JavaScript ជា programming language សំខាន់បំផុតមួយសម្រាប់ Web ហើយដំណើរការជាចម្បងនៅក្នុង browser។\n\n" +
+                        "ខណៈពេលដែល HTML កំណត់រចនាសម្ព័ន្ធ និង CSS កំណត់រចនាប័ទ្ម JavaScript គឺជាអ្វីដែលធ្វើឱ្យ page មានអន្តរកម្ម ដូចជា click button, validate form, toggle menu, fetch data ពី API និង update UI ដោយមិន reload page។\n\n" +
+                        "សព្វថ្ងៃ JavaScript មិនប្រើតែ Frontend ប៉ុណ្ណោះទេ។ វាក៏អាចប្រើក្នុង Backend ជាមួយ Node.js, Mobile apps ជាមួយ React Native និង Desktop apps បានផងដែរ។\n\n" +
+                        "JavaScript មានលក្ខណៈ dynamic typing និង flexible syntax ដូច្នេះវាងាយចាប់ផ្តើម ប៉ុន្តែក៏ត្រូវការការយល់អំពី logic និង structure ឱ្យបានច្បាស់ដែរ។");
         sn(l1, "Hello World", """
                         // console.log - print output
                         console.log("សួស្តី ពិភពលោក!");
@@ -1832,12 +1850,13 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 4. REACT
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedReact(User ins, Category... cats) {
+    private void seedReact(User ins, int orderIndex, Category... cats) {
         Course c = course("React.js ជាភាសាខ្មែរ",
-                "រៀន React.js 18+: Components, Hooks, Router, State Management, " +
-                        "API Calls, Performance, Firebase, Testing និង Deployment ជាភាសាខ្មែរ ។",
+                "វគ្គ React.js ជាភាសាខ្មែរនេះនឹងនាំអ្នកពីការយល់ React ជាគោលការណ៍រហូតដល់ការសាងសង់ Single Page Application ពេញលេញ។ " +
+                        "អ្នកនឹងរៀន components, props, JSX, state, hooks, forms, routing, API integration, state management, performance optimization, testing និង deployment " +
+                        "ជាមួយការពន្យល់លម្អិតជាភាសាខ្មែរ។ បន្ទាប់ពីបញ្ចប់វគ្គនេះ អ្នកគួរតែអាចសរសេរ frontend project ដែលមានរចនាសម្ព័ន្ធល្អ និងត្រៀមសម្រាប់ការងារពិតបាន។",
                 "JavaScript ជាមូលដ្ឋាន",
-                "INTERMEDIATE", true, ins, cats);
+                "INTERMEDIATE", true, orderIndex, ins, cats);
 
         // ═══════════════════════════════════════════════════════════════════
         // CHAPTER 1 — React Introduction
@@ -1845,12 +1864,10 @@ public class DataInitializer implements CommandLineRunner {
         Chapter ch1 = ch(c, "React Introduction", 1);
 
         Lesson l1_1 = ls(ch1, c, "React គឺជាអ្វី?", 1,
-                "React ជា JavaScript library (មិនមែន framework) ដែលបង្កើតដោយ Meta (Facebook) " +
-                        "ឆ្នាំ 2013 សម្រាប់ build UI នៅ Single Page Applications (SPA) ។\n\n" +
-                        "✅ Reusable Components — UI ចែកជា components តូចៗ ប្រើឡើងវិញបាន\n" +
-                        "✅ Virtual DOM — compare virtual DOM → update DOM ដែល changed ប៉ុណ្ណោះ\n" +
-                        "✅ Declarative — ប្រាប់ React ថា UI គួរមើលដូចអ្វី ជំនួសការប្រាប់ steps\n" +
-                        "✅ Strong Community — ecosystem ធំ, packages ច្រើន");
+                "React ជា JavaScript library ដែលបង្កើតដោយ Meta (Facebook) សម្រាប់សាងសង់ User Interface ជាពិសេស Single Page Applications (SPA) ដែលត្រូវការការផ្លាស់ប្តូរទិន្នន័យញឹកញាប់។\n\n" +
+                        "គន្លឹះសំខាន់របស់ React គឺការចែក UI ជា components តូចៗ ដែលអាចប្រើឡើងវិញបាន។ វាធ្វើឱ្យ code មានរចនាសម្ព័ន្ធល្អ ងាយ maintain និងសាកសមសម្រាប់ project ធំៗ។\n\n" +
+                        "React ក៏ប្រើ Virtual DOM ដើម្បីប្រៀបធៀបការផ្លាស់ប្តូរ ហើយ update តែផ្នែកដែលប្ដូរពិតៗ បង្កើន performance នៅពេល UI ស្មុគស្មាញ។\n\n" +
+                        "បើអ្នកចេះ JavaScript មូលដ្ឋាន React គឺជាជំហានបន្ទាប់ដ៏សំខាន់សម្រាប់ក្លាយជា modern Frontend Developer។");
         sn(l1_1, "React App ដំបូង", """
                         // App.js
                         import React from 'react';
@@ -3601,12 +3618,13 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 5. NEXT.JS
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedNextJS(User ins, Category... cats) {
+    private void seedNextJS(User ins, int orderIndex, Category... cats) {
         Course c = course("Next.js ជាភាសាខ្មែរ",
-                "រៀន Next.js 14+ App Router, Server Components, API Routes, Data Fetching, " +
-                        "Tailwind CSS, Authentication, Deployment ជាភាសាខ្មែរ ។",
+                "វគ្គ Next.js ជាភាសាខ្មែរនេះផ្តោតលើការសាងសង់ web application ទំនើបដែលមាន SEO ល្អ performance ខ្ពស់ និងស្ថាបត្យកម្មត្រៀមសម្រាប់ production។ " +
+                        "អ្នកនឹងរៀន App Router, layouts, nested routes, Server Components, Client Components, data fetching, API routes, authentication, middleware, caching, " +
+                        "deployment និង best practices សម្រាប់ full-stack React development នៅក្នុង framework តែមួយ។",
                 "React.js ជាមូលដ្ឋាន",
-                "INTERMEDIATE", false, ins, cats);
+                "INTERMEDIATE", false, orderIndex, ins, cats);
 
         // ══════════════════════════════════════════════════════════════
         // CHAPTER 1 - ការណែនាំ & Setup
@@ -3615,17 +3633,17 @@ public class DataInitializer implements CommandLineRunner {
 
         Lesson l1 = ls(ch1, c, "Next.js គឺជាអ្វី?", 1,
                 """
-                        Next.js ជា React Framework by Vercel ។
+                        Next.js ជា React Framework by Vercel ដែលបង្កើតឡើងដើម្បីដោះស្រាយបញ្ហាដែល React app ធម្មតាជួបប្រទះនៅ production ដូចជា SEO, routing, data fetching, performance និង deployment។
                         
-                        ផ្ដល់ SSR (Server Side Rendering), SSG (Static Site Generation), ISR (Incremental Static Regeneration) ។
+                        Framework នេះផ្ដល់ SSR (Server Side Rendering), SSG (Static Site Generation), ISR (Incremental Static Regeneration) និង App Router ដែលផ្អែកលើ folder structure ។
                         
-                        App Router (Next.js 13+): folder-based routing ។
+                        ហេតុអ្វីបានជាក្រុម developer ជាច្រើនជ្រើស Next.js?
+                        - SEO-friendly: Server អាច render HTML មុន ដើម្បីឱ្យ search engines យល់ page បានល្អ
+                        - Performance: automatic code splitting, image optimization, streaming និង caching
+                        - Full-stack: page, API route, middleware និង auth logic អាចនៅក្នុង project តែមួយ
+                        - Developer Experience: conventions ច្បាស់, TypeScript support, file-based routing និង deploy ទៅ Vercel ងាយ
                         
-                        ហេតុអ្វីប្រើ Next.js?
-                        - SEO-friendly: Server renders HTML → search engines index ល្អ ។
-                        - Performance: Automatic code splitting, image optimization ។
-                        - Full-stack: API Routes ក្នុង project តែមួយ ។
-                        - Developer Experience: Fast Refresh, TypeScript built-in ។""");
+                        សម្រាប់អ្នកដែលចេះ React រួច Next.js ជាជំហានសំខាន់ក្នុងការបង្កើត application ដែលស្ថិតក្នុងកម្រិត production ពិតប្រាកដ។""");
 
         sn(l1, "Create Next.js App", """
                         # Create Next.js project (interactive prompts)
@@ -4572,11 +4590,12 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 6. JAVA
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedJava(User ins, Category... cats) {
+    private void seedJava(User ins, int orderIndex, Category... cats) {
         Course c = course("Java ជាភាសាខ្មែរ",
-                "រៀន Java OOP, Collections, Exception Handling, Generics, " +
-                        "Interfaces, Lambdas, Stream API ជាភាសាខ្មែរ ។",
-                "INTERMEDIATE", true, ins, cats);
+                "វគ្គ Java ជាភាសាខ្មែរនេះផ្តោតលើការបង្កើតគ្រឹះ programming ដែលរឹងមាំសម្រាប់អ្នកចង់ក្លាយជា Backend Developer ឬ Software Engineer។ " +
+                        "អ្នកនឹងរៀន syntax មូលដ្ឋាន, OOP, methods, arrays, collections, exception handling, generics, interfaces, lambdas, streams និង file handling " +
+                        "ជាមួយការពន្យល់លម្អិតជាភាសាខ្មែរ។ Java ជាភាសាដែលមានរចនាសម្ព័ន្ធច្បាស់ ប្រើច្រើននៅក្នុង enterprise systems, Android និង Spring ecosystem។",
+                "INTERMEDIATE", true, orderIndex, ins, cats);
 
         // ══════════════════════════════════════════════════════════════
         // CHAPTER 1 - ការណែនាំ & Data Types
@@ -4584,17 +4603,14 @@ public class DataInitializer implements CommandLineRunner {
         Chapter ch1 = ch(c, "ការណែនាំ & Data Types", 1);
 
         Lesson l1 = ls(ch1, c, "Java គឺជាអ្វី?", 1,
-                "Java ជា OOP language by Sun Microsystems (1995) ។\n\n" +
-                        "Write Once Run Anywhere (WORA) ។ JVM run Java bytecode ។\n\n" +
-                        "ប្រើក្នុង: Android apps, Web (Spring Boot), Enterprise, Big Data ។\n\n" +
-                        "Java ដំណើរការ:\n" +
+                "Java ជាភាសាសរសេរកម្មវិធីបែប Object-Oriented ដែលបង្កើតឡើងដោយ Sun Microsystems ហើយនៅតែមានតួនាទីសំខាន់ខ្លាំងក្នុងពិភព software ដល់សព្វថ្ងៃ។\n\n" +
+                        "គោលការណ៍ល្បីរបស់ Java គឺ Write Once, Run Anywhere (WORA) មានន័យថា code ត្រូវបាន compile ទៅជា bytecode ហើយ JVM អាចរត់វាបានលើ operating system ផ្សេងៗដោយមិនចាំបាច់សរសេរឡើងវិញ។\n\n" +
+                        "Java ត្រូវបានប្រើយ៉ាងទូលំទូលាយក្នុង enterprise systems, banking systems, backend APIs, Android applications, big data tools និង frameworks ដូចជា Spring Boot។\n\n" +
+                        "Java ដំណើរការ៖\n" +
                         "① Source code (.java) → compile → Bytecode (.class)\n" +
                         "② JVM (Java Virtual Machine) run bytecode\n" +
-                        "③ Output ចេញលទ្ធផល ។\n\n" +
-                        "JDK vs JRE vs JVM:\n" +
-                        "- JDK = Java Development Kit (compile + run)\n" +
-                        "- JRE = Java Runtime Environment (run only)\n" +
-                        "- JVM = Java Virtual Machine (execute bytecode)");
+                        "③ Program បង្ហាញ output ឬអនុវត្ត business logic\n\n" +
+                        "JDK = tools សម្រាប់អភិវឌ្ឍ, JRE = environment សម្រាប់រត់, JVM = ម៉ាស៊ីនដែលបកស្រាយ bytecode។");
 
         sn(l1, "Hello World", """
                         // HelloWorld.java
@@ -5750,17 +5766,14 @@ public class DataInitializer implements CommandLineRunner {
     // ══════════════════════════════════════════════════════════════════════════
     // 7. SPRING BOOT
     // ══════════════════════════════════════════════════════════════════════════
-    private void seedSpringBoot(User ins, Category... cats) {
+    private void seedSpringBoot(User ins, int orderIndex, Category... cats) {
         Course c = course(
                 "Spring Boot ជាភាសាខ្មែរ",
-                "វគ្គ Spring Boot សម្រាប់អ្នកដែលមានចំណេះដឹង Java មូលដ្ឋានហើយ ចង់ក្លាយជា " +
-                        "Backend Developer ពិតប្រាកដ។ អ្នករៀននឹងបង្កើត REST API ពេញលេញ " +
-                        "ជាមួយ Spring Boot 3.x, Spring Data JPA, PostgreSQL, Spring Security " +
-                        "ជាមួយ JWT Authentication, Global Exception Handling, File Upload " +
-                        "ទៅ Cloudinary, Bean Validation, MapStruct, Pagination, Unit Testing " +
-                        "ជាមួយ JUnit ",
+                "វគ្គ Spring Boot ជាភាសាខ្មែរនេះត្រូវបានរចនាសម្រាប់អ្នកដែលមានគ្រឹះ Java ហើយចង់ឆ្ពោះទៅការអភិវឌ្ឍ Backend API កម្រិត production។ " +
+                        "អ្នកនឹងរៀនពី project setup, clean package structure, REST controllers, service/repository layers, JPA relationships, PostgreSQL, validation, exception handling, " +
+                        "security ជាមួយ JWT, file upload, mapping DTOs, pagination, testing និង deployment mindset។ វគ្គនេះផ្តោតលើរបៀបសរសេរ backend ដែលអានងាយ ពង្រីកបាន និងប្រើបានក្នុង project ពិត។",
                 "Java ជាមូលដ្ឋាន",
-                "ADVANCED", false, ins, cats);
+                "ADVANCED", false, orderIndex, ins, cats);
 
         // ══════════════════════════════════════════════════════════════════
         //  CHAPTER 1 – ការណែនាំ & Project Setup
@@ -5770,11 +5783,10 @@ public class DataInitializer implements CommandLineRunner {
 
 
         Lesson l1_1 = ls(ch1, c, "Spring Boot គឺជាអ្វី?", 1,
-                "Spring Boot ជា Java framework ដែល built on top of Spring Framework ។\n\n" +
-                        "Auto-configuration: Spring Boot កំណត់ configuration ដោយស្វ័យប្រវត្តិ ។\n\n" +
-                        "Embedded Server: Tomcat/Jetty built-in, មិនចាំបាច់ deploy war file ។\n\n" +
-                        "Production-ready: Actuator, Metrics, Health checks ។\n\n" +
-                        "Spring Initializr: https://start.spring.io ជ្រើស dependencies ងាយស្រួល ។");
+                "Spring Boot ជា framework នៅលើកំពូល Spring Framework ដែលជួយឱ្យការសាងសង់ Java backend application កាន់តែងាយ លឿន និងមានស្តង់ដារខ្ពស់។\n\n" +
+                        "ជំនួសឱ្យការកំណត់ XML និង configuration យ៉ាងច្រើន Spring Boot ផ្តល់ auto-configuration, starter dependencies និង embedded server ដូចជា Tomcat ដែលអាចរត់ app បានភ្លាមៗ។\n\n" +
+                        "វាត្រូវបានប្រើយ៉ាងទូលំទូលាយសម្រាប់ REST API, microservices, admin systems, e-learning platforms, e-commerce backends និង enterprise applications ព្រោះវាអាចរួមបញ្ចូល database, security, validation, logging និង monitoring បានល្អ។\n\n" +
+                        "Spring Initializr (https://start.spring.io) ជួយអ្នកបង្កើត project ដំបូងដោយជ្រើស dependencies ដែលចាំបាច់ ហើយអាចចាប់ផ្តើម coding business logic បានលឿន។");
 
         sn(l1_1, "pom.xml – Full Dependencies", """
                         <?xml version="1.0" encoding="UTF-8"?>
@@ -7231,10 +7243,11 @@ public class DataInitializer implements CommandLineRunner {
         // ══════════════════════════════════════════════════════════════════════════
         // 8. Git & DevOps Basics
         // ══════════════════════════════════════════════════════════════════════════
-        private void seedGit(User ins, Category cat) {
+        private void seedGit(User ins, int orderIndex, Category cat) {
         Course c = course("Git & DevOps Fundamentals",
-            "រៀន Git ពីមូលដ្ឋាន ដល់ branching, merging, .gitignore និង best practices សម្រាប់ team workflow។",
-            "BEGINNER", true, ins, cat);
+            "វគ្គ Git & DevOps Fundamentals នេះជួយឱ្យអ្នកយល់ពីរបៀបគ្រប់គ្រង source code និងធ្វើការជាក្រុមដោយមានវិន័យ។ " +
+                    "អ្នកនឹងរៀន Git basics, staging, commit history, branching, merging, conflict resolution, .gitignore, conventional commits និង workflow ដែលសាកសមសម្រាប់ frontend, backend និង full-stack projects។",
+            "BEGINNER", true, orderIndex, ins, cat);
 
     Chapter ch2 = ch(c, "Git Basics", 2);
     Lesson l2 = ls(ch2, c, "init, add, commit, status, log", 1,
@@ -7388,22 +7401,40 @@ public class DataInitializer implements CommandLineRunner {
 // ══════════════════════════════════════════════════════════════════════════
 
     private Category cat(String name, String desc, int order) {
-        return categoryRepository.findByName(name).orElseGet(() -> {
-            String slug = uniqueCategorySlug(name);
-            log.info("🗂️ Cat: {}", name);
-            return categoryRepository.save(Category.builder()
-                    .name(name).slug(slug).description(desc)
-                    .isActive(true).orderIndex(order).createdAt(now()).build());
-        });
+        return categoryRepository.findByName(name)
+                .map(existing -> {
+                    existing.setDescription(desc);
+                    existing.setOrderIndex(order);
+                    existing.setIsActive(true);
+                    categoryRepository.save(existing);
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    String slug = uniqueCategorySlug(name);
+                    log.info("🗂️ Cat: {}", name);
+                    return categoryRepository.save(Category.builder()
+                            .name(name).slug(slug).description(desc)
+                            .isActive(true).orderIndex(order).createdAt(now()).build());
+                });
     }
 
     private Course course(String title, String desc,
                           String level, boolean featured, User ins, Category... cats) {
-        return course(title, desc, null, level, featured, ins, cats);
+        return course(title, desc, null, level, featured, 0, ins, cats);
+    }
+
+    private Course course(String title, String desc,
+                          String level, boolean featured, int orderIndex, User ins, Category... cats) {
+        return course(title, desc, null, level, featured, orderIndex, ins, cats);
     }
 
     private Course course(String title, String desc, String requirements,
                           String level, boolean featured, User ins, Category... cats) {
+        return course(title, desc, requirements, level, featured, 0, ins, cats);
+    }
+
+    private Course course(String title, String desc, String requirements,
+                          String level, boolean featured, int orderIndex, User ins, Category... cats) {
 
         CourseLevel parsedLevel;
         try {
@@ -7419,12 +7450,26 @@ public class DataInitializer implements CommandLineRunner {
 
         return courseRepository.findByTitle(title)
                 .map(existing -> {
+                    existing.setDescription(desc);
+                    existing.setLevel(finalLevel);
+                    existing.setLanguage("Khmer");
+                    existing.setStatus(CourseStatus.PUBLISHED);
+                    existing.setIsFeatured(featured);
+                    existing.setIsFree(true);
+                    existing.setOrderIndex(orderIndex);
+
                     if (!categories.isEmpty()) {
                         existing.getCategories().addAll(categories);
                     }
+
                     if (requirements != null && !requirements.isBlank()) {
                         existing.setRequirements(requirements);
                     }
+
+                    if (existing.getInstructor() == null) {
+                        existing.setInstructor(ins);
+                    }
+
                     courseRepository.save(existing);
                     return existing;
                 })
@@ -7436,6 +7481,7 @@ public class DataInitializer implements CommandLineRunner {
                             .requirements(requirements)
                             .level(finalLevel).language("Khmer")
                             .status(CourseStatus.PUBLISHED)
+                            .orderIndex(orderIndex)
                             .isFeatured(featured).isFree(true)
                             .instructor(ins).categories(categories)
                             .createdAt(now()).publishedAt(now()).build());
@@ -7455,6 +7501,12 @@ public class DataInitializer implements CommandLineRunner {
     private Lesson ls(Chapter chapter, Course course,
                       String title, int order, String content) {
         return lessonRepository.findByChapterIdAndTitle(chapter.getId(), title)
+                .map(existing -> {
+                    existing.setContent(content);
+                    existing.setOrderIndex(order);
+                    lessonRepository.save(existing);
+                    return existing;
+                })
                 .orElseGet(() -> {
                     String slug = uniqueLessonSlug(course, title);
                     log.debug("    📖 Lesson: {} → slug: {}", title, slug);
@@ -7472,12 +7524,20 @@ public class DataInitializer implements CommandLineRunner {
 
     private void sn(Lesson lesson, String title, String code,
                     String lang, String explanation, int order) {
-        if (codeSnippetRepository.existsByTitleAndLessonId(title, lesson.getId())) return;
-        log.debug("      💻 Snippet: {}", title);
-        codeSnippetRepository.save(CodeSnippet.builder()
-                .title(title).code(code).language(lang)
-                .explanation(explanation).orderIndex(order)
-                .lesson(lesson).createdAt(now()).build());
+        codeSnippetRepository.findByTitleAndLessonId(title, lesson.getId())
+                .ifPresentOrElse(existing -> {
+                    existing.setCode(code);
+                    existing.setLanguage(lang);
+                    existing.setExplanation(explanation);
+                    existing.setOrderIndex(order);
+                    codeSnippetRepository.save(existing);
+                }, () -> {
+                    log.debug("      💻 Snippet: {}", title);
+                    codeSnippetRepository.save(CodeSnippet.builder()
+                            .title(title).code(code).language(lang)
+                            .explanation(explanation).orderIndex(order)
+                            .lesson(lesson).createdAt(now()).build());
+                });
     }
 
     private void done(Course course) {

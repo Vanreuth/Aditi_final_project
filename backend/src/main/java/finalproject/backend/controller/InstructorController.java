@@ -27,8 +27,8 @@ public class InstructorController {
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getInstructorCourses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "orderIndex") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String level,

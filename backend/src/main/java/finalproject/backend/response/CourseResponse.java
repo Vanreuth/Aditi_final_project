@@ -30,6 +30,7 @@ public class CourseResponse {
     private Boolean isFree;
     private BigDecimal price;
     private Integer totalLessons;
+    private Integer orderIndex;
     private BigDecimal avgRating;
     private long viewCount;
     private long enrolledCount;  // distinct users who started at least one lesson

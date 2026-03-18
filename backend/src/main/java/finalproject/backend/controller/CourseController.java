@@ -29,8 +29,8 @@ public class CourseController {
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getAllCourses(
             @RequestParam(defaultValue = "0")         int     page,
             @RequestParam(defaultValue = "10")        int     size,
-            @RequestParam(defaultValue = "createdAt") String  sortBy,
-            @RequestParam(defaultValue = "desc")      String  sortDir,
+            @RequestParam(defaultValue = "orderIndex") String  sortBy,
+            @RequestParam(defaultValue = "asc")        String  sortDir,
             @RequestParam(required = false)           String  search,
             @RequestParam(required = false)           String  status,
             @RequestParam(required = false)           String  level,
@@ -80,7 +80,7 @@ public class CourseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderIndex").ascending());
         PageResponse<CourseResponse> courses = courseService.getCoursesByCategory(categoryId, pageable);
         return ResponseEntity.ok(ApiResponse.success(courses, "Courses retrieved successfully"));
     }
@@ -91,7 +91,7 @@ public class CourseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderIndex").ascending());
         PageResponse<CourseResponse> courses = courseService.getCoursesByInstructor(instructorId, pageable);
         return ResponseEntity.ok(ApiResponse.success(courses, "Courses retrieved successfully"));
     }
@@ -100,8 +100,8 @@ public class CourseController {
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getFeaturedCourses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir
+            @RequestParam(defaultValue = "orderIndex") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
     ) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()

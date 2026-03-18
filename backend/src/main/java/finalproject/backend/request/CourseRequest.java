@@ -38,6 +38,8 @@ public class CourseRequest {
 
     private BigDecimal price = BigDecimal.ZERO;
 
+    private Integer orderIndex = 0;
+
     private Integer categoryId;
     private List<Integer> categoryIds = new ArrayList<>();
 

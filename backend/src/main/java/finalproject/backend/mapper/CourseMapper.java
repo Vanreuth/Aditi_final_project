@@ -51,6 +51,7 @@ public class CourseMapper {
                 .isFree(course.getIsFree())
                 .price(course.getPrice())
                 .totalLessons(course.getTotalLessons())
+                .orderIndex(course.getOrderIndex())
                 .avgRating(course.getAvgRating())
                 .viewCount(views)
                 .enrolledCount(enrolled)
@@ -77,6 +78,7 @@ public class CourseMapper {
                 .isFeatured(request.getFeatured())
                 .isFree(request.getIsFree())
                 .price(request.getPrice())
+                .orderIndex(request.getOrderIndex())
                 .instructor(instructor)
                 .categories(categories != null ? new LinkedHashSet<>(categories) : new LinkedHashSet<>())
                 .build();
@@ -109,6 +111,9 @@ public class CourseMapper {
 
         if (request.getPrice() != null)
             course.setPrice(request.getPrice());
+
+        if (request.getOrderIndex() != null)
+            course.setOrderIndex(request.getOrderIndex());
 
 
         if (instructor != null)

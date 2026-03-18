@@ -69,6 +69,10 @@ public class Course {
     @Builder.Default
     private Integer totalLessons = 0;
 
+    @Column(name = "order_index", columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer orderIndex = 0;
+
     @Column(name = "avg_rating", precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal avgRating = BigDecimal.ZERO; // 0.00–5.00
@@ -117,6 +121,7 @@ public class Course {
         if (isFree       == null) isFree       = false;
         if (price        == null) price        = BigDecimal.ZERO;
         if (totalLessons == null) totalLessons = 0;
+        if (orderIndex   == null) orderIndex   = 0;
         if (viewCount    == null) viewCount    = 0L;
     }
 
