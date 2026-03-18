@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   BarChart2, TrendingUp, Users, BookOpen, GraduationCap,
   ArrowUpRight, ArrowDownRight, Calendar, Activity,
@@ -16,31 +16,7 @@ import {
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-
-/* ─── Types ─────────────────────────────────────────────────────── */
-type Range = "7d" | "30d" | "90d";
-
-/* ─── Mock time-series data (replace with real API) ─────────────── */
-const generateTimeSeries = (range: Range) => {
-  const points = range === "7d" ? 7 : range === "30d" ? 30 : 12;
-  const labels =
-    range === "90d"
-      ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].slice(0, points)
-      : Array.from({ length: points }, (_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (points - 1 - i));
-          return range === "7d"
-            ? d.toLocaleDateString("en", { weekday: "short" })
-            : d.toLocaleDateString("en", { month: "short", day: "numeric" });
-        });
-
-  return labels.map((label, i) => ({
-    label,
-    enrollments: Math.floor(20 + Math.random() * 80 + i * 2),
-    users: Math.floor(5 + Math.random() * 30 + i),
-    completions: Math.floor(3 + Math.random() * 20),
-  }));
-};
+import type { AnalyticsRange } from "@/types/analyticsType";
 
 /* ─── Custom tooltip ─────────────────────────────────────────────── */
 function ChartTooltip({ active, payload, label }: any) {
@@ -151,8 +127,8 @@ function Section({
 }
 
 /* ─── Range toggle ───────────────────────────────────────────────── */
-function RangeToggle({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
-  const opts: { label: string; value: Range }[] = [
+function RangeToggle({ value, onChange }: { value: AnalyticsRange; onChange: (r: AnalyticsRange) => void }) {
+  const opts: { label: string; value: AnalyticsRange }[] = [
     { label: "7D", value: "7d" },
     { label: "30D", value: "30d" },
     { label: "90D", value: "90d" },
@@ -194,10 +170,9 @@ function EmptyState({ icon: Icon, title, sub }: { icon: React.ElementType; title
    Analytics Page
 ═══════════════════════════════════════════════════════════════ */
 export default function AnalyticsPage() {
-  const stats = useDashboardStats();
-  const [range, setRange] = useState<Range>("30d");
-
-  const timeSeries = useMemo(() => generateTimeSeries(range), [range]);
+  const [range, setRange] = useState<AnalyticsRange>("30d");
+  const stats = useDashboardStats(range);
+  const timeSeries = stats.activitySeries;
 
   const LEVEL_COLORS = ["#10b981", "#f59e0b", "#ef4444"];
   const PIE_COLORS = ["#6366f1", "#0ea5e9", "#64748b", "#10b981"];
@@ -278,8 +253,14 @@ export default function AnalyticsPage() {
             <Download className="size-3.5" />
             Export
           </Button>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-[12px]">
-            <RefreshCw className="size-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-[12px]"
+            onClick={() => { void stats.refetch(); }}
+            disabled={stats.loading}
+          >
+            <RefreshCw className={cn("size-3.5", stats.loading && "animate-spin")} />
             Refresh
           </Button>
         </div>
