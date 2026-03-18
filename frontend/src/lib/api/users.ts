@@ -38,7 +38,9 @@ function buildUserFormData(
   appendIfDefined(form, 'phoneNumber', payload.phoneNumber)
   appendIfDefined(form, 'address', payload.address)
   appendIfDefined(form, 'bio', payload.bio)
-  appendIfDefined(form, 'status', payload.status)
+  if ('status' in payload) {
+    appendIfDefined(form, 'status', payload.status)
+  }
 
   if (Array.isArray(payload.roles)) {
     payload.roles.forEach((role) => {
