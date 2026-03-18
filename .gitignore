@@ -6,6 +6,9 @@
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+frontend/coverage/
+frontend/.vercel/
+*.tsbuildinfo
 
 # backend
 backend/target/
