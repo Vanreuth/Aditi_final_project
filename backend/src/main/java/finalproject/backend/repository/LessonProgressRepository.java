@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,6 +57,23 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
     /** Count distinct users who have any progress record for a course (enrolled / studying). */
     @Query("SELECT COUNT(DISTINCT lp.user.id) FROM LessonProgress lp WHERE lp.lesson.course.id = :courseId")
     long countDistinctUsersByCourseId(@Param("courseId") Long courseId);
+
+    @Query("""
+            SELECT lp.lesson.course.id AS courseId,
+                   lp.user.id AS userId,
+                   MIN(lp.createdAt) AS firstSeenAt
+            FROM LessonProgress lp
+            GROUP BY lp.lesson.course.id, lp.user.id
+            """)
+    List<CourseEnrollmentFirstSeenView> findCourseEnrollmentFirstSeen();
+
+    @Query("""
+            SELECT lp.completedAt
+            FROM LessonProgress lp
+            WHERE lp.completed = true
+              AND lp.completedAt IS NOT NULL
+            """)
+    List<LocalDateTime> findCompletedAtMoments();
 
     /**
      * NEW: Count how many distinct courses a user has at least one completed lesson in.
