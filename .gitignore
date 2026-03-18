@@ -1,0 +1,25 @@
+# IDE
+.idea/
+.vscode/
+
+# frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# backend
+backend/target/
+backend/.mvn/
+
+# env files
+.env
+.env.local
+frontend/.env.local
+backend/.env
+
+# logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
