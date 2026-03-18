@@ -67,6 +67,8 @@ app:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:900000}
     refreshExpiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  pdf:
+    browser-warmup-enabled: ${PDF_BROWSER_WARMUP_ENABLED:false}
 
 management:
   health:

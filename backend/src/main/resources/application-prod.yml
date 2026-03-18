@@ -38,6 +38,8 @@ spring:
 app:
   seed:
     enabled: ${APP_SEED_ENABLED:false}
+  pdf:
+    browser-warmup-enabled: ${PDF_BROWSER_WARMUP_ENABLED:false}
   cookie:
     secure: true
     same-site: None

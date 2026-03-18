@@ -12,6 +12,7 @@ import finalproject.backend.modal.Lesson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +51,8 @@ public class CoursePdfGeneratorService {
 
     // ── Injected singleton browser provider (from PlaywrightConfig) ───────
     private final ObjectProvider<Browser> browserProvider;
+    @Value("${app.pdf.browser-warmup-enabled:false}")
+    private boolean browserWarmupEnabled;
 
     private static final List<String> PRISM_RESOURCE_PATHS = List.of(
             "/pdf/prism.min.js",
@@ -133,7 +136,11 @@ public class CoursePdfGeneratorService {
     @PostConstruct
     void warmup() {
         ensurePrismAssetsLoaded();
-        warmBrowser();
+        if (browserWarmupEnabled) {
+            warmBrowser();
+        } else {
+            log.info("⏭️ Skipping Playwright browser warmup");
+        }
     }
 
     private void warmBrowser() {
