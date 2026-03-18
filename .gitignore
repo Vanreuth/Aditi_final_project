@@ -26,3 +26,5 @@ backend/.env
 # OS files
 .DS_Store
 Thumbs.db
+
+docs/                    # optional: project docs, API notes, screenshots
