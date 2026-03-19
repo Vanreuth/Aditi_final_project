@@ -1,6 +1,4 @@
-/**
- * POST /api/v1/snippets  — create snippet
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

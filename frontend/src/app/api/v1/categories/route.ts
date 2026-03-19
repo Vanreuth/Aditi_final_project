@@ -1,7 +1,4 @@
-/**
- * GET  /api/v1/categories   — paginated list
- * POST /api/v1/categories   — [ADMIN] create
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

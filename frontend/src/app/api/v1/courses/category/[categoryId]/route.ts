@@ -1,6 +1,4 @@
-/**
- * GET /api/v1/courses/category/[categoryId]
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

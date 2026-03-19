@@ -1,8 +1,4 @@
-/**
- * GET    /api/v1/courses/[id]
- * PUT    /api/v1/courses/[id]   — [ADMIN/INSTRUCTOR] update (multipart)
- * DELETE /api/v1/courses/[id]   — [ADMIN/INSTRUCTOR]
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

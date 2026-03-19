@@ -1,6 +1,4 @@
-/**
- * GET /api/v1/course/pdf  — list all course PDFs
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

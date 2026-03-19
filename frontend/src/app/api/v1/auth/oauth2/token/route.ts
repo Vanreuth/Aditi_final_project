@@ -1,13 +1,4 @@
-/**
- * POST /api/v1/auth/oauth2/token
- *
- * Called by the frontend OAuth redirect page when tokens arrive as URL params
- * (cross-domain OAuth: Spring is on onrender.com, frontend on vercel.app).
- *
- * Reads { access_token, refresh_token } from the request body and sets them
- * as httpOnly cookies on the frontend domain so the BFF proxy can forward
- * them to Spring Boot on subsequent requests.
- */
+
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -33,7 +24,7 @@ export async function POST(request: NextRequest) {
     httpOnly: true,
     secure  : isProd,
     sameSite: 'lax',
-    maxAge  : 15 * 60,       // 15 minutes — matches Spring's CookieUtil
+    maxAge  : 15 * 60,      
     path    : '/',
   })
 
@@ -41,7 +32,7 @@ export async function POST(request: NextRequest) {
     httpOnly: true,
     secure  : isProd,
     sameSite: 'lax',
-    maxAge  : 24 * 60 * 60,  // 24 hours — matches Spring's CookieUtil
+    maxAge  : 24 * 60 * 60,  
     path    : '/',
   })
 

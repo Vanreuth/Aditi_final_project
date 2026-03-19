@@ -9,12 +9,8 @@ import type {
   InstructorStatsResponse,
 } from '@/types/courseType'
 
-// ─────────────────────────────────────────────────────────────
-//  COURSE SERVICE
-// ─────────────────────────────────────────────────────────────
 
 const COURSE_PATH      = '/api/v1/courses'
-const INSTRUCTOR_PATH  = '/api/v1/instructor'
 
 export const courseService = {
   /** GET / — paginated courses with optional filters */
@@ -71,34 +67,13 @@ export const courseService = {
     return get<PageResponse<CourseResponse>>(`${COURSE_PATH}/featured`, { params: { page, size, sortBy, sortDir } })
   },
 
-  /** GET /coming-soon — paginated, sorted by launchDate asc */
+  /** GET /coming-soon — paginated*/
   getComingSoon: (
     params: Pick<PaginationParams, 'page' | 'size'> = {}
   ): Promise<PageResponse<CourseResponse>> => {
     const { page = 0, size = 10 } = params
     return get<PageResponse<CourseResponse>>(`${COURSE_PATH}/coming-soon`, { params: { page, size } })
   },
-
-  /** GET /instructor/courses — courses owned by current instructor */
-  getMine: (params: CourseFilterParams = {}): Promise<PageResponse<CourseResponse>> => {
-    const { page = 0, size = 10, sortBy = 'orderIndex', sortDir = 'asc',
-            categoryId, status, level, search, isFeatured, isFree } = params
-    const q: Record<string, unknown> = { page, size, sortBy, sortDir }
-    if (categoryId !== undefined) q.categoryId = categoryId
-    if (status)                   q.status     = status
-    if (level)                    q.level      = level
-    if (search)                   q.search     = search
-    if (isFeatured !== undefined) q.isFeatured = isFeatured
-    if (isFree !== undefined)     q.isFree     = isFree
-    return get<PageResponse<CourseResponse>>(`${INSTRUCTOR_PATH}/courses`, { params: q })
-  },
-
-  getMyCourseById: (id: number): Promise<CourseResponse> =>
-    get<CourseResponse>(`${INSTRUCTOR_PATH}/courses/${id}`),
-
-  getInstructorStats: (): Promise<InstructorStatsResponse> =>
-    get<InstructorStatsResponse>(`${INSTRUCTOR_PATH}/stats`),
-
   /** POST / — [ADMIN, INSTRUCTOR] multipart/form-data */
   create: (payload: CourseRequest, thumbnail?: File): Promise<CourseResponse> => {
     const form = buildFormData(payload as unknown as Record<string, unknown>, { thumbnail })
@@ -116,5 +91,4 @@ export const courseService = {
     del<void>(`${COURSE_PATH}/${id}`, { raw: true }),
 }
 
-// Re-export unused type aliases to prevent "imported but never used" warnings
 export type { CourseStatus, CourseLevel }

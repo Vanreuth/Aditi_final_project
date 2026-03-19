@@ -8,7 +8,6 @@ import type {
 } from '@/types/authType'
 
 const AUTH_PATH = '/api/v1/auth'
-// ✅ No backend URL needed in browser at all
 
 function normalizeAuthResponse(
   user: AuthResponse,

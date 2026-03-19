@@ -1,8 +1,4 @@
-/**
- * GET    /api/v1/chapters/[id]
- * PUT    /api/v1/chapters/[id]
- * DELETE /api/v1/chapters/[id]
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

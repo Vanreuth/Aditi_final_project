@@ -1,9 +1,4 @@
-/**
- * GET /api/v1/auth/oauth2/authorize/[provider]
- * Initiates the OAuth2 authorization flow for the given provider.
- * Spring Security returns a 302 → Google; we must relay that redirect
- * back to the browser (redirect: 'manual') instead of following it.
- */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { BACKEND } from '@/lib/proxy'
 
@@ -18,7 +13,7 @@ export async function GET(
   try {
     upstream = await fetch(url, {
       method  : 'GET',
-      redirect: 'manual',   // do NOT follow — let the browser do it
+      redirect: 'manual',   
       headers : { cookie: request.headers.get('cookie') ?? '' },
     })
   } catch {

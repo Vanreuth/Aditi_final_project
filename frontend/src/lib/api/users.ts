@@ -1,11 +1,3 @@
-/**
- * lib/api/users.ts
- *
- * CRUD operations for the /api/v1/users endpoint.
- *
- * Usage:
- *   import { fetchUsers, fetchUser, createUser } from '@/lib/api/users'
- */
 
 import { get, post, put, del } from '@/lib/api/client'
 import type { PageResponse, PaginationParams } from '@/types/apiType'

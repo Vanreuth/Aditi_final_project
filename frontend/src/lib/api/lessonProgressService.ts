@@ -1,10 +1,6 @@
 import { get, post, del } from '@/lib/api/client'
 import type { LessonProgressResponse, LessonProgressRequest } from '@/types/lessonProgressType'
 
-// ─────────────────────────────────────────────────────────────
-//  LESSON PROGRESS SERVICE
-// ─────────────────────────────────────────────────────────────
-
 const PROGRESS_PATH = '/api/v1/lesson-progress'
 
 export const lessonProgressService = {

@@ -1,8 +1,4 @@
-/**
- * GET    /api/v1/lesson-progress
- * POST   /api/v1/lesson-progress
- * DELETE /api/v1/lesson-progress
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

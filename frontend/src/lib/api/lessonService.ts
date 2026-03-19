@@ -1,10 +1,6 @@
 import { get, post, put, del } from '@/lib/api/client'
 import type { LessonResponse, LessonRequest } from '@/types/lessonType'
 
-// ─────────────────────────────────────────────────────────────
-//  LESSON SERVICE
-// ─────────────────────────────────────────────────────────────
-
 const LESSON_PATH = '/api/v1/lessons'
 
 export const lessonService = {

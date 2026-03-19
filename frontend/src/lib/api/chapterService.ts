@@ -1,10 +1,6 @@
 import { get, post, put, del } from '@/lib/api/client'
 import type { ChapterResponse, ChapterRequest } from '@/types/chapterType'
 
-// ─────────────────────────────────────────────────────────────
-//  CHAPTER SERVICE
-// ─────────────────────────────────────────────────────────────
-
 const CHAPTER_PATH = '/api/v1/chapters'
 
 export const chapterService = {

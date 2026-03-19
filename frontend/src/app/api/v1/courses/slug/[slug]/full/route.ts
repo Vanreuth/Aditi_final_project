@@ -1,7 +1,4 @@
-/**
- * GET /api/v1/courses/slug/[slug]/full
- * Returns a course with all nested chapters + lessons.
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

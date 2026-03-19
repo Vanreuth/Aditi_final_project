@@ -2,10 +2,6 @@ import { get, post, put, del } from '@/lib/api/client'
 import type { PageResponse, CategoryFilterParams } from '@/types/api'
 import type { CategoryResponse, CategoryRequest } from '@/types/category'
 
-// ─────────────────────────────────────────────────────────────
-//  CATEGORY SERVICE
-// ─────────────────────────────────────────────────────────────
-
 const CATEGORY_PATH = '/api/v1/categories'
 
 export const categoryService = {

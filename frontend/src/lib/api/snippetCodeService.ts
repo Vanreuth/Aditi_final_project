@@ -1,10 +1,6 @@
 import { get, post, put, del } from '@/lib/api/client'
 import type { CodeSnippetResponse, CodeSnippetRequest } from '@/types/codeSnippetType'
 
-// ─────────────────────────────────────────────────────────────
-//  SNIPPET CODE SERVICE
-// ─────────────────────────────────────────────────────────────
-
 const SNIPPET_PATH = '/api/v1/snippets'
 
 export const snippetService = {

@@ -1,10 +1,6 @@
 import { get, post, del } from '@/lib/api/client'
 import type { CoursePdfExportResponse } from '@/types/coursePDFType'
 
-// ─────────────────────────────────────────────────────────────
-//  PDF SERVICE
-// ─────────────────────────────────────────────────────────────
-
 const PDF_PATH = '/api/v1/course/pdf'
 
 export const pdfService = {

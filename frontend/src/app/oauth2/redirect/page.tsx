@@ -55,9 +55,6 @@ function OAuthCallbackContent() {
 
     async function handleCallback() {
       if (accessToken && refreshToken) {
-        // Cross-domain OAuth: Spring embeds tokens in the redirect URL because
-        // it cannot set cookies across domains (onrender.com → vercel.app).
-        // Exchange them for httpOnly cookies on this domain.
         await fetch('/api/v1/auth/oauth2/token', {
           method : 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -65,16 +62,9 @@ function OAuthCallbackContent() {
         })
         // Remove tokens from URL — prevent exposure in browser history / logs
         window.history.replaceState({}, '', '/oauth2/redirect')
-
-        // Decode roles from the JWT payload we already have — avoids a full
-        // backend round-trip (and Render cold-start delay) just to get roles.
         const roles = decodeJwtRoles(accessToken)
         setStatus("success")
         const destination = getDefaultAppRoute(roles)
-        // Hard navigate so the page reloads AFTER cookies are set.
-        // router.replace() keeps the same React tree, meaning AuthProvider's
-        // bootstrap already ran with no cookies and left user=null — causing
-        // ProtectedRoute to redirect back to /login immediately.
         setTimeout(() => { window.location.href = destination }, 1200)
         return
       }

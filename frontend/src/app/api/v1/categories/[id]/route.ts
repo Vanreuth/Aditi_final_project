@@ -1,8 +1,4 @@
-/**
- * GET    /api/v1/categories/[id]
- * PUT    /api/v1/categories/[id]   — [ADMIN]
- * DELETE /api/v1/categories/[id]   — [ADMIN]
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 

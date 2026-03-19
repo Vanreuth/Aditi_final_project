@@ -33,20 +33,6 @@ export interface ProxyOptions {
 
 // ── Core ───────────────────────────────────────────────────────────────────
 
-/**
- * Forward a Next.js request to the Spring Boot backend and relay
- * the full response — including ALL Set-Cookie headers — back to the browser.
- *
- * Handles:
- *   ✅ Streaming request body (no memory overhead for large uploads)
- *   ✅ Both access_token + refresh_token Set-Cookie headers
- *   ✅ Correct content-type passthrough
- *   ✅ 502 fallback when backend is unreachable
- *
- * @param request     Incoming Next.js request
- * @param backendPath Backend path e.g. '/api/v1/auth/login'
- * @param options     Optional method / body / header overrides
- */
 export async function proxyToBackend(
   request     : NextRequest,
   backendPath : string,
@@ -116,12 +102,6 @@ function buildUpstreamHeaders(
   return headers
 }
 
-/**
- * Resolve request body:
- *   - GET / HEAD → never have a body
- *   - Everything else → stream request.body directly (no JSON.parse overhead)
- *     This supports large file uploads without loading into memory.
- */
 function resolveBody(
   request  : NextRequest,
   method   : string,
@@ -130,15 +110,6 @@ function resolveBody(
   if (['GET', 'HEAD'].includes(method.toUpperCase())) return undefined
   return override ?? request.body ?? undefined
 }
-
-/**
- * Build the NextResponse from the upstream response:
- *   - Mirror exact status code
- *   - Copy safe response headers
- *   - Skip content-encoding (fetch already decoded the body)
- *   - Forward ALL Set-Cookie headers using getSetCookie()
- *     because Headers.get('set-cookie') only returns the FIRST one
- */
 async function buildResponse(upstream: Response): Promise<NextResponse> {
   const body = await upstream.arrayBuffer()
   // arrayBuffer handles any content type: JSON, files, images, binary
@@ -159,17 +130,6 @@ async function buildResponse(upstream: Response): Promise<NextResponse> {
     if (lower === 'content-length')   continue  // length can change after decoding
     response.headers.set(key, value)
   }
-
-  // Forward ALL Set-Cookie headers
-  //
-  // Spring Boot sends TWO separate Set-Cookie headers:
-  //   Set-Cookie: access_token=xxx;  HttpOnly; Max-Age=900
-  //   Set-Cookie: refresh_token=yyy; HttpOnly; Max-Age=604800
-  //
-  // Headers.get('set-cookie') → returns only the FIRST one ❌
-  // headers.getSetCookie()    → returns ALL as string[]    ✅
-  //
-  // We use .append() not .set() so both cookies are preserved.
   const setCookies =
     upstream.headers.getSetCookie?.() ??
     upstream.headers.get('set-cookie')?.split(/,(?=\s*\w+=)/) ??

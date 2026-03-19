@@ -1,6 +1,4 @@
-/**
- * POST /api/v1/course/pdf/[courseId]/download
- */
+
 import { NextRequest } from 'next/server'
 import { proxyToBackend } from '@/lib/proxy'
 
