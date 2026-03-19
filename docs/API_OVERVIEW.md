@@ -159,11 +159,6 @@ Admin users:
 
 - `PUT /{id}/role`
 
-Instructor:
-
-```text
-/api/v1/instructor
-```
 
 - `GET /courses`
 - `GET /courses/{id}`

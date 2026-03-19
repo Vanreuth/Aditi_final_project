@@ -18,7 +18,7 @@ Main responsibilities:
 - course detail and lesson pages
 - login, register, forgot password, and OAuth redirect handling
 - learner account activity and progress pages
-- admin and instructor dashboard pages
+- admin dashboard pages
 - proxying browser API calls to the backend
 
 Main stack:
@@ -39,7 +39,6 @@ Main responsibilities:
 - users, categories, courses, chapters, lessons, and snippets CRUD
 - lesson progress tracking
 - admin analytics
-- instructor statistics
 - Cloudflare R2 uploads
 - Playwright PDF export
 

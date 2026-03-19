@@ -1,6 +1,6 @@
 # CodeGrowthKH
 
-CodeGrowthKH is a full-stack learning platform built with a Next.js frontend and a Spring Boot backend. It supports public course browsing, lesson learning, authentication, learner progress tracking, admin and instructor dashboards, analytics, file uploads, and PDF export.
+CodeGrowthKH is a full-stack learning platform built with a Next.js frontend and a Spring Boot backend. It supports public course browsing, lesson learning, authentication, learner progress tracking, admin  dashboards, analytics, file uploads, and PDF export.
 
 ## Project Structure
 
@@ -16,7 +16,7 @@ CodeGrowthKH is a full-stack learning platform built with a Next.js frontend and
 - course detail and lesson pages by slug
 - login, register, forgot password, and OAuth redirect handling
 - learner account activity and progress tracking
-- admin and instructor dashboard UI
+- admin  dashboard UI
 - course ordering support with `orderIndex`
 - Next.js API proxy layer for backend requests
 
