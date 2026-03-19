@@ -2,10 +2,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ApiResponse } from '@/types/apiType'
 
-// ─────────────────────────────────────────────────────────────
-//  Axios instance — auto refresh on 401
-// ─────────────────────────────────────────────────────────────
-
 interface QueueItem {
   resolve: (value: void) => void
   reject : (error: unknown) => void
@@ -25,8 +21,6 @@ function isOnAuthPage(): boolean {
   return AUTH_PATHS.some((p) => window.location.pathname.startsWith(p))
 }
 
-// Do NOT intercept 401s that come from the refresh endpoint itself —
-// that would cause an infinite loop (refresh → 401 → try refresh again…).
 function isRefreshEndpoint(config: InternalAxiosRequestConfig): boolean {
   return !!config.url?.includes('/auth/refresh')
 }
