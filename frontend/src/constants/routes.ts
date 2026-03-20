@@ -1,13 +1,3 @@
-/**
- * constants/routes.ts
- *
- * Single source of truth for every application route.
- * Import ROUTES (or the grouped arrays) instead of hard-coding path strings.
- *
- * Usage:
- *   import { ROUTES, PUBLIC_ROUTES } from '@/constants/routes'
- *   router.push(ROUTES.DASHBOARD)
- */
 
 export const ROUTES = {
   // ── Public ────────────────────────────────────────────────

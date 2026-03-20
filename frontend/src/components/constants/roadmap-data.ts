@@ -32,14 +32,14 @@ export type RoadmapPath = {
 };
 
 export const learningCourseLinks = [
-  { label: "HTML សម្រាប់អ្នកចាប់ផ្តើម", href: "/courses/html-សម្រាប់អ្នកចាប់ផ្តើម" },
-  { label: "CSS Styling ជាភាសាខ្មែរ", href: "/courses/css-styling-ជាភាសាខ្មែរ-full-course" },
-  { label: "JavaScript ជាភាសាខ្មែរ", href: "/courses/javascript-ជាភាសាខ្មែរ" },
-  { label: "React.js ជាភាសាខ្មែរ", href: "/courses/reactjs-ជាភាសាខ្មែរ" },
+  { label: "HTML សម្រាប់អ្នកចាប់ផ្តើម", href: "/courses/html-សម្រាប់អ្នកចាប់ផ្តើម-1" },
+  { label: "CSS Styling ជាភាសាខ្មែរ", href: "/courses/css-styling-ជាភាសាខ្មែរ-full-course-1" },
+  { label: "JavaScript ជាភាសាខ្មែរ", href: "/courses/javascript-ជាភាសាខ្មែរ-1" },
+  { label: "React.js ជាភាសាខ្មែរ", href: "/courses/reactjs-ជាភាសាខ្មែរ-1" },
   { label: "Next.js ជាភាសាខ្មែរ", href: "/courses/nextjs-ជាភាសាខ្មែរ" },
   { label: "Java ជាភាសាខ្មែរ", href: "/courses/java-ជាភាសាខ្មែរ" },
   { label: "Spring Boot ជាភាសាខ្មែរ", href: "/courses/spring-boot-ជាភាសាខ្មែរ" },
-  { label: "Git & DevOps Fundamentals", href: "/courses/git-devops-fundamentals" },
+  { label: "Git & DevOps Fundamentals", href: "/courses//git-devops-fundamentals-1" },
 ] as const;
 
 export const roadmapPaths: RoadmapPath[] = [
