@@ -342,6 +342,6 @@ public class CoursePdfExportServiceImpl implements CoursePdfExportService {
         if (course.getCategories() == null || course.getCategories().isEmpty()) return false;
 
         return course.getCategories().stream()
-                .anyMatch(category -> category != null && category.getId() != null && category.getId().equals(categoryId));
+                .anyMatch(category -> category != null && category.getId() == categoryId.intValue());
     }
 }
